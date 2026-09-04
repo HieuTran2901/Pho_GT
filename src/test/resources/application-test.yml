@@ -1,0 +1,19 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:pho_test_db;DB_CLOSE_DELAY=-1;MODE=MySQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    database-platform: org.hibernate.dialect.H2Dialect
+
+app:
+  jwt:
+    secret: pho_gia_truyen_1986_spring_boot_jwt_secret_key_very_long_for_hmac_sha_256
+    expiration-ms: 900000
+    refresh-expiration-ms: 604800000
+  cors:
+    allowed-origins: http://localhost:5173
