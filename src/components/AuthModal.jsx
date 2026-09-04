@@ -16,9 +16,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-export default function AuthModal({ onToast }) {
-  const { authModalOpen, closeAuthModal, initialTab, login, register } = useAuth();
-  const [activeTab, setActiveTab] = useState(initialTab || 'login');
+function AuthModal({ onToast }) {
+  const { authModalOpen, closeAuthModal, authTab, setAuthTab, login, register } = useAuth();
   
   // Form states
   const [phone, setPhone] = useState('');
@@ -28,14 +27,6 @@ export default function AuthModal({ onToast }) {
   const [saveTasteProfile, setSaveTasteProfile] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-
-  // Sync tab with initialTab when opened
-  useEffect(() => {
-    if (authModalOpen) {
-      setActiveTab(initialTab || 'login');
-      setErrorMessage('');
-    }
-  }, [authModalOpen, initialTab]);
 
   // Handle ESC key listener & body scroll lock
   useEffect(() => {
@@ -57,7 +48,7 @@ export default function AuthModal({ onToast }) {
     };
   }, [authModalOpen, closeAuthModal]);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
     setErrorMessage('');
 
@@ -71,14 +62,14 @@ export default function AuthModal({ onToast }) {
       return;
     }
 
-    if (activeTab === 'register' && !fullName.trim()) {
+    if (authTab === 'register' && !fullName.trim()) {
       setErrorMessage('Vui lòng nhập họ và tên của bạn');
       return;
     }
 
     setIsLoading(true);
     try {
-      if (activeTab === 'login') {
+      if (authTab === 'login') {
         const user = await login(phone, password);
         if (onToast) onToast(`Chào mừng ${user.fullName} trở lại Phở Gia Truyền 1986!`);
       } else {
@@ -90,21 +81,21 @@ export default function AuthModal({ onToast }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [phone, password, fullName, authTab, login, register, onToast]);
 
   // Demo fill quick login
-  const handleQuickDemo = (type) => {
+  const handleQuickDemo = useCallback((type) => {
     if (type === 'member') {
       setPhone('0988888888');
       setPassword('123456');
-      setActiveTab('login');
+      setAuthTab('login');
     } else {
       setPhone('0912345678');
       setFullName('Bác Hai Phố Cổ');
       setPassword('123456');
-      setActiveTab('register');
+      setAuthTab('register');
     }
-  };
+  }, [setAuthTab]);
 
   if (!authModalOpen) return null;
 
@@ -163,9 +154,9 @@ export default function AuthModal({ onToast }) {
           <div className="flex rounded-xl bg-[#ede3cf] p-1 border border-[#d6c7ac]">
             <button
               type="button"
-              onClick={() => { setActiveTab('login'); setErrorMessage(''); }}
+              onClick={() => { setAuthTab('login'); setErrorMessage(''); }}
               className={`flex-1 py-2.5 text-xs sm:text-sm font-serif font-bold rounded-lg transition-all ${
-                activeTab === 'login'
+                authTab === 'login'
                   ? 'bg-white text-[#8a1e14] shadow-sm border border-[#cbb898]'
                   : 'text-[#6b584c] hover:text-[#2b1810]'
               }`}
@@ -175,9 +166,9 @@ export default function AuthModal({ onToast }) {
 
             <button
               type="button"
-              onClick={() => { setActiveTab('register'); setErrorMessage(''); }}
+              onClick={() => { setAuthTab('register'); setErrorMessage(''); }}
               className={`flex-1 py-2.5 text-xs sm:text-sm font-serif font-bold rounded-lg transition-all relative flex items-center justify-center gap-1.5 ${
-                activeTab === 'register'
+                authTab === 'register'
                   ? 'bg-white text-[#8a1e14] shadow-sm border border-[#cbb898]'
                   : 'text-[#6b584c] hover:text-[#2b1810]'
               }`}
@@ -206,7 +197,7 @@ export default function AuthModal({ onToast }) {
           <form onSubmit={handleSubmit} className="space-y-3.5">
             
             {/* Trường Họ và tên (Chỉ hiện khi Đăng Ký) */}
-            {activeTab === 'register' && (
+            {authTab === 'register' && (
               <div>
                 <label className="block text-xs font-serif font-bold text-[#3a251b] mb-1">
                   Họ và Tên của bạn <span className="text-[#8a1e14]">*</span>
@@ -221,7 +212,7 @@ export default function AuthModal({ onToast }) {
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="Ví dụ: Nguyễn Văn Hiếu"
                     className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-white border border-[#d6c7ac] text-[#2b1810] text-sm placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-[#8a1e14] focus:border-[#8a1e14] transition-all shadow-xs"
-                    required={activeTab === 'register'}
+                    required={authTab === 'register'}
                   />
                 </div>
               </div>
@@ -253,7 +244,7 @@ export default function AuthModal({ onToast }) {
                 <label className="text-xs font-serif font-bold text-[#3a251b]">
                   Mật Khẩu <span className="text-[#8a1e14]">*</span>
                 </label>
-                {activeTab === 'login' && (
+                {authTab === 'login' && (
                   <button 
                     type="button"
                     onClick={() => {
@@ -273,7 +264,7 @@ export default function AuthModal({ onToast }) {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder={activeTab === 'register' ? 'Tối thiểu 6 ký tự' : 'Nhập mật khẩu của bạn'}
+                  placeholder={authTab === 'register' ? 'Tối thiểu 6 ký tự' : 'Nhập mật khẩu của bạn'}
                   className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-white border border-[#d6c7ac] text-[#2b1810] text-sm placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-[#8a1e14] focus:border-[#8a1e14] transition-all shadow-xs"
                   required
                 />
@@ -290,7 +281,7 @@ export default function AuthModal({ onToast }) {
             </div>
 
             {/* Lợi quyền hội viên: Box Tem Phiếu Khách Quen */}
-            {activeTab === 'register' && (
+            {authTab === 'register' && (
               <div className="p-3 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50/70 border border-dashed border-amber-400/80 my-2">
                 <div className="flex items-start gap-2.5">
                   <div className="w-8 h-8 rounded-full bg-amber-500/15 text-[#8a1e14] flex items-center justify-center shrink-0 mt-0.5">
@@ -338,7 +329,7 @@ export default function AuthModal({ onToast }) {
                 </>
               ) : (
                 <>
-                  <span>{activeTab === 'login' ? 'ĐĂNG NHẬP VÀO QUÁN' : 'GIA NHẬP BÁT PHỞ TRI KỶ'}</span>
+                  <span>{authTab === 'login' ? 'ĐĂNG NHẬP VÀO QUÁN' : 'GIA NHẬP BÁT PHỞ TRI KỶ'}</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
@@ -382,3 +373,5 @@ export default function AuthModal({ onToast }) {
     </div>
   );
 }
+
+export default React.memo(AuthModal);

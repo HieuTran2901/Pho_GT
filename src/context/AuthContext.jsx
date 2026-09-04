@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 
 const AuthContext = createContext(null);
 
@@ -15,7 +15,7 @@ export function AuthProvider({ children }) {
   });
 
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [initialTab, setInitialTab] = useState('login'); // 'login' | 'register'
+  const [authTab, setAuthTab] = useState('login'); // 'login' | 'register'
 
   useEffect(() => {
     if (user) {
@@ -26,7 +26,7 @@ export function AuthProvider({ children }) {
   }, [user]);
 
   const openAuthModal = useCallback((tab = 'login') => {
-    setInitialTab(tab);
+    setAuthTab(tab);
     setAuthModalOpen(true);
   }, []);
 
@@ -36,7 +36,6 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(async (phone, password) => {
     // Giả lập hoặc gọi API backend
-    // Mặc định tạo tài khoản khách quen
     const mockUser = {
       id: 'usr_' + Date.now(),
       fullName: phone === '0988888888' ? 'Nguyễn Văn Hiếu' : 'Khách Quen 1986',
@@ -61,9 +60,9 @@ export function AuthProvider({ children }) {
     };
 
     setUser(mockUser);
-    closeAuthModal();
+    setAuthModalOpen(false);
     return mockUser;
-  }, [closeAuthModal]);
+  }, []);
 
   const register = useCallback(async (phone, fullName, password, email) => {
     const newUser = {
@@ -90,9 +89,9 @@ export function AuthProvider({ children }) {
     };
 
     setUser(newUser);
-    closeAuthModal();
+    setAuthModalOpen(false);
     return newUser;
-  }, [closeAuthModal]);
+  }, []);
 
   const logout = useCallback(() => {
     setUser(null);
@@ -111,21 +110,33 @@ export function AuthProvider({ children }) {
     });
   }, []);
 
+  // Memoize contextValue to prevent redundant consumer re-renders
+  const contextValue = useMemo(() => ({
+    user,
+    isAuthenticated: !!user,
+    authModalOpen,
+    authTab,
+    setAuthTab,
+    openAuthModal,
+    closeAuthModal,
+    login,
+    register,
+    logout,
+    updateTasteProfile,
+  }), [
+    user,
+    authModalOpen,
+    authTab,
+    openAuthModal,
+    closeAuthModal,
+    login,
+    register,
+    logout,
+    updateTasteProfile,
+  ]);
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isAuthenticated: !!user,
-        authModalOpen,
-        initialTab,
-        openAuthModal,
-        closeAuthModal,
-        login,
-        register,
-        logout,
-        updateTasteProfile,
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

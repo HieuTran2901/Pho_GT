@@ -9,7 +9,6 @@ import CartDrawer from './components/CartDrawer';
 import Footer from './components/Footer';
 import FlyingPhoBowl from './components/FlyingPhoBowl';
 import AuthModal from './components/AuthModal';
-import { AuthProvider } from './context/AuthContext';
 
 export default function App() {
   const [cartItems, setCartItems] = useState([
@@ -132,8 +131,7 @@ export default function App() {
   );
 
   return (
-    <AuthProvider>
-      <div className="min-h-screen bg-brand-cream flex flex-col font-sans">
+    <div className="min-h-screen bg-brand-cream flex flex-col font-sans">
         {/* Toast notification */}
         {toastMessage && (
           <div className="fixed bottom-6 right-6 z-50 bg-stone-900 text-white px-5 py-3 rounded-2xl shadow-2xl border border-amber-400/40 text-sm font-medium flex items-center gap-2 animate-bounce">
@@ -187,6 +185,5 @@ export default function App() {
         {/* Footer */}
         <Footer />
       </div>
-    </AuthProvider>
   );
 }

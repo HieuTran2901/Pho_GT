@@ -37,8 +37,9 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, isCartJiggling }) {
   const { user, isAuthenticated, openAuthModal, logout } = useAuth();
   const navItems = NAV_ITEMS;
 
-  // Close dropdown on click outside
+  // Close dropdown on click outside only when open
   useEffect(() => {
+    if (!userDropdownOpen) return;
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setUserDropdownOpen(false);
@@ -46,7 +47,7 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, isCartJiggling }) {
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [userDropdownOpen]);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 font-sans shadow-md">
