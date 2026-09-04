@@ -28,13 +28,42 @@ function AuthModal({ onToast }) {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
+  const [shouldRender, setShouldRender] = useState(authModalOpen);
+  const [isClosing, setIsClosing] = useState(false);
+
+  // Synchronize state when authModalOpen becomes true
+  if (authModalOpen && !shouldRender) {
+    setShouldRender(true);
+    setIsClosing(false);
+  }
+
+  // Trigger exit animation when authModalOpen becomes false
+  useEffect(() => {
+    let timer;
+    if (!authModalOpen && shouldRender && !isClosing) {
+      setIsClosing(true);
+      timer = setTimeout(() => {
+        setShouldRender(false);
+        setIsClosing(false);
+      }, 280);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [authModalOpen, shouldRender, isClosing]);
+
+  const handleClose = useCallback(() => {
+    if (isClosing) return;
+    closeAuthModal();
+  }, [isClosing, closeAuthModal]);
+
   // Handle ESC key listener & body scroll lock
   useEffect(() => {
-    if (!authModalOpen) return;
+    if (!shouldRender) return;
 
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        closeAuthModal();
+      if (e.key === 'Escape' && !isClosing) {
+        handleClose();
       }
     };
 
@@ -46,7 +75,7 @@ function AuthModal({ onToast }) {
       document.body.style.overflow = originalOverflow;
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [authModalOpen, closeAuthModal]);
+  }, [shouldRender, isClosing, handleClose]);
 
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
@@ -97,30 +126,37 @@ function AuthModal({ onToast }) {
     }
   }, [setAuthTab]);
 
-  if (!authModalOpen) return null;
+  if (!shouldRender) return null;
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto"
+      className={`fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto ${
+        isClosing ? 'pointer-events-none' : ''
+      }`}
       role="dialog"
       aria-modal="true"
       aria-labelledby="auth-modal-title"
     >
       {/* 1. Backdrop với hiệu ứng sương mờ cổ kính */}
       <div 
-        className="fixed inset-0 bg-black/65 backdrop-blur-sm transition-opacity animate-fade-in"
-        onClick={closeAuthModal}
+        className={`fixed inset-0 bg-black/65 backdrop-blur-sm transition-opacity ${
+          isClosing ? 'animate-backdrop-fade-out' : 'animate-backdrop-fade-in'
+        }`}
+        onClick={handleClose}
       />
 
       {/* 2. Main Modal Card (Parchment Texture & Vintage Seal) */}
-      <div className="relative w-full max-w-[490px] bg-[#fbf9f4] border-2 border-[#8a1e14] rounded-2xl shadow-2xl overflow-hidden z-10 my-auto animate-modal-steam-unveil transform-gpu will-change-transform">
+      <div className={`relative w-full max-w-[490px] bg-[#fbf9f4] border-2 border-[#8a1e14] rounded-2xl shadow-2xl overflow-hidden z-10 my-auto transform-gpu will-change-transform ${
+        isClosing ? 'animate-modal-steam-dissipate' : 'animate-modal-steam-unveil'
+      }`}>
         
         {/* Đường chỉ vàng hoàng gia & vân góc truyền thống với hiệu ứng ánh kim */}
         <div className="absolute inset-1.5 border border-[#d4af37]/60 rounded-xl pointer-events-none z-20 animate-golden-shimmer"></div>
 
         {/* Nút Đóng (X) Phong Cách Đồng Vintage */}
         <button
-          onClick={closeAuthModal}
+          onClick={handleClose}
+          disabled={isClosing}
           className="absolute top-4 right-4 z-30 w-8 h-8 rounded-full bg-[#f4ebd9] hover:bg-[#8a1e14] text-[#8a1e14] hover:text-white border border-[#8a1e14]/30 flex items-center justify-center transition-all duration-200 shadow-sm group"
           aria-label="Đóng cửa sổ"
         >

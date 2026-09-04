@@ -491,3 +491,50 @@
 .animate-golden-shimmer {
   animation: goldenShimmerTrace 2.2s ease-in-out infinite alternate;
 }
+
+/* --- Heritage Auth Modal Exit & Backdrop (Steam Dissipate & Soft Blur) --- */
+@keyframes modalSteamDissipate {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.93);
+    filter: blur(4px);
+  }
+}
+
+@keyframes backdropFadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes backdropFadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-modal-steam-dissipate {
+  animation: modalSteamDissipate 0.28s cubic-bezier(0.4, 0, 1, 1) forwards;
+  will-change: transform, opacity, filter;
+}
+
+.animate-backdrop-fade-in {
+  animation: backdropFadeIn 0.32s ease-out both;
+  will-change: opacity;
+}
+
+.animate-backdrop-fade-out {
+  animation: backdropFadeOut 0.28s ease-in forwards;
+  will-change: opacity;
+}
