@@ -28,6 +28,7 @@ public class LoyaltyService {
         this.userRepository = userRepository;
     }
 
+    @Transactional
     public SummaryResponse getLoyaltySummary(String userId) {
         LoyaltyAccount account = loyaltyAccountRepository.findByUserId(userId).orElseGet(() -> {
             User user = userRepository.findById(userId)

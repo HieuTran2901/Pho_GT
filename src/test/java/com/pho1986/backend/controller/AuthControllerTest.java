@@ -65,18 +65,6 @@ public class AuthControllerTest {
     @Test
     @DisplayName("3. Đăng nhập thành công với tài khoản đã đăng ký -> Nhận 200 OK")
     void testLoginSuccess() throws Exception {
-        // Đăng ký người dùng trước để đảm bảo dữ liệu tồn tại trong H2 Test DB
-        RegisterRequest regReq = new RegisterRequest();
-        regReq.setPhone("0988888888");
-        regReq.setFullName("Chủ Quán Phở");
-        regReq.setPassword("123456");
-        regReq.setSaveTasteProfile(false);
-
-        mockMvc.perform(post("/api/v1/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(regReq)))
-                .andExpect(status().isCreated());
-
         LoginRequest request = new LoginRequest();
         request.setPhone("0988888888");
         request.setPassword("123456");

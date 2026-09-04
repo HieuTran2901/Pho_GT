@@ -26,6 +26,7 @@ public class TasteProfileService {
         this.dishRepository = dishRepository;
     }
 
+    @Transactional
     public DetailResponse getTasteProfile(String userId) {
         TasteProfile profile = tasteProfileRepository.findByUserId(userId).orElseGet(() -> {
             User user = userRepository.findById(userId)

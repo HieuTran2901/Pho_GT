@@ -1,12 +1,9 @@
 package com.pho1986.backend.bootstrap;
 
-import com.pho1986.backend.model.entity.Category;
-import com.pho1986.backend.model.entity.Dish;
-import com.pho1986.backend.model.entity.LoyaltyReward;
-import com.pho1986.backend.repository.CategoryRepository;
-import com.pho1986.backend.repository.DishRepository;
-import com.pho1986.backend.repository.LoyaltyRewardRepository;
+import com.pho1986.backend.model.entity.*;
+import com.pho1986.backend.repository.*;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -17,14 +14,29 @@ public class DataInitializer implements CommandLineRunner {
     private final CategoryRepository categoryRepository;
     private final DishRepository dishRepository;
     private final LoyaltyRewardRepository loyaltyRewardRepository;
+    private final UserRepository userRepository;
+    private final TasteProfileRepository tasteProfileRepository;
+    private final LoyaltyAccountRepository loyaltyAccountRepository;
+    private final LoyaltyTransactionRepository loyaltyTransactionRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public DataInitializer(
             CategoryRepository categoryRepository,
             DishRepository dishRepository,
-            LoyaltyRewardRepository loyaltyRewardRepository) {
+            LoyaltyRewardRepository loyaltyRewardRepository,
+            UserRepository userRepository,
+            TasteProfileRepository tasteProfileRepository,
+            LoyaltyAccountRepository loyaltyAccountRepository,
+            LoyaltyTransactionRepository loyaltyTransactionRepository,
+            PasswordEncoder passwordEncoder) {
         this.categoryRepository = categoryRepository;
         this.dishRepository = dishRepository;
         this.loyaltyRewardRepository = loyaltyRewardRepository;
+        this.userRepository = userRepository;
+        this.tasteProfileRepository = tasteProfileRepository;
+        this.loyaltyAccountRepository = loyaltyAccountRepository;
+        this.loyaltyTransactionRepository = loyaltyTransactionRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -75,6 +87,47 @@ public class DataInitializer implements CommandLineRunner {
                 new LoyaltyReward("Tặng 01 Bát Phở Bò Tái Nạm Đặc Biệt", "Phần thưởng cao cấp nhất dành cho Hội viên Tri Kỷ tích lũy đủ 500 điểm.", 500, "FREE_ITEM", 85000.0, true)
         );
         loyaltyRewardRepository.saveAll(rewards);
+
+        // 4. Khởi tạo tài khoản thực khách thân thiết mẫu (0988888888 / 123456)
+        if (userRepository.count() == 0) {
+            User demoUser = new User(
+                    "0988888888",
+                    "Nguyễn Văn Hiếu",
+                    passwordEncoder.encode("123456"),
+                    "hieu.nguyen@pho1986.vn"
+            );
+            demoUser = userRepository.save(demoUser);
+
+            TasteProfile taste = new TasteProfile();
+            taste.setUser(demoUser);
+            taste.setBrothType("BEO_NGAY");
+            taste.setOnionStyle("HANH_TRAN");
+            taste.setHerbStyle("DU_RAU");
+            taste.setSpicyLevel(2);
+            taste.setCrullerPref("QUAY_GION");
+            taste.setCustomNote("Cho nhiều nước béo thơm và hành trần riêng");
+            taste = tasteProfileRepository.save(taste);
+            demoUser.setTasteProfile(taste);
+
+            LoyaltyAccount loyalty = new LoyaltyAccount();
+            loyalty.setUser(demoUser);
+            loyalty.setTotalPoints(135);
+            loyalty.setAvailablePoints(135);
+            loyalty.setMembershipTier("DONG");
+            loyalty.setTotalOrdersCount(2);
+            loyalty.setTotalSpent(170000.0);
+            loyalty = loyaltyAccountRepository.save(loyalty);
+            demoUser.setLoyaltyAccount(loyalty);
+
+            loyaltyTransactionRepository.save(new LoyaltyTransaction(
+                    loyalty, null, 50, "WELCOME_BONUS", 50, "Thưởng 50 điểm Tri Kỷ chào mừng gia nhập"
+            ));
+            loyaltyTransactionRepository.save(new LoyaltyTransaction(
+                    loyalty, null, 85, "EARN_ORDER", 135, "Tích điểm thưởng từ đơn hàng đầu tiên"
+            ));
+
+            System.out.println("👤 [Spring Boot] Gieo tài khoản mẫu 0988888888 (Nguyễn Văn Hiếu - Tri Kỷ) thành công!");
+        }
 
         System.out.println("✅ [Spring Boot] Gieo dữ liệu thành công vào MySQL!");
     }
