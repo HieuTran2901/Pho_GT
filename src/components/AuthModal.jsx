@@ -28,29 +28,47 @@ function AuthModal({ onToast }) {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const [shouldRender, setShouldRender] = useState(authModalOpen);
+  const [mounted, setMounted] = useState(authModalOpen);
   const [isClosing, setIsClosing] = useState(false);
+  const closeTimerRef = useRef(null);
+  const isFirstRender = useRef(true);
 
-  // Synchronize state when authModalOpen becomes true
-  if (authModalOpen && !shouldRender) {
-    setShouldRender(true);
+  // Immediate mount synchronization to avoid 1-frame blank tick
+  if (authModalOpen && !mounted) {
+    setMounted(true);
     setIsClosing(false);
   }
 
-  // Trigger exit animation when authModalOpen becomes false
+  // Synchronize modal open/close lifecycle
   useEffect(() => {
-    let timer;
-    if (!authModalOpen && shouldRender && !isClosing) {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      if (!authModalOpen) return;
+    }
+
+    if (authModalOpen) {
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = null;
+      }
+      setMounted(true);
+      setIsClosing(false);
+      setErrorMessage('');
+    } else {
       setIsClosing(true);
-      timer = setTimeout(() => {
-        setShouldRender(false);
+      closeTimerRef.current = setTimeout(() => {
+        setMounted(false);
         setIsClosing(false);
+        closeTimerRef.current = null;
       }, 280);
     }
+
     return () => {
-      if (timer) clearTimeout(timer);
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current);
+      }
     };
-  }, [authModalOpen, shouldRender, isClosing]);
+  }, [authModalOpen]);
 
   const handleClose = useCallback(() => {
     if (isClosing) return;
@@ -59,7 +77,7 @@ function AuthModal({ onToast }) {
 
   // Handle ESC key listener & body scroll lock
   useEffect(() => {
-    if (!shouldRender) return;
+    if (!mounted) return;
 
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && !isClosing) {
@@ -75,7 +93,7 @@ function AuthModal({ onToast }) {
       document.body.style.overflow = originalOverflow;
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [shouldRender, isClosing, handleClose]);
+  }, [mounted, isClosing, handleClose]);
 
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
@@ -126,7 +144,7 @@ function AuthModal({ onToast }) {
     }
   }, [setAuthTab]);
 
-  if (!shouldRender) return null;
+  if (!mounted) return null;
 
   return (
     <div 
@@ -139,7 +157,7 @@ function AuthModal({ onToast }) {
     >
       {/* 1. Backdrop với hiệu ứng sương mờ cổ kính */}
       <div 
-        className={`fixed inset-0 bg-black/65 backdrop-blur-sm transition-opacity ${
+        className={`fixed inset-0 bg-black/65 backdrop-blur-sm ${
           isClosing ? 'animate-backdrop-fade-out' : 'animate-backdrop-fade-in'
         }`}
         onClick={handleClose}
