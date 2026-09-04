@@ -398,3 +398,96 @@
 .animate-heart-tab-jiggle {
   animation: heartTabJiggle 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+
+/* --- Heritage Auth Modal Entrance (Steam Unveil & Wax Seal Stamp) --- */
+@keyframes modalSteamUnveil {
+  0% {
+    opacity: 0;
+    transform: translateY(24px) scale(0.94);
+  }
+  60% {
+    opacity: 0.95;
+    transform: translateY(-2px) scale(1.008);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes sealStampPress {
+  0% {
+    opacity: 0;
+    transform: scale(1.4) rotate(-5deg);
+    filter: drop-shadow(0 0 0 rgba(138, 30, 20, 0));
+  }
+  50% {
+    opacity: 1;
+    transform: scale(0.92) rotate(1deg);
+    filter: drop-shadow(0 0 22px rgba(138, 30, 20, 0.75));
+  }
+  75% {
+    transform: scale(1.05) rotate(-0.5deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+    filter: drop-shadow(0 4px 10px rgba(138, 30, 20, 0.28));
+  }
+}
+
+@keyframes sealSteamWisp {
+  0% {
+    opacity: 0;
+    transform: translateY(4px) scale(0.7) rotate(0deg);
+  }
+  35% {
+    opacity: 0.6;
+  }
+  75% {
+    opacity: 0.2;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-26px) scale(1.45) rotate(14deg);
+  }
+}
+
+@keyframes goldenShimmerTrace {
+  0% {
+    opacity: 0.4;
+    box-shadow: 0 0 0 rgba(212, 175, 55, 0);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 14px rgba(212, 175, 55, 0.6);
+  }
+  100% {
+    opacity: 0.65;
+    box-shadow: 0 0 4px rgba(212, 175, 55, 0.2);
+  }
+}
+
+.animate-modal-steam-unveil {
+  animation: modalSteamUnveil 0.38s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+}
+
+.animate-seal-stamp {
+  animation: sealStampPress 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) 0.12s both;
+  will-change: transform, opacity, filter;
+}
+
+.animate-seal-steam-1 {
+  animation: sealSteamWisp 3.4s infinite ease-out;
+  will-change: transform, opacity;
+}
+
+.animate-seal-steam-2 {
+  animation: sealSteamWisp 4.2s infinite ease-out 1.2s;
+  will-change: transform, opacity;
+}
+
+.animate-golden-shimmer {
+  animation: goldenShimmerTrace 2.2s ease-in-out infinite alternate;
+}
