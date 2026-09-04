@@ -1,0 +1,281 @@
+export const MENU_CATEGORIES = [
+  { id: 'all', name: 'Tất Cả Món' },
+  { id: 'pho-bo', name: 'Phở Bò Truyền Thống' },
+  { id: 'pho-ga', name: 'Phở Gà Đồi Ta' },
+  { id: 'special', name: 'Món Đặc Biệt' },
+  { id: 'sides', name: 'Món Ăn Kèm & Nước' },
+];
+
+export const MENU_ITEMS = [
+  {
+    id: 1,
+    name: 'Phở Bò Tái Lăn Hà Nội',
+    category: 'pho-bo',
+    price: 65000,
+    tag: 'Best Seller',
+    tagIcon: 'star',
+    portion: 'Tô thường',
+    theme: 'red',
+    description: 'Thịt bò tươi xào lăn nhanh tay trên chảo gang lửa lớn với tỏi thơm nức, giữ trọn độ mềm ngọt tự nhiên, hòa quyện trong nước dùng thanh trong.',
+    image: 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&w=800&q=80',
+    ingredients: ['Bò tươi thái mỏng', 'Bánh phở tươi tráng tay', 'Hành hoa & ngò gai', 'Nước dùng ninh 24h'],
+    featurePills: [
+      { label: 'Bò tươi', sub: 'Thái mỏng', type: 'meat' },
+      { label: 'Bánh phở', sub: 'Tươi mỗi ngày', type: 'noodle' },
+      { label: 'Nước dùng', sub: 'Ninh 24h', type: 'broth' },
+      { label: 'Hành hoa', sub: 'Tươi sạch', type: 'herb' }
+    ],
+    highlights: [
+      'Thịt bò tái mềm ngọt',
+      'Hành hoa, ngò gai thơm ngon',
+      'Nước dùng trong, thanh',
+      'Phở tươi tráng thủ công'
+    ]
+  },
+  {
+    id: 2,
+    name: 'Phở Đặc Biệt — Bát Đầy Đủ',
+    category: 'special',
+    price: 85000,
+    tag: 'Signature',
+    tagIcon: 'leaf',
+    portion: 'Tô lớn',
+    theme: 'green',
+    description: 'Tinh hoa tụ hội: Tái, chín nạm thơm béo, gầu giòn sần sật, gân bò dẻo quánh cùng viên bò hảo hạng và quả trứng chần lòng đào béo ngậy.',
+    image: 'https://images.unsplash.com/photo-1631709497146-a239ef373cf1?auto=format&fit=crop&w=800&q=80',
+    ingredients: ['Tái, Nạm, Gầu, Gân, Bò viên', 'Trứng chần lòng đào', 'Hành củ chần', 'Nước béo'],
+    featurePills: [
+      { label: 'Đầy đủ', sub: '7 loại topping', type: 'special' },
+      { label: 'Bò tuyển chọn', sub: 'Tươi mỗi ngày', type: 'meat' },
+      { label: 'Nước dùng', sub: 'Ninh xương 24h', type: 'broth' },
+      { label: 'Gia vị', sub: 'Chuẩn vị 1986', type: 'spice' }
+    ],
+    highlights: [
+      '7 loại topping đặc biệt',
+      'Trứng chần lòng đào béo ngậy',
+      'Nước dùng đậm đà, ngọt thanh',
+      'Bánh phở tươi dai mềm'
+    ]
+  },
+  {
+    id: 3,
+    name: 'Phở Bò Tái Nạm Giòn',
+    category: 'pho-bo',
+    price: 60000,
+    tag: 'Đậm Vị!',
+    tagIcon: 'flame',
+    portion: 'Tô thường',
+    theme: 'red',
+    description: 'Sự kết hợp hoàn hảo giữa vị ngọt mềm của thịt bò tái nhúng vừa tới và độ giòn sần sật, thơm ngậy của nạm bò hoa hảo hạng.',
+    image: 'https://images.unsplash.com/photo-1594041680534-e8c8cdebd659?auto=format&fit=crop&w=800&q=80',
+    ingredients: ['Thịt bò tái tơ', 'Nạm giòn hoa văn', 'Bánh phở mềm mượt', 'Nước dùng trong vắt'],
+    featurePills: [
+      { label: 'Nạm giòn', sub: 'Hoa vàng', type: 'meat' },
+      { label: 'Thịt tái', sub: 'Mềm ngọt', type: 'meat' },
+      { label: 'Bánh phở', sub: 'Mềm dai', type: 'noodle' },
+      { label: 'Nước dùng', sub: 'Đậm đà', type: 'broth' }
+    ],
+    highlights: [
+      'Nạm giòn sần sật',
+      'Nước dùng đậm đà, thơm',
+      'Thịt tái mềm, ngọt tự nhiên',
+      'Phở tươi mỗi ngày'
+    ]
+  },
+  {
+    id: 4,
+    name: 'Phở Bò Sốt Vang Cổ Truyền',
+    category: 'special',
+    price: 75000,
+    tag: 'Gia Truyền',
+    tagIcon: 'sparkles',
+    portion: 'Tô thường',
+    theme: 'red',
+    description: 'Bắp bò hầm mềm rục cùng rượu vang đỏ, hoa hồi, quế chi và cà chua bi, tạo nên màu nước dùng hổ phách sánh óng ánh và hương thơm nồng nàn.',
+    image: 'https://images.unsplash.com/photo-1576777647209-e8733d7b851d?auto=format&fit=crop&w=800&q=80',
+    ingredients: ['Bắp bò hoa', 'Gia vị sốt vang thảo mộc', 'Rau mùi tàu', 'Ớt tươi'],
+    featurePills: [
+      { label: 'Bắp hoa', sub: 'Hầm mềm', type: 'meat' },
+      { label: 'Vang đỏ', sub: 'Thơm nồng', type: 'spice' },
+      { label: 'Hồi quế', sub: 'Gia truyền', type: 'spice' },
+      { label: 'Nước sốt', sub: 'Hổ phách', type: 'broth' }
+    ],
+    highlights: [
+      'Bắp bò hoa hầm mềm',
+      'Rượu vang đỏ thơm nồng',
+      'Nước dùng hổ phách sánh',
+      'Gia vị quế hồi hạ thổ'
+    ]
+  },
+  {
+    id: 5,
+    name: 'Phở Gà Đồi Chặt Lá Chanh',
+    category: 'pho-ga',
+    price: 60000,
+    tag: 'Món Mới',
+    tagIcon: 'leaf',
+    portion: 'Tô thường',
+    theme: 'red',
+    description: 'Thịt gà đồi ta thả vườn chắc thịt, da vàng ươm giòn sần sật, thái thớ đượm hương thơm thanh thoát của lá chanh tươi thái chỉ.',
+    image: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80',
+    ingredients: ['Thịt gà đồi da vàng', 'Lá chanh tươi', 'Hành hoa tỉa', 'Nước dùng gà ngọt thanh'],
+    featurePills: [
+      { label: 'Gà đồi ta', sub: 'Thịt chắc', type: 'meat' },
+      { label: 'Da vàng', sub: 'Giòn sần sật', type: 'meat' },
+      { label: 'Lá chanh', sub: 'Thái chỉ thơm', type: 'herb' },
+      { label: 'Nước dùng', sub: 'Thanh ngọt', type: 'broth' }
+    ],
+    highlights: [
+      'Gà đồi ta thả vườn',
+      'Da vàng ươm giòn sần sật',
+      'Lá chanh tươi thái chỉ',
+      'Nước dùng gà thanh ngọt'
+    ]
+  },
+  {
+    id: 6,
+    name: 'Phở Đùi Gà Rút Xương',
+    category: 'pho-ga',
+    price: 70000,
+    tag: 'Được Yêu Thích',
+    tagIcon: 'star',
+    portion: 'Tô lớn',
+    theme: 'red',
+    description: 'Nguyên chiếc đùi gà góc phần tư vàng óng ả, rút xương khéo léo, thịt mọng nước ngọt đậm đà chấm cùng muối tiêu ớt chanh ớt gió Hà Giang.',
+    image: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=800&q=80',
+    ingredients: ['Đùi gà ta nguyên chiếc', 'Gia vị chấm truyền thống', 'Nước dùng thảo mộc'],
+    featurePills: [
+      { label: 'Đùi góc tư', sub: 'Nguyên chiếc', type: 'meat' },
+      { label: 'Rút xương', sub: 'Khéo léo', type: 'meat' },
+      { label: 'Muối tiêu', sub: 'Chanh ớt gió', type: 'spice' },
+      { label: 'Nước dùng', sub: 'Hầm thảo mộc', type: 'broth' }
+    ],
+    highlights: [
+      'Đùi gà ta nguyên chiếc',
+      'Rút xương khéo léo',
+      'Thịt mọng nước ngọt đậm',
+      'Muối tiêu chanh ớt gió'
+    ]
+  },
+  {
+    id: 7,
+    name: 'Quẩy Giòn Chiên Phồng (Đĩa 3 cái)',
+    category: 'sides',
+    price: 15000,
+    tag: 'Ăn Kèm',
+    tagIcon: 'flame',
+    portion: 'Đĩa 3 cái',
+    theme: 'red',
+    description: 'Quẩy vàng ruộm, vỏ ngoài giòn rụm bên trong xốp mềm, chấm ngập nước phở béo nóng hổi là chuẩn vị bữa sáng Hà Thành.',
+    image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=800&q=80',
+    ingredients: ['Bột mì ủ truyền thống', 'Dầu chiên mới trong ngày'],
+    featurePills: [
+      { label: 'Vỏ quẩy', sub: 'Giòn rụm', type: 'bread' },
+      { label: 'Ruột bánh', sub: 'Xốp mềm', type: 'bread' },
+      { label: 'Dầu chiên', sub: 'Mới trong ngày', type: 'flame' },
+      { label: 'Ăn kèm', sub: 'Hút nước dùng', type: 'broth' }
+    ],
+    highlights: [
+      'Vỏ ngoài giòn rụm',
+      'Bên trong xốp mềm',
+      'Chiên dầu mới mỗi ngày',
+      'Hút trọn nước dùng béo'
+    ]
+  },
+  {
+    id: 8,
+    name: 'Trứng Gà Chần Nước Béo & Tiết Canh Phở',
+    category: 'sides',
+    price: 15000,
+    tag: 'Đặc Sắc',
+    tagIcon: 'sparkles',
+    portion: 'Bát riêng',
+    theme: 'red',
+    description: 'Trứng gà ta lòng đào béo ngậy được chần điệu nghệ trong muôi nước béo sôi sùng sục, rắc thêm chút tiêu sọ xay mịn ấm nồng.',
+    image: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=800&q=80',
+    ingredients: ['Trứng gà ta sạch', 'Nước béo phở bò', 'Tiêu sọ Phú Quốc'],
+    featurePills: [
+      { label: 'Trứng gà ta', sub: 'Lòng đào', type: 'egg' },
+      { label: 'Nước béo', sub: 'Sôi sùng sục', type: 'broth' },
+      { label: 'Tiêu sọ', sub: 'Phú Quốc', type: 'spice' },
+      { label: 'Dinh dưỡng', sub: 'Ấm nồng vị', type: 'special' }
+    ],
+    highlights: [
+      'Lòng đào béo ngậy',
+      'Trứng gà ta chọn lọc',
+      'Chần nước béo nóng hổi',
+      'Tiêu sọ ấm nồng'
+    ]
+  },
+  {
+    id: 9,
+    name: 'Trà Sen Tây Hồ Thượng Hạng',
+    category: 'sides',
+    price: 20000,
+    tag: 'Thức Uống',
+    tagIcon: 'leaf',
+    portion: 'Tách ấm',
+    theme: 'red',
+    description: 'Trà búp Tân Cương ướp hoa sen Bách Diệp Hồ Tây tươi ngát, thanh lọc vị giác sau khi thưởng thức tô phở nóng sốt.',
+    image: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=800&q=80',
+    ingredients: ['Trà Tân Cương', 'Gạo sen Bách Diệp', 'Nước khoáng tinh khiết'],
+    featurePills: [
+      { label: 'Trà búp', sub: 'Tân Cương', type: 'tea' },
+      { label: 'Sen Tây Hồ', sub: 'Bách Diệp', type: 'flower' },
+      { label: 'Hương vị', sub: 'Thanh tao ngát', type: 'herb' },
+      { label: 'Thanh lọc', sub: 'Hài hòa vị', type: 'tea' }
+    ],
+    highlights: [
+      'Trà búp Tân Cương',
+      'Gạo sen Bách Diệp',
+      'Thanh lọc vị giác',
+      'Hương thơm thanh tao'
+    ]
+  }
+];
+
+export const TESTIMONIALS = [
+  {
+    id: 1,
+    name: 'NSƯT Hoàng Trung Kiên',
+    role: 'Thực khách quen thuộc 15 năm',
+    content: 'Từ ngày quán còn ở góc phố nhỏ năm 1986 đến nay, hương vị nước phở vẫn trong veo và ngọt hậu sâu từ xương bò, không lẫn chút bột ngọt hoá học nào.',
+    rating: 5,
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80'
+  },
+  {
+    id: 2,
+    name: 'Food Blogger Vũ Thùy Linh',
+    role: 'Sáng lập kênh Mê Ẩm Thực',
+    content: 'Bát phở sốt vang và nạm giòn ở đây thực sự đỉnh cao! Bánh phở tươi mềm mướt không nát, thịt bò tươi ngọt lịm. Quán giữ được cái hồn phở cổ Hà Nội nguyên bản.',
+    rating: 5,
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'
+  },
+  {
+    id: 3,
+    name: 'David Miller',
+    role: 'Du khách từ Melbourne, Úc',
+    content: 'The best Pho I have ever tasted in Vietnam! The broth is so aromatic with star anise and cinnamon. The staff is extremely warm and helpful.',
+    rating: 5,
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80'
+  }
+];
+
+export const HERITAGE_FEATURES = [
+  {
+    title: 'Hầm Xương 24 Tiếng',
+    desc: '100% xương ống bò tươi tuyển chọn mỗi sớm, ninh liu riu cùng gừng nướng và hành nướng trên than hồng đúng 24 giờ.'
+  },
+  {
+    title: 'Gia Vị Thảo Mộc Tự Nhiên',
+    desc: 'Hoa hồi Lạng Sơn, quế thanh Yên Bái, thảo quả Hà Giang và tiêu sọ Phú Quốc sao vàng hạ thổ tạo nên hương vị bất biến.'
+  },
+  {
+    title: 'Bánh Phở Tươi Thủ Công',
+    desc: 'Xay từ gạo mùa thơm dẻo, tráng mỏng thủ công và thái tay mỗi sáng sớm. Không chất bảo quản, không hàn the.'
+  },
+  {
+    title: 'Thịt Bò Tươi Nóng Trong Ngày',
+    desc: 'Chỉ nhập thịt bò tơ tươi loại 1 từ lò mổ sáng sớm, thớ thịt đỏ tươi mọng, không cấp đông qua đêm.'
+  }
+];
