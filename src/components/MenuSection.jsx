@@ -109,12 +109,23 @@ const MenuCard = React.memo(function MenuCard({
   };
 
   const handleToggleHeart = (e) => {
-    if (!isLiked) {
+    const isAdding = !isLiked;
+    if (isAdding) {
       setIsPopping(true);
       if (popTimerRef.current) clearTimeout(popTimerRef.current);
       popTimerRef.current = setTimeout(() => setIsPopping(false), 650);
     }
-    onToggleLike(item, e);
+
+    let coords = null;
+    if (isAdding && e && e.currentTarget) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      coords = {
+        startX: rect.left + rect.width / 2,
+        startY: rect.top + rect.height / 2,
+      };
+    }
+
+    onToggleLike(item, coords, isAdding);
   };
 
   const isGreenTheme = item.theme === 'green';
@@ -349,13 +360,12 @@ function MenuSection({ onAddToCart }) {
     };
   }, []);
 
-  const toggleFavorite = useCallback((item, e) => {
-    let willAdd = false;
+  const toggleFavorite = useCallback((item, coords, isAdding) => {
+    // 1. Update persistent favorites state
     setFavoriteIds((prev) => {
-      willAdd = !prev.includes(item.id);
-      const next = willAdd
-        ? [...prev, item.id]
-        : prev.filter((id) => id !== item.id);
+      const next = prev.includes(item.id)
+        ? prev.filter((id) => id !== item.id)
+        : [...prev, item.id];
       try {
         localStorage.setItem('pho_favorites', JSON.stringify(next));
       } catch (err) {
@@ -364,12 +374,8 @@ function MenuSection({ onAddToCart }) {
       return next;
     });
 
-    // If adding to favorites, launch Proposal 2 Flying Heart parabolic flight
-    if (willAdd && e && e.currentTarget) {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const startX = rect.left + rect.width / 2;
-      const startY = rect.top + rect.height / 2;
-
+    // 2. Launch parabolic flying heart if adding to favorites
+    if (isAdding && coords) {
       const target = document.getElementById('category-tab-favorites');
       let endX = window.innerWidth / 2;
       let endY = 180;
@@ -381,8 +387,8 @@ function MenuSection({ onAddToCart }) {
 
       const newFly = {
         id: Date.now() + Math.random(),
-        startX,
-        startY,
+        startX: coords.startX,
+        startY: coords.startY,
         endX,
         endY,
       };
