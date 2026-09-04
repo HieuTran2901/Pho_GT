@@ -1,8 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { authApi } from '../services/authApi';
 
 const AuthContext = createContext(null);
 
 const AUTH_STORAGE_KEY = 'pho1986_customer_session';
+const AUTH_TOKEN_KEY = 'pho1986_access_token';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
@@ -17,13 +19,29 @@ export function AuthProvider({ children }) {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authTab, setAuthTab] = useState('login'); // 'login' | 'register'
 
+  // Đồng bộ session user vào localStorage
   useEffect(() => {
     if (user) {
       localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
     } else {
       localStorage.removeItem(AUTH_STORAGE_KEY);
+      localStorage.removeItem(AUTH_TOKEN_KEY);
     }
   }, [user]);
+
+  // Kiểm tra và làm mới dữ liệu người dùng qua JWT khi mở app
+  useEffect(() => {
+    const token = localStorage.getItem(AUTH_TOKEN_KEY);
+    if (token) {
+      authApi.getMe(token).then((profile) => {
+        if (profile) {
+          setUser(profile);
+        }
+      }).catch(() => {
+        // Giữ phiên hiện tại nếu backend offline
+      });
+    }
+  }, []);
 
   const openAuthModal = useCallback((tab = 'login') => {
     setAuthTab(tab);
@@ -35,65 +53,40 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = useCallback(async (phone, password) => {
-    // Giả lập hoặc gọi API backend
-    const mockUser = {
-      id: 'usr_' + Date.now(),
-      fullName: phone === '0988888888' ? 'Nguyễn Văn Hiếu' : 'Khách Quen 1986',
-      phone,
-      role: 'CUSTOMER',
-      loyaltyAccount: {
-        totalPoints: 135,
-        availablePoints: 135,
-        membershipTier: 'DONG',
-        totalOrdersCount: 2,
-        totalSpent: 170000,
-      },
-      tasteProfile: {
-        favoriteDishName: 'Phở Bò Tái Nạm Gầu Giòn 1986',
-        brothType: 'BEO_NGAY',
-        onionStyle: 'HANH_TRAN',
-        herbStyle: 'DU_RAU',
-        spicyLevel: 2,
-        crullerPref: 'QUAY_GION',
-        customNote: 'Cho nhiều nước béo thơm và hành trần riêng',
-      },
-    };
-
-    setUser(mockUser);
+    const data = await authApi.login({ phone, password });
+    const authenticatedUser = data.user || data;
+    if (data.accessToken) {
+      localStorage.setItem(AUTH_TOKEN_KEY, data.accessToken);
+    }
+    setUser(authenticatedUser);
     setAuthModalOpen(false);
-    return mockUser;
+    return authenticatedUser;
   }, []);
 
   const register = useCallback(async (phone, fullName, password, email = null, saveTasteProfile = true) => {
-    const newUser = {
-      id: 'usr_' + Date.now(),
-      fullName: fullName || 'Thực Khách Tri Kỷ',
+    const data = await authApi.register({
       phone,
-      email: email || null,
-      role: 'CUSTOMER',
-      loyaltyAccount: {
-        totalPoints: 50,
-        availablePoints: 50,
-        membershipTier: 'DONG',
-        totalOrdersCount: 0,
-        totalSpent: 0,
-      },
-      tasteProfile: saveTasteProfile ? {
-        brothType: 'DAM_DA',
-        onionStyle: 'NHIEU_HANH',
-        herbStyle: 'DU_RAU',
-        spicyLevel: 1,
-        crullerPref: 'QUAY_GION',
-        customNote: 'Chuẩn vị truyền thống 1986 (Đã lưu)',
-      } : null,
-    };
-
-    setUser(newUser);
+      fullName,
+      password,
+      email,
+      saveTasteProfile
+    });
+    const registeredUser = data.user || data;
+    if (data.accessToken) {
+      localStorage.setItem(AUTH_TOKEN_KEY, data.accessToken);
+    }
+    setUser(registeredUser);
     setAuthModalOpen(false);
-    return newUser;
+    return registeredUser;
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    const token = localStorage.getItem(AUTH_TOKEN_KEY);
+    if (token) {
+      await authApi.logout(token);
+    }
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+    localStorage.removeItem(AUTH_STORAGE_KEY);
     setUser(null);
   }, []);
 
