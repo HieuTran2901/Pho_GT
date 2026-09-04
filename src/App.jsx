@@ -146,6 +146,7 @@ export default function App() {
           onOpenCart={handleOpenCart}
           onOpenOrder={handleOpenOrder}
           isCartJiggling={isCartJiggling}
+          onToast={showToast}
         />
 
         {/* Auth Modal (Heritage Vintage Register/Login) */}

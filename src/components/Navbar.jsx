@@ -28,7 +28,7 @@ const NAV_ITEMS = [
   { id: 'order', label: 'ĐẶT BÀN & GIAO TẬN NƠI', icon: Bike, href: '#order' },
 ];
 
-function Navbar({ cartCount, onOpenCart, onOpenOrder, isCartJiggling }) {
+function Navbar({ cartCount, onOpenCart, onOpenOrder, isCartJiggling, onToast }) {
   const [activeTab, setActiveTab] = useState('hero');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -181,6 +181,7 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, isCartJiggling }) {
                         onClick={() => {
                           logout();
                           setUserDropdownOpen(false);
+                          if (onToast) onToast('Bạn đã đăng xuất tài khoản thành công!');
                         }}
                         className="w-full text-left px-4 py-2 text-red-700 hover:bg-red-50 flex items-center gap-2 font-serif font-semibold"
                       >
@@ -275,7 +276,11 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, isCartJiggling }) {
                 <div className="font-serif font-bold text-[#8a1e14]">{user.fullName}</div>
                 <div className="text-xs text-stone-600">{user.phone} • {user.loyaltyAccount?.availablePoints || 50}đ Tri Kỷ</div>
                 <button
-                  onClick={() => { logout(); setMobileMenuOpen(false); }}
+                  onClick={() => {
+                    logout();
+                    setMobileMenuOpen(false);
+                    if (onToast) onToast('Bạn đã đăng xuất tài khoản thành công!');
+                  }}
                   className="mt-2 text-xs text-red-700 font-bold flex items-center gap-1"
                 >
                   <LogOut className="w-3.5 h-3.5" />

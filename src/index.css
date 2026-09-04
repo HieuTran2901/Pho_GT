@@ -538,3 +538,20 @@
   animation: backdropFadeOut 0.28s ease-in forwards;
   will-change: opacity;
 }
+
+/* --- Form Alert Shake Animation --- */
+@keyframes shakeAlert {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  20%, 60% {
+    transform: translateX(-5px);
+  }
+  40%, 80% {
+    transform: translateX(5px);
+  }
+}
+
+.animate-shake {
+  animation: shakeAlert 0.38s ease-in-out both;
+}

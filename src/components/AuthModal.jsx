@@ -60,6 +60,7 @@ function AuthModal({ onToast }) {
         setMounted(false);
         setIsClosing(false);
         closeTimerRef.current = null;
+        setPassword('');
       }, 280);
     }
 
@@ -99,13 +100,28 @@ function AuthModal({ onToast }) {
     e.preventDefault();
     setErrorMessage('');
 
-    if (!phone.trim()) {
+    // Sanitize phone number (strip whitespace, dashes, dots)
+    const cleanPhone = phone.replace(/[\s.-]+/g, '');
+
+    if (!cleanPhone) {
       setErrorMessage('Vui lòng nhập số điện thoại');
+      return;
+    }
+
+    // Validate Vietnamese mobile number (10 digits starting with 03, 05, 07, 08, 09)
+    const vnPhoneRegex = /^(0[35789])[0-9]{8}$/;
+    if (!vnPhoneRegex.test(cleanPhone)) {
+      setErrorMessage('Số điện thoại không hợp lệ (cần 10 chữ số, bắt đầu bằng 03, 05, 07, 08, 09)');
       return;
     }
 
     if (!password.trim()) {
       setErrorMessage('Vui lòng nhập mật khẩu');
+      return;
+    }
+
+    if (password.trim().length < 6) {
+      setErrorMessage('Mật khẩu phải có tối thiểu 6 ký tự');
       return;
     }
 
@@ -117,18 +133,20 @@ function AuthModal({ onToast }) {
     setIsLoading(true);
     try {
       if (authTab === 'login') {
-        const user = await login(phone, password);
+        const user = await login(cleanPhone, password);
         if (onToast) onToast(`Chào mừng ${user.fullName} trở lại Phở Gia Truyền 1986!`);
       } else {
-        const user = await register(phone, fullName, password);
+        const user = await register(cleanPhone, fullName.trim(), password, null, saveTasteProfile);
         if (onToast) onToast(`Đăng ký thành công! Bạn nhận được 50 điểm Bát Phở Tri Kỷ.`);
       }
+      // Reset sensitive password after successful login/registration
+      setPassword('');
     } catch (err) {
       setErrorMessage(err.message || 'Đã xảy ra lỗi, vui lòng thử lại');
     } finally {
       setIsLoading(false);
     }
-  }, [phone, password, fullName, authTab, login, register, onToast]);
+  }, [phone, password, fullName, authTab, saveTasteProfile, login, register, onToast]);
 
   // Demo fill quick login
   const handleQuickDemo = useCallback((type) => {
@@ -164,7 +182,7 @@ function AuthModal({ onToast }) {
       />
 
       {/* 2. Main Modal Card (Parchment Texture & Vintage Seal) */}
-      <div className={`relative w-full max-w-[490px] bg-[#fbf9f4] border-2 border-[#8a1e14] rounded-2xl shadow-2xl overflow-hidden z-10 my-auto transform-gpu will-change-transform ${
+      <div className={`relative w-full max-w-[490px] max-h-[92vh] flex flex-col bg-[#fbf9f4] border-2 border-[#8a1e14] rounded-2xl shadow-2xl overflow-hidden z-10 my-auto transform-gpu will-change-transform ${
         isClosing ? 'animate-modal-steam-dissipate' : 'animate-modal-steam-unveil'
       }`}>
         
@@ -182,7 +200,7 @@ function AuthModal({ onToast }) {
         </button>
 
         {/* Header: Dấu Mộc & Tiêu Đề Cổ Kính */}
-        <div className="bg-gradient-to-b from-[#f2e7d5] via-[#f7f0e3] to-[#fbf9f4] pt-7 pb-4 px-6 text-center border-b border-[#e2d5be] relative overflow-hidden">
+        <div className="bg-gradient-to-b from-[#f2e7d5] via-[#f7f0e3] to-[#fbf9f4] pt-7 pb-4 px-6 text-center border-b border-[#e2d5be] relative overflow-hidden shrink-0">
           
           {/* Làn khói phở bốc hơi thanh thoát từ dấu mộc (Phương án 1: Làn Khói Phở) */}
           <div className="absolute top-2 left-1/2 -translate-x-1/2 pointer-events-none flex justify-center w-24 h-10 overflow-visible z-10">
@@ -210,11 +228,11 @@ function AuthModal({ onToast }) {
         </div>
 
         {/* Tabs Điều Hướng: Đăng Nhập / Đăng Ký */}
-        <div className="px-6 pt-4 pb-2">
+        <div className="px-6 pt-4 pb-2 shrink-0">
           <div className="flex rounded-xl bg-[#ede3cf] p-1 border border-[#d6c7ac]">
             <button
               type="button"
-              onClick={() => { setAuthTab('login'); setErrorMessage(''); }}
+              onClick={() => { setAuthTab('login'); setErrorMessage(''); setPassword(''); }}
               className={`flex-1 py-2.5 text-xs sm:text-sm font-serif font-bold rounded-lg transition-all ${
                 authTab === 'login'
                   ? 'bg-white text-[#8a1e14] shadow-sm border border-[#cbb898]'
@@ -226,7 +244,7 @@ function AuthModal({ onToast }) {
 
             <button
               type="button"
-              onClick={() => { setAuthTab('register'); setErrorMessage(''); }}
+              onClick={() => { setAuthTab('register'); setErrorMessage(''); setPassword(''); }}
               className={`flex-1 py-2.5 text-xs sm:text-sm font-serif font-bold rounded-lg transition-all relative flex items-center justify-center gap-1.5 ${
                 authTab === 'register'
                   ? 'bg-white text-[#8a1e14] shadow-sm border border-[#cbb898]'
@@ -243,7 +261,7 @@ function AuthModal({ onToast }) {
         </div>
 
         {/* Form Body */}
-        <div className="p-6 pt-2">
+        <div className="p-6 pt-2 overflow-y-auto flex-1">
           
           {/* Thông báo lỗi nếu có */}
           {errorMessage && (
@@ -259,7 +277,7 @@ function AuthModal({ onToast }) {
             {/* Trường Họ và tên (Chỉ hiện khi Đăng Ký) */}
             {authTab === 'register' && (
               <div>
-                <label className="block text-xs font-serif font-bold text-[#3a251b] mb-1">
+                <label htmlFor="auth-fullname" className="block text-xs font-serif font-bold text-[#3a251b] mb-1">
                   Họ và Tên của bạn <span className="text-[#8a1e14]">*</span>
                 </label>
                 <div className="relative">
@@ -267,6 +285,7 @@ function AuthModal({ onToast }) {
                     <User className="w-4 h-4" />
                   </div>
                   <input
+                    id="auth-fullname"
                     type="text"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
@@ -280,7 +299,7 @@ function AuthModal({ onToast }) {
 
             {/* Trường Số điện thoại */}
             <div>
-              <label className="block text-xs font-serif font-bold text-[#3a251b] mb-1">
+              <label htmlFor="auth-phone" className="block text-xs font-serif font-bold text-[#3a251b] mb-1">
                 Số Điện Thoại <span className="text-[#8a1e14]">*</span>
               </label>
               <div className="relative">
@@ -288,6 +307,7 @@ function AuthModal({ onToast }) {
                   <Phone className="w-4 h-4" />
                 </div>
                 <input
+                  id="auth-phone"
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
@@ -301,7 +321,7 @@ function AuthModal({ onToast }) {
             {/* Trường Mật khẩu */}
             <div>
               <div className="flex justify-between items-center mb-1">
-                <label className="text-xs font-serif font-bold text-[#3a251b]">
+                <label htmlFor="auth-password" className="text-xs font-serif font-bold text-[#3a251b]">
                   Mật Khẩu <span className="text-[#8a1e14]">*</span>
                 </label>
                 {authTab === 'login' && (
@@ -321,6 +341,7 @@ function AuthModal({ onToast }) {
                   <Lock className="w-4 h-4" />
                 </div>
                 <input
+                  id="auth-password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}

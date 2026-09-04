@@ -64,7 +64,7 @@ export function AuthProvider({ children }) {
     return mockUser;
   }, []);
 
-  const register = useCallback(async (phone, fullName, password, email) => {
+  const register = useCallback(async (phone, fullName, password, email = null, saveTasteProfile = true) => {
     const newUser = {
       id: 'usr_' + Date.now(),
       fullName: fullName || 'Thực Khách Tri Kỷ',
@@ -78,14 +78,14 @@ export function AuthProvider({ children }) {
         totalOrdersCount: 0,
         totalSpent: 0,
       },
-      tasteProfile: {
+      tasteProfile: saveTasteProfile ? {
         brothType: 'DAM_DA',
         onionStyle: 'NHIEU_HANH',
         herbStyle: 'DU_RAU',
         spicyLevel: 1,
         crullerPref: 'QUAY_GION',
-        customNote: 'Chuẩn vị truyền thống 1986',
-      },
+        customNote: 'Chuẩn vị truyền thống 1986 (Đã lưu)',
+      } : null,
     };
 
     setUser(newUser);
