@@ -8,6 +8,8 @@ import OrderSection from './components/OrderSection';
 import CartDrawer from './components/CartDrawer';
 import Footer from './components/Footer';
 import FlyingPhoBowl from './components/FlyingPhoBowl';
+import AuthModal from './components/AuthModal';
+import { AuthProvider } from './context/AuthContext';
 
 export default function App() {
   const [cartItems, setCartItems] = useState([
@@ -130,56 +132,61 @@ export default function App() {
   );
 
   return (
-    <div className="min-h-screen bg-brand-cream flex flex-col font-sans">
-      {/* Toast notification */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-stone-900 text-white px-5 py-3 rounded-2xl shadow-2xl border border-amber-400/40 text-sm font-medium flex items-center gap-2 animate-bounce">
-          <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-          {toastMessage}
-        </div>
-      )}
+    <AuthProvider>
+      <div className="min-h-screen bg-brand-cream flex flex-col font-sans">
+        {/* Toast notification */}
+        {toastMessage && (
+          <div className="fixed bottom-6 right-6 z-50 bg-stone-900 text-white px-5 py-3 rounded-2xl shadow-2xl border border-amber-400/40 text-sm font-medium flex items-center gap-2 animate-bounce">
+            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+            {toastMessage}
+          </div>
+        )}
 
-      {/* Navigation */}
-      <Navbar
-        cartCount={cartCount}
-        onOpenCart={handleOpenCart}
-        onOpenOrder={handleOpenOrder}
-        isCartJiggling={isCartJiggling}
-      />
-
-      {/* Flying Parabolic Pho Bowls */}
-      {flyingBowls.map((fly) => (
-        <FlyingPhoBowl
-          key={fly.id}
-          fly={fly}
-          onComplete={handleFlightComplete}
+        {/* Navigation */}
+        <Navbar
+          cartCount={cartCount}
+          onOpenCart={handleOpenCart}
+          onOpenOrder={handleOpenOrder}
+          isCartJiggling={isCartJiggling}
         />
-      ))}
 
-      {/* Main Sections */}
-      <main className="flex-1">
-        <Hero
-          onExploreMenu={handleExploreMenu}
-          onBookTable={handleOpenOrder}
+        {/* Auth Modal (Heritage Vintage Register/Login) */}
+        <AuthModal onToast={showToast} />
+
+        {/* Flying Parabolic Pho Bowls */}
+        {flyingBowls.map((fly) => (
+          <FlyingPhoBowl
+            key={fly.id}
+            fly={fly}
+            onComplete={handleFlightComplete}
+          />
+        ))}
+
+        {/* Main Sections */}
+        <main className="flex-1">
+          <Hero
+            onExploreMenu={handleExploreMenu}
+            onBookTable={handleOpenOrder}
+          />
+          <MenuSection onAddToCart={handleAddToCart} />
+          <StorySection />
+          <Testimonials />
+          <OrderSection />
+        </main>
+
+        {/* Slide-out Cart Drawer */}
+        <CartDrawer
+          isOpen={cartOpen}
+          onClose={handleCloseCart}
+          cartItems={cartItems}
+          onUpdateQuantity={handleUpdateQuantity}
+          onRemoveItem={handleRemoveItem}
+          onCheckout={handleCheckout}
         />
-        <MenuSection onAddToCart={handleAddToCart} />
-        <StorySection />
-        <Testimonials />
-        <OrderSection />
-      </main>
 
-      {/* Slide-out Cart Drawer */}
-      <CartDrawer
-        isOpen={cartOpen}
-        onClose={handleCloseCart}
-        cartItems={cartItems}
-        onUpdateQuantity={handleUpdateQuantity}
-        onRemoveItem={handleRemoveItem}
-        onCheckout={handleCheckout}
-      />
-
-      {/* Footer */}
-      <Footer />
-    </div>
+        {/* Footer */}
+        <Footer />
+      </div>
+    </AuthProvider>
   );
 }
