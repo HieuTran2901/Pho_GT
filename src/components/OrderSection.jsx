@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Phone, CheckCircle2, Send, ChefHat } from 'lucide-react';
 import useScrollReveal from '../hooks/useScrollReveal';
 import { useAuth } from '../context/AuthContext';
@@ -16,26 +16,43 @@ function OrderSection() {
   const [sectionRef, isVisible] = useScrollReveal({ threshold: 0.12 });
   const { user } = useAuth();
 
-  const [formData, setFormData] = useState({
+  // Lazy initialize form data with authenticated user info
+  const [formData, setFormData] = useState(() => ({
     orderType: 'dine-in', // dine-in or delivery
-    customerName: '',
-    phone: '',
+    customerName: user?.fullName || '',
+    phone: user?.phone || '',
     branch: 'hanoi-hangbac',
     guestCount: '2',
     date: '',
     time: '',
     address: '',
     note: ''
-  });
+  }));
 
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const submitTimerRef = useRef(null);
+  const hasAutoFilledRef = useRef(Boolean(user?.fullName || user?.phone));
 
-  // Auto-fill user contact info if available and field is empty
+  // Minimum date constraint (today) to prevent picking past dates on mobile
+  const todayDateStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+
+  // Single-pass derived Set for O(1) exact taste chip matching without substring false positives
+  const selectedTasteSet = useMemo(() => {
+    if (!formData.note) return new Set();
+    return new Set(
+      formData.note
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+    );
+  }, [formData.note]);
+
+  // Auto-fill user contact info once when user profile loads asynchronously
   useEffect(() => {
-    if (user) {
+    if (user && !hasAutoFilledRef.current) {
+      hasAutoFilledRef.current = true;
       setFormData((prev) => ({
         ...prev,
         customerName: prev.customerName || user.fullName || '',
@@ -43,6 +60,20 @@ function OrderSection() {
       }));
     }
   }, [user]);
+
+  // Generic stable input change handler using functional updater
+  const handleInputChange = useCallback((e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  }, []);
+
+  const handleSetOrderType = useCallback((type) => {
+    setFormData((prev) => ({ ...prev, orderType: type }));
+  }, []);
+
+  const handleSetGuestCount = useCallback((count) => {
+    setFormData((prev) => ({ ...prev, guestCount: count }));
+  }, []);
 
   const handleToggleTaste = useCallback((pref) => {
     setFormData((prev) => {
@@ -64,6 +95,11 @@ function OrderSection() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    // Dismiss mobile virtual keyboard on submission to reveal the result cleanly
+    if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+
     setIsLoading(true);
 
     // Simulate order/booking submission with timer cleanup
@@ -240,7 +276,7 @@ function OrderSection() {
                   <div className="grid grid-cols-2 p-1 rounded-xl bg-black/40 border border-white/10 mb-4 text-xs sm:text-sm font-semibold">
                     <button
                       type="button"
-                      onClick={() => setFormData({ ...formData, orderType: 'dine-in' })}
+                      onClick={() => handleSetOrderType('dine-in')}
                       className={`py-2 sm:py-2.5 rounded-lg transition-all ${
                         formData.orderType === 'dine-in'
                           ? 'bg-brand-red text-white shadow-sm font-bold'
@@ -251,7 +287,7 @@ function OrderSection() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setFormData({ ...formData, orderType: 'delivery' })}
+                      onClick={() => handleSetOrderType('delivery')}
                       className={`py-2 sm:py-2.5 rounded-lg transition-all ${
                         formData.orderType === 'delivery'
                           ? 'bg-brand-red text-white shadow-sm font-bold'
@@ -270,11 +306,13 @@ function OrderSection() {
                       </label>
                       <input
                         type="text"
+                        name="customerName"
+                        autoComplete="name"
                         required
                         placeholder="Ví dụ: Nguyễn Văn A"
                         value={formData.customerName}
-                        onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white placeholder-stone-500 text-xs sm:text-sm focus:outline-none focus:border-amber-400 transition-colors"
+                        onChange={handleInputChange}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white placeholder-stone-500 text-base sm:text-sm focus:outline-none focus:border-amber-400 transition-colors"
                       />
                     </div>
                     <div>
@@ -283,11 +321,13 @@ function OrderSection() {
                       </label>
                       <input
                         type="tel"
+                        name="phone"
+                        autoComplete="tel"
                         required
                         placeholder="Ví dụ: 0912 345 678"
                         value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white placeholder-stone-500 text-xs sm:text-sm focus:outline-none focus:border-amber-400 transition-colors"
+                        onChange={handleInputChange}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white placeholder-stone-500 text-base sm:text-sm focus:outline-none focus:border-amber-400 transition-colors"
                       />
                     </div>
                   </div>
@@ -299,9 +339,10 @@ function OrderSection() {
                         Cơ sở phục vụ *
                       </label>
                       <select
+                        name="branch"
                         value={formData.branch}
-                        onChange={(e) => setFormData({ ...formData, branch: e.target.value })}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#2e1d15] border border-white/15 text-white text-xs sm:text-sm focus:outline-none focus:border-amber-400 transition-colors"
+                        onChange={handleInputChange}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#2e1d15] border border-white/15 text-white text-base sm:text-sm focus:outline-none focus:border-amber-400 transition-colors"
                       >
                         <option value="hanoi-hangbac">Hà Nội: 45 Hàng Bạc, Hoàn Kiếm (Cơ sở gốc 1986)</option>
                         <option value="hanoi-lyquocsu">Hà Nội: 10 Lý Quốc Sư, Hoàn Kiếm</option>
@@ -325,7 +366,7 @@ function OrderSection() {
                             <button
                               key={item.val}
                               type="button"
-                              onClick={() => setFormData({ ...formData, guestCount: item.val })}
+                              onClick={() => handleSetGuestCount(item.val)}
                               className={`py-2 rounded-lg border text-xs font-medium transition-all ${
                                 formData.guestCount === item.val
                                   ? 'bg-amber-500/20 border-amber-400 text-amber-200 font-bold'
@@ -344,11 +385,13 @@ function OrderSection() {
                         </label>
                         <input
                           type="text"
+                          name="address"
+                          autoComplete="street-address"
                           required
                           placeholder="Số nhà, tên đường, phường/xã..."
                           value={formData.address}
-                          onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                          className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white placeholder-stone-500 text-xs sm:text-sm focus:outline-none focus:border-amber-400 transition-colors"
+                          onChange={handleInputChange}
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white placeholder-stone-500 text-base sm:text-sm focus:outline-none focus:border-amber-400 transition-colors"
                         />
                       </div>
                     )}
@@ -362,10 +405,12 @@ function OrderSection() {
                       </label>
                       <input
                         type="date"
+                        name="date"
+                        min={todayDateStr}
                         required
                         value={formData.date}
-                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white text-xs sm:text-sm focus:outline-none focus:border-amber-400 transition-colors"
+                        onChange={handleInputChange}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white text-base sm:text-sm focus:outline-none focus:border-amber-400 transition-colors"
                       />
                     </div>
                     <div>
@@ -374,10 +419,11 @@ function OrderSection() {
                       </label>
                       <input
                         type="time"
+                        name="time"
                         required
                         value={formData.time}
-                        onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white text-xs sm:text-sm focus:outline-none focus:border-amber-400 transition-colors"
+                        onChange={handleInputChange}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white text-base sm:text-sm focus:outline-none focus:border-amber-400 transition-colors"
                       />
                     </div>
                   </div>
@@ -394,7 +440,7 @@ function OrderSection() {
                     {/* Clean Taste Specification Chips (No emoji) */}
                     <div className="flex flex-wrap gap-1.5 mb-2.5">
                       {TASTE_PREFERENCES.map((pref) => {
-                        const isSelected = formData.note && formData.note.includes(pref);
+                        const isSelected = selectedTasteSet.has(pref);
                         return (
                           <button
                             key={pref}
@@ -414,10 +460,11 @@ function OrderSection() {
 
                     <textarea
                       rows="2"
+                      name="note"
                       placeholder="Ghi chú thêm: bàn gần cửa sổ, ăn cay, xin thêm ớt chưng..."
                       value={formData.note}
-                      onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-                      className="w-full px-3.5 py-2 rounded-xl bg-white/5 border border-white/15 text-white placeholder-stone-500 text-xs sm:text-sm focus:outline-none focus:border-amber-400 resize-none transition-colors"
+                      onChange={handleInputChange}
+                      className="w-full px-3.5 py-2 rounded-xl bg-white/5 border border-white/15 text-white placeholder-stone-500 text-base sm:text-sm focus:outline-none focus:border-amber-400 resize-none transition-colors"
                     ></textarea>
                   </div>
 
