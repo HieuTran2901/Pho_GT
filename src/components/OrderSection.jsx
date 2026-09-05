@@ -1,7 +1,14 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Phone, CheckCircle2, Send, ChefHat } from 'lucide-react';
+import { Phone, CheckCircle2, Send, ChefHat, ArrowLeft, QrCode, Banknote, Clock, Copy, Check } from 'lucide-react';
 import useScrollReveal from '../hooks/useScrollReveal';
 import { useAuth } from '../context/AuthContext';
+import { paymentApi } from '../services/paymentApi';
+
+const BRANCH_LABELS = {
+  'hanoi-hangbac': '45 Hàng Bạc, Hoàn Kiếm, Hà Nội',
+  'hanoi-lyquocsu': '10 Lý Quốc Sư, Hoàn Kiếm, Hà Nội',
+  'saigon-d1': '86 Nguyễn Du, Quận 1, TP.HCM'
+};
 
 const TASTE_PREFERENCES = [
   'Nhiều hành',
@@ -29,7 +36,14 @@ function OrderSection() {
     note: ''
   }));
 
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  // In-Place Multi-Step navigation states (Step 1: Info, Step 2: Payment, Step 3: Confirmation)
+  const [step, setStep] = useState(1);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('POST_PAID_AT_STORE');
+  const [paymentData, setPaymentData] = useState(null);
+  const [bookingCode, setBookingCode] = useState('');
+  const [isCopied, setIsCopied] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [isVietQrConfirmed, setIsVietQrConfirmed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const submitTimerRef = useRef(null);
@@ -69,6 +83,7 @@ function OrderSection() {
 
   const handleSetOrderType = useCallback((type) => {
     setFormData((prev) => ({ ...prev, orderType: type }));
+    setSelectedPaymentMethod(type === 'dine-in' ? 'POST_PAID_AT_STORE' : 'COD');
   }, []);
 
   const handleSetGuestCount = useCallback((count) => {
@@ -93,6 +108,7 @@ function OrderSection() {
     };
   }, []);
 
+  // Step 1: Submit handler validates current form and smoothly transitions in-place to Step 2
   const handleSubmit = (e) => {
     e.preventDefault();
     // Dismiss mobile virtual keyboard on submission to reveal the result cleanly
@@ -102,16 +118,50 @@ function OrderSection() {
 
     setIsLoading(true);
 
-    // Simulate order/booking submission with timer cleanup
     if (submitTimerRef.current) clearTimeout(submitTimerRef.current);
     submitTimerRef.current = setTimeout(() => {
       setIsLoading(false);
-      setIsSubmitted(true);
-    }, 800);
+      const branchPrefix = formData.branch === 'saigon-d1' ? 'SG' : 'HN';
+      const randomSalt = Math.floor(1000 + Math.random() * 9000);
+      setBookingCode(`PHO1986-${branchPrefix}-${randomSalt}`);
+      setStep(2);
+    }, 450);
+  };
+
+  // Step 2: Confirm payment method and transition to Step 3 (Heritage Pass or VietQR)
+  const handleConfirmOrder = async () => {
+    setIsProcessingPayment(true);
+    try {
+      const paymentRes = await paymentApi.createPayment({
+        orderCode: bookingCode,
+        paymentMethod: selectedPaymentMethod,
+        note: formData.note
+      });
+      setPaymentData(paymentRes);
+    } catch (err) {
+      console.warn('[OrderSection] Payment API creation error:', err);
+    } finally {
+      setIsProcessingPayment(false);
+      setStep(3);
+    }
+  };
+
+  const handleBackToStep1 = () => {
+    setStep(1);
+  };
+
+  const handleCopyCode = (text) => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    }
   };
 
   const handleReset = () => {
-    setIsSubmitted(false);
+    setStep(1);
+    setPaymentData(null);
+    setIsVietQrConfirmed(false);
     setFormData({
       orderType: 'dine-in',
       customerName: user?.fullName || '',
@@ -123,6 +173,7 @@ function OrderSection() {
       address: '',
       note: ''
     });
+    setSelectedPaymentMethod('POST_PAID_AT_STORE');
   };
 
   return (
@@ -249,27 +300,36 @@ function OrderSection() {
           <div className={`lg:col-span-7 transition-all duration-700 ${isVisible ? 'reveal-slide-right' : 'opacity-0'}`}>
             <div className="bg-[#241710] border border-amber-900/40 rounded-3xl p-4 sm:p-8 lg:p-10 shadow-2xl relative">
               
-              {isSubmitted ? (
-                /* Success State */
-                <div className="text-center py-10 space-y-4 animate-fadeIn">
-                  <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto mb-2 border border-emerald-500/30">
-                    <CheckCircle2 className="w-8 h-8" />
+              {/* Progress Breadcrumbs (Visible on Step 2 & Step 3) */}
+              {step > 1 && (
+                <div className="flex items-center justify-between mb-5 pb-3 border-b border-white/10 text-xs px-1 animate-fadeIn">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-5 h-5 rounded-full bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center shadow-xs">✓</span>
+                    <span className="text-emerald-400 font-medium">1. Thông tin</span>
                   </div>
-                  <h3 className="font-serif text-2xl font-bold text-white">
-                    Đặt Bàn Thành Công!
-                  </h3>
-                  <p className="text-stone-300 text-sm max-w-md mx-auto leading-relaxed">
-                    Cảm ơn quý khách <strong className="text-amber-300">{formData.customerName || 'bạn'}</strong>! Quán đã ghi nhận yêu cầu và sẽ gọi điện xác nhận trong vòng 5 phút tới số <strong className="text-amber-300">{formData.phone}</strong>.
-                  </p>
-                  <button
-                    onClick={handleReset}
-                    className="mt-4 px-6 py-2.5 rounded-full bg-brand-red text-white text-sm font-semibold hover:bg-brand-redhover transition-colors shadow-lg"
-                  >
-                    Tạo Yêu Cầu Mới
-                  </button>
+                  <div className="h-px flex-1 mx-2.5 bg-stone-700"></div>
+                  <div className="flex items-center gap-1.5">
+                    <span className={`w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center shadow-xs ${step === 2 ? 'bg-brand-red text-white' : 'bg-emerald-600 text-white'}`}>
+                      {step > 2 ? '✓' : '2'}
+                    </span>
+                    <span className={step === 2 ? 'text-amber-200 font-bold' : 'text-emerald-400 font-medium'}>
+                      2. Thanh toán
+                    </span>
+                  </div>
+                  <div className="h-px flex-1 mx-2.5 bg-stone-700"></div>
+                  <div className="flex items-center gap-1.5">
+                    <span className={`w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center shadow-xs ${step === 3 ? 'bg-brand-red text-white' : 'bg-stone-800 text-stone-500'}`}>
+                      3
+                    </span>
+                    <span className={step === 3 ? 'text-amber-200 font-bold' : 'text-stone-500 font-medium'}>
+                      3. Hoàn tất
+                    </span>
+                  </div>
                 </div>
-              ) : (
-                /* Interactive Form State */
+              )}
+
+              {/* STEP 1: Interactive Form State (100% Original, untouched inputs & buttons) */}
+              {step === 1 && (
                 <form onSubmit={handleSubmit} className="space-y-4">
                   
                   {/* Order Type Segmented Switcher */}
@@ -490,6 +550,401 @@ function OrderSection() {
                   </button>
 
                 </form>
+              )}
+
+              {/* STEP 2: Payment Method & Concise Summary */}
+              {step === 2 && (
+                <div className="space-y-4 animate-fadeIn">
+                  {/* Quick Summary Bar */}
+                  <div className="p-3.5 rounded-2xl bg-black/40 border border-amber-900/30 flex items-start justify-between">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-amber-300">{formData.customerName || 'Quý khách'}</span>
+                        <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded text-stone-300">{formData.phone}</span>
+                      </div>
+                      <p className="text-xs text-stone-300 leading-relaxed">
+                        {formData.orderType === 'dine-in' ? (
+                          <>
+                            Đặt bàn {formData.guestCount} người • {formData.time || '19:00'} ngày {formData.date || 'Hôm nay'} • {BRANCH_LABELS[formData.branch] || 'Hàng Bạc'}
+                          </>
+                        ) : (
+                          <>
+                            Giao phở tận nơi • {formData.address || 'Địa chỉ quý khách'}
+                          </>
+                        )}
+                      </p>
+                      {formData.note && (
+                        <div className="text-[11px] text-amber-400/90 italic">
+                          Khẩu vị riêng: {formData.note}
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleBackToStep1}
+                      className="text-[11px] text-amber-400 hover:text-amber-300 underline font-semibold shrink-0 cursor-pointer pt-0.5 ml-2"
+                    >
+                      Sửa lại
+                    </button>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-stone-200 mb-2.5">
+                      Chọn phương thức thanh toán & xác nhận:
+                    </label>
+
+                    {/* Dine-In Payment Options */}
+                    {formData.orderType === 'dine-in' && (
+                      <div className="space-y-2.5">
+                        <label className={`flex items-start gap-3 p-3.5 rounded-2xl border cursor-pointer transition-all ${
+                          selectedPaymentMethod === 'POST_PAID_AT_STORE'
+                            ? 'bg-amber-950/30 border-amber-400 shadow-xs'
+                            : 'bg-white/5 border-white/10 hover:border-amber-400/50'
+                        }`}>
+                          <input
+                            type="radio"
+                            name="payment_method"
+                            value="POST_PAID_AT_STORE"
+                            checked={selectedPaymentMethod === 'POST_PAID_AT_STORE'}
+                            onChange={() => setSelectedPaymentMethod('POST_PAID_AT_STORE')}
+                            className="mt-1 accent-amber-500"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-bold text-white flex items-center gap-1.5">
+                                <Banknote className="w-4 h-4 text-emerald-400" />
+                                Thanh toán sau tại quán
+                              </span>
+                              <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-bold border border-emerald-500/30">
+                                Giữ bàn 30 phút
+                              </span>
+                            </div>
+                            <p className="text-xs text-stone-400 mt-1 leading-relaxed">
+                              Bàn được giữ miễn phí. Quý khách tới quán đọc số điện thoại để nhận bàn và thanh toán tại quầy thu ngân sau khi dùng bữa.
+                            </p>
+                          </div>
+                        </label>
+
+                        <label className={`flex items-start gap-3 p-3.5 rounded-2xl border cursor-pointer transition-all ${
+                          selectedPaymentMethod === 'VIETQR'
+                            ? 'bg-amber-950/30 border-amber-400 shadow-xs'
+                            : 'bg-white/5 border-white/10 hover:border-amber-400/50'
+                        }`}>
+                          <input
+                            type="radio"
+                            name="payment_method"
+                            value="VIETQR"
+                            checked={selectedPaymentMethod === 'VIETQR'}
+                            onChange={() => setSelectedPaymentMethod('VIETQR')}
+                            className="mt-1 accent-amber-500"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-bold text-white flex items-center gap-1.5">
+                                <QrCode className="w-4 h-4 text-amber-400" />
+                                Quét mã VietQR Napas 247
+                              </span>
+                              <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-bold border border-amber-500/30">
+                                Tự động xác nhận
+                              </span>
+                            </div>
+                            <p className="text-xs text-stone-400 mt-1 leading-relaxed">
+                              Quét mã qua ứng dụng ngân hàng để chuyển khoản. Quán chuẩn bị sẵn bàn đẹp kèm ưu tiên tặng quẩy nóng giòn & trà sen.
+                            </p>
+                          </div>
+                        </label>
+                      </div>
+                    )}
+
+                    {/* Delivery Payment Options */}
+                    {formData.orderType === 'delivery' && (
+                      <div className="space-y-2.5">
+                        <label className={`flex items-start gap-3 p-3.5 rounded-2xl border cursor-pointer transition-all ${
+                          selectedPaymentMethod === 'COD'
+                            ? 'bg-amber-950/30 border-amber-400 shadow-xs'
+                            : 'bg-white/5 border-white/10 hover:border-amber-400/50'
+                        }`}>
+                          <input
+                            type="radio"
+                            name="payment_method"
+                            value="COD"
+                            checked={selectedPaymentMethod === 'COD'}
+                            onChange={() => setSelectedPaymentMethod('COD')}
+                            className="mt-1 accent-amber-500"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-bold text-white flex items-center gap-1.5">
+                                <Banknote className="w-4 h-4 text-emerald-400" />
+                                Tiền mặt khi nhận phở (COD)
+                              </span>
+                              <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-bold border border-emerald-500/30">
+                                An tâm
+                              </span>
+                            </div>
+                            <p className="text-xs text-stone-400 mt-1 leading-relaxed">
+                              Nhân viên giao bát phở nóng 90°C tới tận nơi. Quý khách kiểm tra bát phở và thanh toán tiền mặt trực tiếp.
+                            </p>
+                          </div>
+                        </label>
+
+                        <label className={`flex items-start gap-3 p-3.5 rounded-2xl border cursor-pointer transition-all ${
+                          selectedPaymentMethod === 'VIETQR'
+                            ? 'bg-amber-950/30 border-amber-400 shadow-xs'
+                            : 'bg-white/5 border-white/10 hover:border-amber-400/50'
+                        }`}>
+                          <input
+                            type="radio"
+                            name="payment_method"
+                            value="VIETQR"
+                            checked={selectedPaymentMethod === 'VIETQR'}
+                            onChange={() => setSelectedPaymentMethod('VIETQR')}
+                            className="mt-1 accent-amber-500"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-bold text-white flex items-center gap-1.5">
+                                <QrCode className="w-4 h-4 text-amber-400" />
+                                Chuyển khoản VietQR tiện lợi
+                              </span>
+                              <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-bold border border-amber-500/30">
+                                Không cần tiền lẻ
+                              </span>
+                            </div>
+                            <p className="text-xs text-stone-400 mt-1 leading-relaxed">
+                              Quét mã thanh toán trước nhanh gọn, tài xế có thể treo phở trước cửa nếu bạn bận họp.
+                            </p>
+                          </div>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Action Buttons for Step 2 */}
+                  <div className="pt-2 flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={handleBackToStep1}
+                      className="w-1/3 py-3 rounded-xl bg-white/10 hover:bg-white/15 text-stone-300 font-semibold text-xs sm:text-sm transition-all text-center cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      <ArrowLeft className="w-3.5 h-3.5" />
+                      <span>Quay Lại</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleConfirmOrder}
+                      disabled={isProcessingPayment}
+                      className="w-2/3 py-3 rounded-xl bg-gradient-to-r from-brand-red to-amber-600 hover:from-brand-redhover hover:to-amber-700 text-white font-bold text-xs sm:text-sm shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                    >
+                      {isProcessingPayment ? (
+                        <span className="flex items-center gap-2">
+                          <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                          <span>Đang Xác Nhận...</span>
+                        </span>
+                      ) : (
+                        <span>
+                          {selectedPaymentMethod === 'VIETQR' ? 'Mở Mã Quét VietQR →' : 'Xác Nhận Giữ Chỗ Ngay →'}
+                        </span>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 3: Heritage Boarding Pass or VietQR Dynamic Screen */}
+              {step === 3 && (
+                <div className="space-y-4 animate-fadeIn">
+                  {selectedPaymentMethod === 'VIETQR' && !isVietQrConfirmed ? (
+                    /* Case 3A: VietQR Screen */
+                    <div className="space-y-3.5">
+                      <div className="text-center">
+                        <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2.5 py-0.5 rounded-full font-bold border border-amber-500/30 inline-flex items-center gap-1">
+                          <QrCode className="w-3 h-3 text-amber-400" />
+                          <span>VietQR Napas 247 MBBank</span>
+                        </span>
+                        <h3 className="font-serif text-xl sm:text-2xl font-bold text-white mt-1">
+                          Quét Mã Chuyển Khoản
+                        </h3>
+                        <p className="text-xs text-stone-400">
+                          Mã QR có hiệu lực trong <span className="text-amber-300 font-bold">15 phút</span>
+                        </p>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-white/5 border border-amber-500/40 flex flex-col items-center justify-center text-center">
+                        <div className="w-44 h-44 bg-white rounded-xl p-2 shadow-md flex items-center justify-center">
+                          <img
+                            src={paymentData?.qrCodeUrl || `https://img.vietqr.io/image/970422-0986198686-compact2.png?amount=150000&addInfo=PHO1986%20${bookingCode}&accountName=PHO%20GIA%20TRUYEN%201986`}
+                            alt="VietQR Phở Gia Truyền 1986"
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+
+                        <div className="mt-3 w-full bg-black/40 rounded-xl p-3 text-xs text-left space-y-1.5 border border-white/10">
+                          <div className="flex justify-between items-center">
+                            <span className="text-stone-400">Ngân hàng:</span>
+                            <span className="font-bold text-white">MBBank (Quân Đội)</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-stone-400">Số tài khoản:</span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold text-amber-300 font-mono">0986 1986 86</span>
+                              <button
+                                type="button"
+                                onClick={() => handleCopyCode('0986198686')}
+                                className="text-[10px] text-stone-400 hover:text-white p-0.5 cursor-pointer"
+                                title="Sao chép số tài khoản"
+                              >
+                                <Copy className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-stone-400">Chủ tài khoản:</span>
+                            <span className="font-bold text-stone-200">PHO GIA TRUYEN 1986</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-stone-400">Nội dung CK:</span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold text-amber-300 font-mono">{paymentData?.transferContent || `PHO1986 ${bookingCode}`}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleCopyCode(paymentData?.transferContent || `PHO1986 ${bookingCode}`)}
+                                className="text-[10px] text-stone-400 hover:text-white p-0.5 cursor-pointer"
+                                title="Sao chép nội dung chuyển khoản"
+                              >
+                                <Copy className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {isCopied && (
+                        <div className="text-center text-xs text-emerald-400 font-medium">
+                          ✓ Đã sao chép vào bộ nhớ tạm!
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setStep(2)}
+                          className="w-1/3 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-stone-300 font-semibold text-xs text-center cursor-pointer"
+                        >
+                          ← Đổi Cách Khác
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsVietQrConfirmed(true)}
+                          className="w-2/3 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-md cursor-pointer"
+                        >
+                          Tôi Đã Chuyển Khoản Xong ✓
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Case 3B: Heritage Boarding Pass (Post-paid or COD or Confirmed VietQR) */
+                    <div className="text-center py-2 space-y-4">
+                      <div className="w-14 h-14 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto border border-emerald-500/30 shadow-md">
+                        <CheckCircle2 className="w-7 h-7" />
+                      </div>
+
+                      <div>
+                        <h3 className="font-serif text-2xl font-bold text-amber-100">
+                          {formData.orderType === 'dine-in' ? 'Đặt Bàn Thành Công!' : 'Giao Phở Đã Xác Nhận!'}
+                        </h3>
+                        <p className="text-xs sm:text-sm text-stone-300 mt-1 max-w-sm mx-auto leading-relaxed">
+                          {formData.orderType === 'dine-in'
+                            ? `Cảm ơn ${formData.customerName || 'quý khách'}! Bàn của bạn đã được giữ chỗ ưu tiên trong 30 phút tại quán.`
+                            : `Bếp Phở Gia Truyền 1986 đang chuẩn bị nước dùng và sẽ giao tận nơi tới ${formData.customerName || 'bạn'}.`}
+                        </p>
+                      </div>
+
+                      {/* Heritage Pass Card */}
+                      <div className="p-4 rounded-2xl bg-black/60 border border-amber-500/40 text-left space-y-2.5 relative overflow-hidden shadow-lg">
+                        <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
+                          <div>
+                            <span className="text-[10px] text-amber-400 font-bold tracking-widest uppercase">
+                              {formData.orderType === 'dine-in' ? 'Thẻ Bàn Di Sản' : 'Phiếu Giao Phở Nóng'}
+                            </span>
+                            <div className="font-mono text-base font-bold text-white tracking-wider flex items-center gap-1.5">
+                              <span>#{bookingCode}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleCopyCode(bookingCode)}
+                                className="text-stone-400 hover:text-amber-300 p-0.5 cursor-pointer"
+                                title="Sao chép mã"
+                              >
+                                {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                              </button>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-[10px] text-stone-400">Trạng thái:</span>
+                            <div className="text-xs font-bold text-amber-300 flex items-center gap-1">
+                              <Clock className="w-3 h-3 text-amber-400" />
+                              <span>{formData.orderType === 'dine-in' ? 'Giữ bàn 30 phút' : 'Nóng 90°C'}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div>
+                            <span className="text-stone-400 text-[10px]">Khách hàng:</span>
+                            <div className="font-semibold text-stone-200">{formData.customerName || 'Quý khách'}</div>
+                          </div>
+                          <div>
+                            <span className="text-stone-400 text-[10px]">Số điện thoại:</span>
+                            <div className="font-semibold text-stone-200">{formData.phone}</div>
+                          </div>
+                          <div>
+                            <span className="text-stone-400 text-[10px]">
+                              {formData.orderType === 'dine-in' ? 'Thời gian & Bàn:' : 'Thời gian giao:'}
+                            </span>
+                            <div className="font-semibold text-stone-200">
+                              {formData.orderType === 'dine-in'
+                                ? `${formData.time || '19:00'} • ${formData.guestCount} khách`
+                                : 'Giao ngay (25-35 phút)'}
+                            </div>
+                          </div>
+                          <div>
+                            <span className="text-stone-400 text-[10px]">Thanh toán:</span>
+                            <div className="font-semibold text-emerald-400">
+                              {selectedPaymentMethod === 'POST_PAID_AT_STORE'
+                                ? 'Tại quầy sau khi ăn'
+                                : selectedPaymentMethod === 'COD'
+                                ? 'Tiền mặt khi nhận phở'
+                                : 'Đã thanh toán VietQR ✓'}
+                            </div>
+                          </div>
+                        </div>
+
+                        {formData.note && (
+                          <div className="border-t border-white/10 pt-2 text-[11px] text-amber-300/90 italic">
+                            Khẩu vị riêng: {formData.note}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-3 pt-2">
+                        <button
+                          type="button"
+                          onClick={handleReset}
+                          className="flex-1 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-stone-300 font-semibold text-xs transition-colors cursor-pointer"
+                        >
+                          Tạo Yêu Cầu Mới
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleCopyCode(`PHO1986 - Mã giữ bàn: #${bookingCode} (${formData.customerName} - ${formData.phone})`)}
+                          className="flex-1 py-2.5 rounded-xl bg-brand-red hover:bg-brand-redhover text-white font-bold text-xs shadow-md transition-colors cursor-pointer"
+                        >
+                          {isCopied ? 'Đã Sao Chép Mã ✓' : 'Lưu Mã Giữ Bàn'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
 
             </div>
