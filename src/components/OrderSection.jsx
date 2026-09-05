@@ -7,7 +7,8 @@ import { paymentApi } from '../services/paymentApi';
 const BRANCH_LABELS = {
   'hanoi-hangbac': '45 Hàng Bạc, Hoàn Kiếm, Hà Nội',
   'hanoi-lyquocsu': '10 Lý Quốc Sư, Hoàn Kiếm, Hà Nội',
-  'saigon-d1': '86 Nguyễn Du, Quận 1, TP.HCM'
+  'hcm-quan1': '88 Pasteur, Quận 1, TP.HCM',
+  'hcm-quan3': '152 Võ Thị Sáu, Quận 3, TP.HCM'
 };
 
 const TASTE_PREFERENCES = [
@@ -48,6 +49,7 @@ function OrderSection() {
   const [isLoading, setIsLoading] = useState(false);
 
   const submitTimerRef = useRef(null);
+  const copyTimerRef = useRef(null);
   const hasAutoFilledRef = useRef(Boolean(user?.fullName || user?.phone));
 
   // Minimum date constraint (today) to prevent picking past dates on mobile
@@ -106,6 +108,7 @@ function OrderSection() {
   useEffect(() => {
     return () => {
       if (submitTimerRef.current) clearTimeout(submitTimerRef.current);
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
     };
   }, []);
 
@@ -122,7 +125,7 @@ function OrderSection() {
     if (submitTimerRef.current) clearTimeout(submitTimerRef.current);
     submitTimerRef.current = setTimeout(() => {
       setIsLoading(false);
-      const branchPrefix = formData.branch === 'saigon-d1' ? 'SG' : 'HN';
+      const branchPrefix = formData.branch?.startsWith('hcm') ? 'SG' : 'HN';
       const randomSalt = Math.floor(1000 + Math.random() * 9000);
       setBookingCode(`PHO1986-${branchPrefix}-${randomSalt}`);
       setDirection('forward');
@@ -163,7 +166,8 @@ function OrderSection() {
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
       navigator.clipboard.writeText(text);
       setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = setTimeout(() => setIsCopied(false), 2000);
     }
   };
 
