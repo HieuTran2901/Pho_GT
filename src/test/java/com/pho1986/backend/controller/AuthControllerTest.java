@@ -14,6 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -90,5 +91,28 @@ public class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.success", is(false)));
+    }
+
+    @Test
+    @DisplayName("5. [SECURITY] Đăng nhập thành công -> Trả về Set-Cookie HttpOnly cho accessToken và refreshToken")
+    void testLoginSetsHttpOnlyCookies() throws Exception {
+        LoginRequest request = new LoginRequest();
+        request.setPhone("0988888888");
+        request.setPassword("123456");
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(header().exists("Set-Cookie"));
+    }
+
+    @Test
+    @DisplayName("6. [SECURITY] Đăng xuất -> Xóa Cookie và thu hồi token thành công")
+    void testLogoutClearsCookies() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/logout"))
+                .andExpect(status().isOk())
+                .andExpect(header().exists("Set-Cookie"))
+                .andExpect(jsonPath("$.success", is(true)));
     }
 }

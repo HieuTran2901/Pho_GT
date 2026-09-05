@@ -4,10 +4,15 @@ import com.pho1986.backend.model.dto.AuthDtos.*;
 import com.pho1986.backend.model.entity.*;
 import com.pho1986.backend.repository.*;
 import com.pho1986.backend.security.JwtTokenProvider;
+import com.pho1986.backend.security.LoginRateLimiter;
+import com.pho1986.backend.security.TokenRevocationService;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.Date;
 
 @Service
 public class AuthService {
@@ -19,6 +24,9 @@ public class AuthService {
     private final OrderRepository orderRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
+    private final RefreshTokenRepository refreshTokenRepository;
+    private final TokenRevocationService tokenRevocationService;
+    private final LoginRateLimiter loginRateLimiter;
 
     public AuthService(
             UserRepository userRepository,
@@ -27,7 +35,10 @@ public class AuthService {
             LoyaltyTransactionRepository loyaltyTransactionRepository,
             OrderRepository orderRepository,
             PasswordEncoder passwordEncoder,
-            JwtTokenProvider tokenProvider) {
+            JwtTokenProvider tokenProvider,
+            RefreshTokenRepository refreshTokenRepository,
+            TokenRevocationService tokenRevocationService,
+            LoginRateLimiter loginRateLimiter) {
         this.userRepository = userRepository;
         this.tasteProfileRepository = tasteProfileRepository;
         this.loyaltyAccountRepository = loyaltyAccountRepository;
@@ -35,6 +46,17 @@ public class AuthService {
         this.orderRepository = orderRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
+        this.refreshTokenRepository = refreshTokenRepository;
+        this.tokenRevocationService = tokenRevocationService;
+        this.loginRateLimiter = loginRateLimiter;
+    }
+
+    private String createAndSaveRefreshToken(User user) {
+        String token = tokenProvider.generateRefreshToken(user.getId(), user.getRole());
+        LocalDateTime expiryDate = LocalDateTime.now().plusNanos(tokenProvider.getRefreshExpirationMs() * 1_000_000);
+        RefreshToken refreshToken = new RefreshToken(user, token, expiryDate);
+        refreshTokenRepository.save(refreshToken);
+        return token;
     }
 
     @Transactional
@@ -89,19 +111,73 @@ public class AuthService {
         loyaltyTransactionRepository.save(transaction);
 
         String accessToken = tokenProvider.generateAccessToken(user.getId(), user.getRole());
-        return new AuthResponse(user, accessToken, 50);
+        String refreshToken = createAndSaveRefreshToken(user);
+        return new AuthResponse(user, accessToken, refreshToken, 50);
     }
 
     public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findByPhone(request.getPhone())
-                .orElseThrow(() -> new BadCredentialsException("Số điện thoại hoặc mật khẩu không chính xác"));
+        if (loginRateLimiter.isBlocked(request.getPhone())) {
+            long remainingSeconds = loginRateLimiter.getRemainingBlockSeconds(request.getPhone());
+            throw new BadCredentialsException("Quý khách đã thử đăng nhập sai quá nhiều lần. Vui lòng nghỉ tay ít phút và thử lại sau " 
+                    + remainingSeconds + " giây nữa nhé!");
+        }
 
-        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+        User user = userRepository.findByPhone(request.getPhone()).orElse(null);
+        if (user == null || !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            loginRateLimiter.recordFailure(request.getPhone());
             throw new BadCredentialsException("Số điện thoại hoặc mật khẩu không chính xác");
         }
 
+        loginRateLimiter.reset(request.getPhone());
         String accessToken = tokenProvider.generateAccessToken(user.getId(), user.getRole());
-        return new AuthResponse(user, accessToken);
+        String refreshToken = createAndSaveRefreshToken(user);
+        return new AuthResponse(user, accessToken, refreshToken);
+    }
+
+    @Transactional
+    public AuthResponse refreshToken(String refreshTokenString) {
+        if (refreshTokenString == null || refreshTokenString.isBlank() || !tokenProvider.validateToken(refreshTokenString)) {
+            throw new BadCredentialsException("Phiên đăng nhập đã hết hạn, quý khách vui lòng đăng nhập lại nhé!");
+        }
+
+        RefreshToken refreshToken = refreshTokenRepository.findByToken(refreshTokenString)
+                .orElseThrow(() -> new BadCredentialsException("Phiên đăng nhập không hợp lệ hoặc đã hết hiệu lực."));
+
+        if (refreshToken.isRevoked() || refreshToken.isExpired()) {
+            throw new BadCredentialsException("Phiên đăng nhập đã bị thu hồi hoặc đã hết hạn.");
+        }
+
+        // [SECURITY_AGENT] Refresh Token Rotation: Revoke old token and issue a fresh one
+        refreshToken.setRevoked(true);
+        refreshTokenRepository.save(refreshToken);
+
+        User user = refreshToken.getUser();
+        String newAccessToken = tokenProvider.generateAccessToken(user.getId(), user.getRole());
+        String newRefreshToken = createAndSaveRefreshToken(user);
+
+        return new AuthResponse(user, newAccessToken, newRefreshToken);
+    }
+
+    @Transactional
+    public void logout(String accessToken, String refreshTokenString) {
+        // [SECURITY_AGENT] Immediate Access Token Revocation via Blacklist
+        if (accessToken != null && !accessToken.isBlank()) {
+            Date expiry = tokenProvider.getExpirationDateFromToken(accessToken);
+            long expiryMs = (expiry != null) ? expiry.getTime() : System.currentTimeMillis() + tokenProvider.getExpirationMs();
+            tokenRevocationService.revoke(accessToken, expiryMs);
+            String jti = tokenProvider.getJtiFromToken(accessToken);
+            if (jti != null) {
+                tokenRevocationService.revoke(jti, expiryMs);
+            }
+        }
+
+        // [SECURITY_AGENT] Revoke Refresh Token in persistent store
+        if (refreshTokenString != null && !refreshTokenString.isBlank()) {
+            refreshTokenRepository.findByToken(refreshTokenString).ifPresent(rt -> {
+                rt.setRevoked(true);
+                refreshTokenRepository.save(rt);
+            });
+        }
     }
 
     public User getMe(String userId) {
@@ -184,6 +260,7 @@ public class AuthService {
         }
 
         String accessToken = tokenProvider.generateAccessToken(user.getId(), user.getRole());
-        return new AuthResponse(user, accessToken, earnedPoints);
+        String refreshToken = createAndSaveRefreshToken(user);
+        return new AuthResponse(user, accessToken, refreshToken, earnedPoints);
     }
 }

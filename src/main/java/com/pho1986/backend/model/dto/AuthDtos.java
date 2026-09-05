@@ -73,14 +73,27 @@ public class AuthDtos {
         public void setPassword(String password) { this.password = password; }
     }
 
+    public static class RefreshTokenRequest {
+        private String refreshToken;
+        public String getRefreshToken() { return refreshToken; }
+        public void setRefreshToken(String refreshToken) { this.refreshToken = refreshToken; }
+    }
+
     public static class AuthResponse {
         private User user;
         private String accessToken;
+        private String refreshToken;
         private Integer pointsEarned;
 
         public AuthResponse(User user, String accessToken) {
             this.user = user;
             this.accessToken = accessToken;
+        }
+
+        public AuthResponse(User user, String accessToken, String refreshToken) {
+            this.user = user;
+            this.accessToken = accessToken;
+            this.refreshToken = refreshToken;
         }
 
         public AuthResponse(User user, String accessToken, Integer pointsEarned) {
@@ -89,10 +102,19 @@ public class AuthDtos {
             this.pointsEarned = pointsEarned;
         }
 
+        public AuthResponse(User user, String accessToken, String refreshToken, Integer pointsEarned) {
+            this.user = user;
+            this.accessToken = accessToken;
+            this.refreshToken = refreshToken;
+            this.pointsEarned = pointsEarned;
+        }
+
         public User getUser() { return user; }
         public void setUser(User user) { this.user = user; }
         public String getAccessToken() { return accessToken; }
         public void setAccessToken(String accessToken) { this.accessToken = accessToken; }
+        public String getRefreshToken() { return refreshToken; }
+        public void setRefreshToken(String refreshToken) { this.refreshToken = refreshToken; }
         public Integer getPointsEarned() { return pointsEarned; }
         public void setPointsEarned(Integer pointsEarned) { this.pointsEarned = pointsEarned; }
     }

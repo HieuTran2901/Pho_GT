@@ -20,9 +20,11 @@ import java.util.Collections;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider tokenProvider;
+    private final TokenRevocationService revocationService;
 
-    public JwtAuthenticationFilter(JwtTokenProvider tokenProvider) {
+    public JwtAuthenticationFilter(JwtTokenProvider tokenProvider, TokenRevocationService revocationService) {
         this.tokenProvider = tokenProvider;
+        this.revocationService = revocationService;
     }
 
     @Override
@@ -31,15 +33,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = getJwtFromRequest(request);
 
         if (StringUtils.hasText(token) && tokenProvider.validateToken(token)) {
-            String userId = tokenProvider.getUserIdFromToken(token);
-            String role = tokenProvider.getRoleFromToken(token);
+            // [SECURITY_AGENT] Check if token or its JTI has been revoked upon logout
+            String jti = tokenProvider.getJtiFromToken(token);
+            if (!revocationService.isRevoked(token) && (jti == null || !revocationService.isRevoked(jti))) {
+                String userId = tokenProvider.getUserIdFromToken(token);
+                String role = tokenProvider.getRoleFromToken(token);
 
-            SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + role);
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(userId, null, Collections.singletonList(authority));
-            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + role);
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(userId, null, Collections.singletonList(authority));
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            }
         }
 
         filterChain.doFilter(request, response);

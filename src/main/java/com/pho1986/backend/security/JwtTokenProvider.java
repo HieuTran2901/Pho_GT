@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.UUID;
 
 @Component
 public class JwtTokenProvider {
@@ -30,6 +31,7 @@ public class JwtTokenProvider {
         Date expiryDate = new Date(now.getTime() + expirationMs);
 
         return Jwts.builder()
+                .id(UUID.randomUUID().toString())
                 .subject(userId)
                 .claim("role", role)
                 .issuedAt(now)
@@ -43,6 +45,7 @@ public class JwtTokenProvider {
         Date expiryDate = new Date(now.getTime() + refreshExpirationMs);
 
         return Jwts.builder()
+                .id(UUID.randomUUID().toString())
                 .subject(userId)
                 .claim("role", role)
                 .issuedAt(now)
@@ -52,23 +55,39 @@ public class JwtTokenProvider {
     }
 
     public String getUserIdFromToken(String token) {
-        Claims claims = Jwts.parser()
-                .verifyWith(key)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
-
+        Claims claims = getClaims(token);
         return claims.getSubject();
     }
 
     public String getRoleFromToken(String token) {
-        Claims claims = Jwts.parser()
+        Claims claims = getClaims(token);
+        return claims.get("role", String.class);
+    }
+
+    public String getJtiFromToken(String token) {
+        try {
+            Claims claims = getClaims(token);
+            return claims.getId();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public Date getExpirationDateFromToken(String token) {
+        try {
+            Claims claims = getClaims(token);
+            return claims.getExpiration();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private Claims getClaims(String token) {
+        return Jwts.parser()
                 .verifyWith(key)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
-
-        return claims.get("role", String.class);
     }
 
     public boolean validateToken(String token) {
@@ -79,4 +98,7 @@ public class JwtTokenProvider {
             return false;
         }
     }
+
+    public long getExpirationMs() { return expirationMs; }
+    public long getRefreshExpirationMs() { return refreshExpirationMs; }
 }
