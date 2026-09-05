@@ -38,6 +38,7 @@ function OrderSection() {
 
   // In-Place Multi-Step navigation states (Step 1: Info, Step 2: Payment, Step 3: Confirmation)
   const [step, setStep] = useState(1);
+  const [direction, setDirection] = useState('forward');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('POST_PAID_AT_STORE');
   const [paymentData, setPaymentData] = useState(null);
   const [bookingCode, setBookingCode] = useState('');
@@ -124,6 +125,7 @@ function OrderSection() {
       const branchPrefix = formData.branch === 'saigon-d1' ? 'SG' : 'HN';
       const randomSalt = Math.floor(1000 + Math.random() * 9000);
       setBookingCode(`PHO1986-${branchPrefix}-${randomSalt}`);
+      setDirection('forward');
       setStep(2);
     }, 450);
   };
@@ -142,12 +144,19 @@ function OrderSection() {
       console.warn('[OrderSection] Payment API creation error:', err);
     } finally {
       setIsProcessingPayment(false);
+      setDirection('forward');
       setStep(3);
     }
   };
 
   const handleBackToStep1 = () => {
+    setDirection('backward');
     setStep(1);
+  };
+
+  const handleBackToStep2 = () => {
+    setDirection('backward');
+    setStep(2);
   };
 
   const handleCopyCode = (text) => {
@@ -159,6 +168,7 @@ function OrderSection() {
   };
 
   const handleReset = () => {
+    setDirection('backward');
     setStep(1);
     setPaymentData(null);
     setIsVietQrConfirmed(false);
@@ -303,25 +313,38 @@ function OrderSection() {
               {/* Progress Breadcrumbs (Visible on Step 2 & Step 3) */}
               {step > 1 && (
                 <div className="flex items-center justify-between mb-5 pb-3 border-b border-white/10 text-xs px-1 animate-fadeIn">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-5 h-5 rounded-full bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center shadow-xs">✓</span>
-                    <span className="text-emerald-400 font-medium">1. Thông tin</span>
+                  <button
+                    type="button"
+                    onClick={handleBackToStep1}
+                    className="flex items-center gap-1.5 cursor-pointer group"
+                    title="Quay lại bước 1"
+                  >
+                    <span className="w-5 h-5 rounded-full bg-emerald-600 group-hover:bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center shadow-xs transition-colors">✓</span>
+                    <span className="text-emerald-400 group-hover:text-emerald-300 font-medium transition-colors">1. Thông tin</span>
+                  </button>
+
+                  <div className="h-0.5 flex-1 mx-2.5 bg-stone-700/60 rounded-full overflow-hidden">
+                    <div className={`h-full bg-gradient-to-r from-emerald-500 to-amber-500 transition-all duration-500 ease-out ${step >= 2 ? 'w-full' : 'w-0'}`}></div>
                   </div>
-                  <div className="h-px flex-1 mx-2.5 bg-stone-700"></div>
+
                   <div className="flex items-center gap-1.5">
-                    <span className={`w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center shadow-xs ${step === 2 ? 'bg-brand-red text-white' : 'bg-emerald-600 text-white'}`}>
+                    <span className={`w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center shadow-xs transition-all duration-300 ${step === 2 ? 'bg-brand-red text-white scale-110 ring-2 ring-amber-400/40' : 'bg-emerald-600 text-white'}`}>
                       {step > 2 ? '✓' : '2'}
                     </span>
-                    <span className={step === 2 ? 'text-amber-200 font-bold' : 'text-emerald-400 font-medium'}>
+                    <span className={`transition-colors duration-300 ${step === 2 ? 'text-amber-200 font-bold' : 'text-emerald-400 font-medium'}`}>
                       2. Thanh toán
                     </span>
                   </div>
-                  <div className="h-px flex-1 mx-2.5 bg-stone-700"></div>
+
+                  <div className="h-0.5 flex-1 mx-2.5 bg-stone-700/60 rounded-full overflow-hidden">
+                    <div className={`h-full bg-gradient-to-r from-amber-500 to-emerald-400 transition-all duration-500 ease-out ${step >= 3 ? 'w-full' : 'w-0'}`}></div>
+                  </div>
+
                   <div className="flex items-center gap-1.5">
-                    <span className={`w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center shadow-xs ${step === 3 ? 'bg-brand-red text-white' : 'bg-stone-800 text-stone-500'}`}>
+                    <span className={`w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center shadow-xs transition-all duration-300 ${step === 3 ? 'bg-brand-red text-white scale-110 ring-2 ring-amber-400/40' : 'bg-stone-800 text-stone-500'}`}>
                       3
                     </span>
-                    <span className={step === 3 ? 'text-amber-200 font-bold' : 'text-stone-500 font-medium'}>
+                    <span className={`transition-colors duration-300 ${step === 3 ? 'text-amber-200 font-bold' : 'text-stone-500 font-medium'}`}>
                       3. Hoàn tất
                     </span>
                   </div>
@@ -330,7 +353,7 @@ function OrderSection() {
 
               {/* STEP 1: Interactive Form State (100% Original, untouched inputs & buttons) */}
               {step === 1 && (
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className={`space-y-4 ${direction === 'backward' ? 'animate-step-backward' : ''}`}>
                   
                   {/* Order Type Segmented Switcher */}
                   <div className="grid grid-cols-2 p-1 rounded-xl bg-black/40 border border-white/10 mb-4 text-xs sm:text-sm font-semibold">
@@ -554,7 +577,7 @@ function OrderSection() {
 
               {/* STEP 2: Payment Method & Concise Summary */}
               {step === 2 && (
-                <div className="space-y-4 animate-fadeIn">
+                <div className={`space-y-4 ${direction === 'forward' ? 'animate-step-forward' : 'animate-step-backward'}`}>
                   {/* Quick Summary Bar */}
                   <div className="p-3.5 rounded-2xl bg-black/40 border border-amber-900/30 flex items-start justify-between">
                     <div className="space-y-1">
@@ -753,7 +776,7 @@ function OrderSection() {
 
               {/* STEP 3: Heritage Boarding Pass or VietQR Dynamic Screen */}
               {step === 3 && (
-                <div className="space-y-4 animate-fadeIn">
+                <div className={`space-y-4 ${direction === 'forward' ? 'animate-step-forward' : 'animate-step-backward'}`}>
                   {selectedPaymentMethod === 'VIETQR' && !isVietQrConfirmed ? (
                     /* Case 3A: VietQR Screen */
                     <div className="space-y-3.5">
@@ -828,7 +851,7 @@ function OrderSection() {
                       <div className="flex items-center gap-3">
                         <button
                           type="button"
-                          onClick={() => setStep(2)}
+                          onClick={handleBackToStep2}
                           className="w-1/3 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-stone-300 font-semibold text-xs text-center cursor-pointer"
                         >
                           ← Đổi Cách Khác
@@ -845,8 +868,9 @@ function OrderSection() {
                   ) : (
                     /* Case 3B: Heritage Boarding Pass (Post-paid or COD or Confirmed VietQR) */
                     <div className="text-center py-2 space-y-4">
-                      <div className="w-14 h-14 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto border border-emerald-500/30 shadow-md">
-                        <CheckCircle2 className="w-7 h-7" />
+                      <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto border border-emerald-500/40 shadow-xl animate-pop-spring relative">
+                        <div className="absolute inset-0 rounded-full bg-emerald-400/25 animate-ping opacity-30"></div>
+                        <CheckCircle2 className="w-8 h-8 text-emerald-400" />
                       </div>
 
                       <div>
@@ -860,8 +884,12 @@ function OrderSection() {
                         </p>
                       </div>
 
-                      {/* Heritage Pass Card */}
-                      <div className="p-4 rounded-2xl bg-black/60 border border-amber-500/40 text-left space-y-2.5 relative overflow-hidden shadow-lg">
+                      {/* Heritage Pass Card with Gold Shimmer */}
+                      <div className="p-4 sm:p-5 rounded-2xl bg-black/60 border border-amber-500/40 text-left space-y-3 relative overflow-hidden shadow-2xl animate-pass-card">
+                        {/* Metallic Gold Shimmer Sweep Effect */}
+                        <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl">
+                          <div className="w-1/2 h-full bg-gradient-to-r from-transparent via-amber-300/15 to-transparent absolute top-0 left-0 animate-gold-shimmer"></div>
+                        </div>
                         <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
                           <div>
                             <span className="text-[10px] text-amber-400 font-bold tracking-widest uppercase">

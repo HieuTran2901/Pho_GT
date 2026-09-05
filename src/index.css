@@ -635,4 +635,92 @@
   will-change: transform, opacity;
 }
 
+/* --- Multi-Step Booking & Payment Fluid Animations --- */
+@keyframes stepSlideForward {
+  0% {
+    opacity: 0;
+    transform: translateX(32px) scale(0.985);
+    filter: blur(2px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    filter: blur(0px);
+  }
+}
+
+@keyframes stepSlideBackward {
+  0% {
+    opacity: 0;
+    transform: translateX(-32px) scale(0.985);
+    filter: blur(2px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    filter: blur(0px);
+  }
+}
+
+@keyframes popSpringSuccess {
+  0% {
+    transform: scale(0.2) rotate(-15deg);
+    opacity: 0;
+  }
+  65% {
+    transform: scale(1.18) rotate(3deg);
+    opacity: 1;
+  }
+  85% {
+    transform: scale(0.96) rotate(-1deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes goldShimmerSweep {
+  0% {
+    transform: translateX(-120%) skewX(-20deg);
+  }
+  100% {
+    transform: translateX(250%) skewX(-20deg);
+  }
+}
+
+@keyframes passCardFloat {
+  0%, 100% {
+    transform: translateY(0);
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5), 0 0 20px rgba(245, 158, 11, 0.15);
+  }
+  50% {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.6), 0 0 30px rgba(245, 158, 11, 0.28);
+  }
+}
+
+.animate-step-forward {
+  animation: stepSlideForward 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.animate-step-backward {
+  animation: stepSlideBackward 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.animate-pop-spring {
+  animation: popSpringSuccess 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.animate-gold-shimmer {
+  animation: goldShimmerSweep 2.2s infinite ease-in-out;
+}
+
+.animate-pass-card {
+  animation: passCardFloat 4s ease-in-out infinite;
+}
+
 
