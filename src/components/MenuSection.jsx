@@ -518,6 +518,24 @@ function MenuSection({ onAddToCart }) {
   const isManualScrollingRef = useRef(false);
   const scrollLockTimerRef = useRef(null);
   const activeCategoryRef = useRef('all');
+  const searchQueryRef = useRef(searchQuery);
+
+  useEffect(() => {
+    searchQueryRef.current = searchQuery;
+  }, [searchQuery]);
+
+  // O(1) fast lookup Set references for liked & added items to eliminate repeated O(N) scans
+  const favoriteIdsSet = useMemo(() => new Set(favoriteIds), [favoriteIds]);
+  const addedItemIdsSet = useMemo(() => new Set(addedItemIds), [addedItemIds]);
+
+  // Memoized static food grouping (zero array filtering reallocation per render)
+  const groupedItems = useMemo(() => {
+    const map = {};
+    FOOD_GROUPS.forEach((grp) => {
+      map[grp.id] = MENU_ITEMS.filter((i) => i.category === grp.id);
+    });
+    return map;
+  }, []);
 
   const toggleGroupExpand = useCallback((catId) => {
     setExpandedGroups((prev) => ({
@@ -542,11 +560,16 @@ function MenuSection({ onAddToCart }) {
 
   useEffect(() => {
     if (!selectedDetailItem) return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') setSelectedDetailItem(null);
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, [selectedDetailItem]);
 
   const toggleFavorite = useCallback((item, coords, isAdding) => {
@@ -709,9 +732,7 @@ function MenuSection({ onAddToCart }) {
       return;
     }
 
-    if (searchQuery) {
-      setSearchQuery('');
-    }
+    setSearchQuery((prev) => (prev ? '' : prev));
 
     isManualScrollingRef.current = true;
     activeCategoryRef.current = catId;
@@ -732,16 +753,16 @@ function MenuSection({ onAddToCart }) {
     scrollLockTimerRef.current = setTimeout(() => {
       isManualScrollingRef.current = false;
     }, 850);
-  }, [searchQuery, scrollToCategorySection, centerCategoryTab]);
+  }, [scrollToCategorySection, centerCategoryTab]);
 
   // Bidirectional ScrollSpy Listener: Highlights active category tab when scrolling through sections
+  // Attached once with zero listener tear-down churn during scrolling
   useEffect(() => {
-    if (activeCategory === 'favorites' || searchQuery) return;
-
     const sectionIds = ['pho-bo', 'special', 'pho-ga', 'sides'];
 
     const handleScroll = () => {
       if (isManualScrollingRef.current) return;
+      if (activeCategoryRef.current === 'favorites' || searchQueryRef.current) return;
 
       const triggerOffset = window.innerWidth >= 1024 ? 180 : 155;
       let currentActive = 'all';
@@ -767,7 +788,7 @@ function MenuSection({ onAddToCart }) {
       if (
         activeCategoryRef.current !== currentActive &&
         activeCategoryRef.current !== 'favorites' &&
-        !searchQuery
+        !searchQueryRef.current
       ) {
         activeCategoryRef.current = currentActive;
         setActiveCategory(currentActive);
@@ -777,9 +798,9 @@ function MenuSection({ onAddToCart }) {
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [activeCategory, searchQuery, centerCategoryTab]);
+  }, [centerCategoryTab]);
 
-  // Memoized filter logic
+  // Memoized filter logic with O(1) set lookup
   const filteredItems = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     return MENU_ITEMS.filter((item) => {
@@ -787,7 +808,7 @@ function MenuSection({ onAddToCart }) {
       if (activeCategory === 'all') {
         matchesCategory = true;
       } else if (activeCategory === 'favorites') {
-        matchesCategory = favoriteIds.includes(item.id);
+        matchesCategory = favoriteIdsSet.has(item.id);
       } else {
         matchesCategory = item.category === activeCategory;
       }
@@ -801,7 +822,7 @@ function MenuSection({ onAddToCart }) {
         item.ingredients.some((i) => i.toLowerCase().includes(query))
       );
     });
-  }, [activeCategory, favoriteIds, searchQuery]);
+  }, [activeCategory, favoriteIdsSet, searchQuery]);
 
   const handleAdd = useCallback((item, e) => {
     let startX = window.innerWidth / 2;
@@ -1029,9 +1050,9 @@ function MenuSection({ onAddToCart }) {
                     key={`search-${item.id}`}
                     item={item}
                     index={index}
-                    isAdded={addedItemIds.includes(item.id)}
+                    isAdded={addedItemIdsSet.has(item.id)}
                     onAdd={handleAdd}
-                    isLiked={favoriteIds.includes(item.id)}
+                    isLiked={favoriteIdsSet.has(item.id)}
                     onToggleLike={toggleFavorite}
                     onOpenDetail={setSelectedDetailItem}
                   />
@@ -1078,9 +1099,9 @@ function MenuSection({ onAddToCart }) {
                     key={`fav-${item.id}`}
                     item={item}
                     index={index}
-                    isAdded={addedItemIds.includes(item.id)}
+                    isAdded={addedItemIdsSet.has(item.id)}
                     onAdd={handleAdd}
-                    isLiked={favoriteIds.includes(item.id)}
+                    isLiked={favoriteIdsSet.has(item.id)}
                     onToggleLike={toggleFavorite}
                     onOpenDetail={setSelectedDetailItem}
                   />
@@ -1114,7 +1135,7 @@ function MenuSection({ onAddToCart }) {
           <div className="space-y-12 sm:space-y-16">
             {FOOD_GROUPS.map((grp) => {
               const headerConfig = GROUP_HEADER_CONFIG[grp.id];
-              const groupItems = MENU_ITEMS.filter((i) => i.category === grp.id);
+              const groupItems = groupedItems[grp.id] || [];
               const isExpanded = !!expandedGroups[grp.id];
               const visibleItems = isExpanded ? groupItems : groupItems.slice(0, INITIAL_GROUP_LIMIT);
 
@@ -1158,9 +1179,9 @@ function MenuSection({ onAddToCart }) {
                         key={`${grp.id}-${item.id}`}
                         item={item}
                         index={index}
-                        isAdded={addedItemIds.includes(item.id)}
+                        isAdded={addedItemIdsSet.has(item.id)}
                         onAdd={handleAdd}
-                        isLiked={favoriteIds.includes(item.id)}
+                        isLiked={favoriteIdsSet.has(item.id)}
                         onToggleLike={toggleFavorite}
                         onOpenDetail={setSelectedDetailItem}
                       />
@@ -1277,16 +1298,16 @@ function MenuSection({ onAddToCart }) {
                 <div className="absolute top-3 right-3 z-10">
                   <button
                     type="button"
-                    onClick={() => toggleFavorite(selectedDetailItem, null, !favoriteIds.includes(selectedDetailItem.id))}
+                    onClick={() => toggleFavorite(selectedDetailItem, null, !favoriteIdsSet.has(selectedDetailItem.id))}
                     className={`w-9 h-9 rounded-full backdrop-blur-md flex items-center justify-center shadow-md active:scale-90 transition-all ${
-                      favoriteIds.includes(selectedDetailItem.id)
+                      favoriteIdsSet.has(selectedDetailItem.id)
                         ? 'bg-rose-950/80 border border-rose-400/80 text-rose-400'
                         : 'bg-black/40 text-white'
                     }`}
                   >
                     <Heart
                       className={`w-4 h-4 ${
-                        favoriteIds.includes(selectedDetailItem.id)
+                        favoriteIdsSet.has(selectedDetailItem.id)
                           ? 'fill-[#96281b] text-[#96281b]'
                           : 'text-white'
                       }`}
