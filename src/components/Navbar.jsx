@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { 
   Home, 
   Utensils, 
@@ -16,7 +16,6 @@ import {
   Sparkles,
   LogOut,
   ChevronDown,
-  Bookmark,
   Zap,
   ArrowRight,
   FileText
