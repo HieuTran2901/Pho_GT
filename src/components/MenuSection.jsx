@@ -134,7 +134,6 @@ const MenuCard = React.memo(function MenuCard({
     rootMargin: '0px 0px -40px 0px',
   });
   const [floatingPlusOne, setFloatingPlusOne] = useState(false);
-  const [showPills, setShowPills] = useState(false);
   const [isPopping, setIsPopping] = useState(false);
 
   const plusOneTimerRef = useRef(null);
@@ -365,11 +364,7 @@ const MenuCard = React.memo(function MenuCard({
           {/* HƯỚNG 1: Glassmorphism Ingredient Pills Sheet (Slides up from bowl image bottom on hover) */}
           {item.featurePills && item.featurePills.length > 0 && (
             <div
-              className={`absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/95 via-black/80 to-black/40 backdrop-blur-md border-t border-white/20 transition-all duration-300 ease-out z-20 ${
-                showPills
-                  ? 'translate-y-0 opacity-100 pointer-events-auto'
-                  : 'translate-y-full opacity-0 pointer-events-none sm:group-hover:translate-y-0 sm:group-hover:opacity-100 sm:group-hover:pointer-events-auto'
-              }`}
+              className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/95 via-black/80 to-black/40 backdrop-blur-md border-t border-white/20 transition-all duration-300 ease-out z-20 translate-y-full opacity-0 pointer-events-none sm:group-hover:translate-y-0 sm:group-hover:opacity-100 sm:group-hover:pointer-events-auto"
             >
               <div className="flex items-center justify-between text-[10px] uppercase font-bold text-amber-300 tracking-wider mb-2 px-0.5">
                 <span className="flex items-center gap-1">
