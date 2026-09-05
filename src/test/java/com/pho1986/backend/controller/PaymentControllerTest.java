@@ -115,7 +115,7 @@ public class PaymentControllerTest {
     }
 
     @Test
-    @DisplayName("4. Xác nhận thanh toán thành công -> Chuyển status SUCCESS và cập nhật đơn hàng PAID")
+    @DisplayName("4. Xác nhận thanh toán thành công với Secret Key hợp lệ -> Chuyển status SUCCESS và cập nhật đơn hàng PAID")
     void testConfirmPaymentSuccess() throws Exception {
         // Tạo payment VietQR trước
         CreatePaymentRequest createReq = new CreatePaymentRequest();
@@ -131,10 +131,11 @@ public class PaymentControllerTest {
         String responseBody = result.getResponse().getContentAsString();
         String paymentCode = objectMapper.readTree(responseBody).get("data").get("paymentCode").asText();
 
-        // Xác nhận thanh toán
+        // Xác nhận thanh toán với Secret Key đúng
         ConfirmPaymentRequest confirmReq = new ConfirmPaymentRequest();
         confirmReq.setTransactionRef("MB-FT-998877");
         confirmReq.setAmount(150000.0);
+        confirmReq.setSecretKey("pho1986_webhook_secret_key_prod_auth_2026");
 
         mockMvc.perform(post("/api/v1/payments/" + paymentCode + "/confirm")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -146,6 +147,97 @@ public class PaymentControllerTest {
 
         // Kiểm tra tra cứu trạng thái giao dịch
         mockMvc.perform(get("/api/v1/payments/" + paymentCode + "/status"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status", is("SUCCESS")));
+    }
+
+    @Test
+    @DisplayName("5. [Bảo mật] Xác nhận thanh toán với Secret Key giả mạo -> Bị chặn 403 Forbidden")
+    void testConfirmPaymentInvalidSecretKey() throws Exception {
+        CreatePaymentRequest createReq = new CreatePaymentRequest();
+        createReq.setOrderCode(testOrder.getOrderCode());
+        createReq.setPaymentMethod("VIETQR");
+
+        MvcResult result = mockMvc.perform(post("/api/v1/payments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createReq)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String paymentCode = objectMapper.readTree(result.getResponse().getContentAsString()).get("data").get("paymentCode").asText();
+
+        ConfirmPaymentRequest fakeReq = new ConfirmPaymentRequest();
+        fakeReq.setTransactionRef("HACKER-REF-001");
+        fakeReq.setAmount(150000.0);
+        fakeReq.setSecretKey("invalid_malicious_secret_token_xyz");
+
+        mockMvc.perform(post("/api/v1/payments/" + paymentCode + "/confirm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(fakeReq)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.success", is(false)))
+                .andExpect(jsonPath("$.message", containsString("Secret Key không hợp lệ")));
+    }
+
+    @Test
+    @DisplayName("6. [Bảo mật] Xác nhận thanh toán với số tiền bị sửa đổi (Tampered Amount) -> Bị chặn 400 Bad Request")
+    void testConfirmPaymentTamperedAmount() throws Exception {
+        CreatePaymentRequest createReq = new CreatePaymentRequest();
+        createReq.setOrderCode(testOrder.getOrderCode());
+        createReq.setPaymentMethod("VIETQR");
+
+        MvcResult result = mockMvc.perform(post("/api/v1/payments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createReq)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String paymentCode = objectMapper.readTree(result.getResponse().getContentAsString()).get("data").get("paymentCode").asText();
+
+        ConfirmPaymentRequest tamperedReq = new ConfirmPaymentRequest();
+        tamperedReq.setTransactionRef("TAMPERED-REF-002");
+        tamperedReq.setAmount(1000.0); // Cố tình chuyển 1.000đ thay vì 150.000đ
+        tamperedReq.setSecretKey("pho1986_webhook_secret_key_prod_auth_2026");
+
+        mockMvc.perform(post("/api/v1/payments/" + paymentCode + "/confirm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(tamperedReq)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success", is(false)))
+                .andExpect(jsonPath("$.message", containsString("không khớp với giá trị đơn hàng")));
+    }
+
+    @Test
+    @DisplayName("7. [Bảo mật] Chống Replay Attack: Gửi Webhook xác nhận nhiều lần -> Idempotent trả lời an toàn")
+    void testConfirmPaymentReplayAttackIdempotent() throws Exception {
+        CreatePaymentRequest createReq = new CreatePaymentRequest();
+        createReq.setOrderCode(testOrder.getOrderCode());
+        createReq.setPaymentMethod("VIETQR");
+
+        MvcResult result = mockMvc.perform(post("/api/v1/payments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createReq)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String paymentCode = objectMapper.readTree(result.getResponse().getContentAsString()).get("data").get("paymentCode").asText();
+
+        ConfirmPaymentRequest confirmReq = new ConfirmPaymentRequest();
+        confirmReq.setTransactionRef("REPLAY-REF-003");
+        confirmReq.setAmount(150000.0);
+        confirmReq.setSecretKey("pho1986_webhook_secret_key_prod_auth_2026");
+
+        // Lần 1: Thành công
+        mockMvc.perform(post("/api/v1/payments/" + paymentCode + "/confirm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(confirmReq)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status", is("SUCCESS")));
+
+        // Lần 2 (Replay webhook): Vẫn trả lời 200 OK với status SUCCESS, không throw exception, không nhân đôi điểm
+        mockMvc.perform(post("/api/v1/payments/" + paymentCode + "/confirm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(confirmReq)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status", is("SUCCESS")));
     }

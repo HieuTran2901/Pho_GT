@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.util.Random;
+import java.util.UUID;
 
 @Service
 public class PaymentService {
@@ -19,6 +19,9 @@ public class PaymentService {
     private final OrderRepository orderRepository;
     private final LoyaltyAccountRepository loyaltyAccountRepository;
     private final LoyaltyTransactionRepository loyaltyTransactionRepository;
+
+    @Value("${app.payment.webhook-secret:pho1986_webhook_secret_key_prod_auth_2026}")
+    private String webhookSecret;
 
     @Value("${app.payment.vietqr.bank-bin:970422}")
     private String defaultBankBin; // MBBank
@@ -44,8 +47,9 @@ public class PaymentService {
     }
 
     private String generatePaymentCode(String orderCode) {
-        int rand = 1000 + new Random().nextInt(9000);
-        return "PAY-" + orderCode.replace("PHO-", "") + "-" + rand;
+        String clean = orderCode.replaceAll("[^a-zA-Z0-9]", "");
+        String salt = UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
+        return "PAY-" + clean + "-" + salt;
     }
 
     @Transactional
@@ -74,7 +78,7 @@ public class PaymentService {
         response.setExpiredAt(transaction.getExpiredAt());
 
         if ("VIETQR".equals(method)) {
-            String cleanOrderCode = order.getOrderCode().replace("-", "");
+            String cleanOrderCode = order.getOrderCode().replaceAll("[^a-zA-Z0-9]", "");
             String transferContent = "PHO1986 " + cleanOrderCode;
 
             String encodedContent = URLEncoder.encode(transferContent, StandardCharsets.UTF_8);
@@ -154,6 +158,7 @@ public class PaymentService {
         PaymentTransaction transaction = paymentTransactionRepository.findByPaymentCode(paymentCode)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy giao dịch với mã: " + paymentCode));
 
+        // 1. Chống replay attack / Double confirmation
         if ("SUCCESS".equals(transaction.getStatus())) {
             return new PaymentStatusResponse(
                     transaction.getPaymentCode(),
@@ -165,10 +170,38 @@ public class PaymentService {
             );
         }
 
+        // 2. Xác thực Secret Key của Webhook / Gateway
+        String providedSecret = (request != null && request.getSecretKey() != null) ? request.getSecretKey() : null;
+        if (providedSecret == null || !webhookSecret.equals(providedSecret)) {
+            throw new SecurityException("Xác thực cổng thanh toán thất bại: Secret Key không hợp lệ!");
+        }
+
+        // 3. Kiểm tra tính toàn vẹn số tiền thanh toán (chống giả mạo số tiền)
+        if (request != null && request.getAmount() != null) {
+            if (Math.abs(request.getAmount() - transaction.getAmount()) > 1.0) {
+                throw new IllegalArgumentException(String.format(
+                        "Số tiền thanh toán thực tế (%.0f đ) không khớp với giá trị đơn hàng (%.0f đ)!",
+                        request.getAmount(), transaction.getAmount()
+                ));
+            }
+        }
+
+        // 4. Kiểm tra giao dịch hết hạn (quá 15 phút)
+        if ("EXPIRED".equals(transaction.getStatus()) ||
+                (transaction.getExpiredAt() != null && LocalDateTime.now().isAfter(transaction.getExpiredAt()))) {
+            transaction.setStatus("EXPIRED");
+            paymentTransactionRepository.save(transaction);
+            throw new IllegalStateException("Giao dịch thanh toán đã hết hạn (quá 15 phút). Vui lòng tạo yêu cầu thanh toán mới.");
+        }
+
+        if (!"PENDING".equals(transaction.getStatus())) {
+            throw new IllegalStateException("Giao dịch không ở trạng thái chờ thanh toán (Trạng thái hiện tại: " + transaction.getStatus() + ")!");
+        }
+
         LocalDateTime now = LocalDateTime.now();
         transaction.setStatus("SUCCESS");
         transaction.setPaidAt(now);
-        transaction.setTransactionRef(request != null ? request.getTransactionRef() : "MOCK-REF-" + System.currentTimeMillis());
+        transaction.setTransactionRef(request.getTransactionRef() != null ? request.getTransactionRef() : "REF-" + System.currentTimeMillis());
         paymentTransactionRepository.save(transaction);
 
         // Cập nhật trạng thái đơn hàng

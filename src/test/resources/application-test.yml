@@ -17,3 +17,6 @@ app:
     refresh-expiration-ms: 604800000
   cors:
     allowed-origins: http://localhost:5173
+  payment:
+    webhook-secret: pho1986_webhook_secret_key_prod_auth_2026
+
