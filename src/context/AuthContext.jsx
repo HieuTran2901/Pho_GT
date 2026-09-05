@@ -45,36 +45,35 @@ export function AuthProvider({ children }) {
     }
   }, [user]);
 
-  // Kiểm tra và làm mới dữ liệu người dùng qua JWT khi mở app
+  // Kiểm tra và làm mới dữ liệu người dùng qua JWT/Cookie khi mở app
   useEffect(() => {
     const token = localStorage.getItem(AUTH_TOKEN_KEY);
-    if (token) {
-      // Dọn dẹp nếu phát hiện token giả lập cũ
-      if (token.startsWith('mock_jwt_token')) {
+    // Dọn dẹp nếu phát hiện token giả lập cũ
+    if (token && token.startsWith('mock_jwt_token')) {
+      setUser(null);
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+      return;
+    }
+
+    // Gọi getMe() với credentials: 'include' (trình duyệt tự gửi HttpOnly Cookie)
+    authApi.getMe(token).then((profile) => {
+      if (profile) {
+        setUser(profile);
+      } else {
+        // Token hoặc Cookie không còn hợp lệ trên hệ thống backend thực tế
         setUser(null);
         localStorage.removeItem(AUTH_STORAGE_KEY);
         localStorage.removeItem(AUTH_TOKEN_KEY);
-        return;
       }
-
-      authApi.getMe(token).then((profile) => {
-        if (profile) {
-          setUser(profile);
-        } else {
-          // Token không còn hợp lệ trên hệ thống backend thực tế
-          setUser(null);
-          localStorage.removeItem(AUTH_STORAGE_KEY);
-          localStorage.removeItem(AUTH_TOKEN_KEY);
-        }
-      }).catch((err) => {
-        // Nếu là lỗi xác thực (401/403), hủy bỏ phiên ngay
-        if (err?.status === 401 || err?.status === 403) {
-          setUser(null);
-          localStorage.removeItem(AUTH_STORAGE_KEY);
-          localStorage.removeItem(AUTH_TOKEN_KEY);
-        }
-      });
-    }
+    }).catch((err) => {
+      // Nếu là lỗi xác thực (401/403), hủy bỏ phiên ngay
+      if (err?.status === 401 || err?.status === 403) {
+        setUser(null);
+        localStorage.removeItem(AUTH_STORAGE_KEY);
+        localStorage.removeItem(AUTH_TOKEN_KEY);
+      }
+    });
   }, []);
 
   const openAuthModal = useCallback((tab = 'login') => {
@@ -116,9 +115,7 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(async () => {
     const token = localStorage.getItem(AUTH_TOKEN_KEY);
-    if (token) {
-      await authApi.logout(token);
-    }
+    await authApi.logout(token);
     localStorage.removeItem(AUTH_TOKEN_KEY);
     localStorage.removeItem(AUTH_STORAGE_KEY);
     setUser(null);

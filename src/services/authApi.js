@@ -40,6 +40,7 @@ export const authApi = {
     try {
       const response = await fetch(`${API_BASE_URL}/register`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -70,6 +71,7 @@ export const authApi = {
     try {
       const response = await fetch(`${API_BASE_URL}/login`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -88,16 +90,16 @@ export const authApi = {
   },
 
   /**
-   * Lấy thông tin tài khoản hiện tại từ JWT
+   * Làm mới phiên đăng nhập ngầm qua Refresh Token Cookie (Silent Refresh)
    */
-  async getMe(token) {
-    if (!token) return null;
+  async refreshToken() {
     try {
-      const response = await fetch(`${API_BASE_URL}/me`, {
-        method: 'GET',
+      const response = await fetch(`${API_BASE_URL}/refresh`, {
+        method: 'POST',
+        credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Accept': 'application/json',
+          'Content-Type': 'application/json',
         },
       });
       return await handleResponse(response);
@@ -107,16 +109,49 @@ export const authApi = {
   },
 
   /**
-   * Đăng xuất phiên
+   * Lấy thông tin tài khoản hiện tại từ JWT / Cookie
    */
-  async logout(token) {
+  async getMe(token = null) {
     try {
+      const headers = { 'Accept': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/me`, {
+        method: 'GET',
+        credentials: 'include',
+        headers,
+      });
+
+      // Nếu token hết hạn (401), kích hoạt silent refresh ngầm
+      if (response.status === 401) {
+        const refreshData = await this.refreshToken();
+        if (refreshData && refreshData.user) {
+          return refreshData.user;
+        }
+        return null;
+      }
+
+      return await handleResponse(response);
+    } catch {
+      return null;
+    }
+  },
+
+  /**
+   * Đăng xuất phiên và xóa sạch HttpOnly Cookie
+   */
+  async logout(token = null) {
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
       await fetch(`${API_BASE_URL}/logout`, {
         method: 'POST',
-        headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
-          'Content-Type': 'application/json',
-        },
+        credentials: 'include',
+        headers,
       });
     } catch {
       // Bỏ qua lỗi mạng khi logout
