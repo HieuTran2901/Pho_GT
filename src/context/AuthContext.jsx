@@ -9,19 +9,14 @@ const AUTH_TOKEN_KEY = 'pho1986_access_token';
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     try {
+      // [SECURITY_AGENT] Tự động dọn sạch token trần khỏi localStorage nếu còn sót lại từ trước
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+
       const saved = localStorage.getItem(AUTH_STORAGE_KEY);
-      const token = localStorage.getItem(AUTH_TOKEN_KEY);
-      // Dọn dẹp dữ liệu mock hoặc session giả lập còn sót lại từ trước
-      if (token && token.startsWith('mock_jwt_token')) {
-        localStorage.removeItem(AUTH_STORAGE_KEY);
-        localStorage.removeItem(AUTH_TOKEN_KEY);
-        return null;
-      }
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed?.id && String(parsed.id).startsWith('usr_')) {
           localStorage.removeItem(AUTH_STORAGE_KEY);
-          localStorage.removeItem(AUTH_TOKEN_KEY);
           return null;
         }
         return parsed;
@@ -35,7 +30,7 @@ export function AuthProvider({ children }) {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authTab, setAuthTab] = useState('login'); // 'login' | 'register'
 
-  // Đồng bộ session user vào localStorage
+  // Đồng bộ session user vào localStorage (Chỉ lưu profile hiển thị, KHÔNG lưu secret token)
   useEffect(() => {
     if (user) {
       localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
@@ -45,33 +40,25 @@ export function AuthProvider({ children }) {
     }
   }, [user]);
 
-  // Kiểm tra và làm mới dữ liệu người dùng qua JWT/Cookie khi mở app
+  // Kiểm tra và làm mới dữ liệu người dùng qua HttpOnly Cookie khi mở app
   useEffect(() => {
-    const token = localStorage.getItem(AUTH_TOKEN_KEY);
-    // Dọn dẹp nếu phát hiện token giả lập cũ
-    if (token && token.startsWith('mock_jwt_token')) {
-      setUser(null);
-      localStorage.removeItem(AUTH_STORAGE_KEY);
-      localStorage.removeItem(AUTH_TOKEN_KEY);
-      return;
-    }
+    // Đảm bảo không còn token trần trong localStorage
+    localStorage.removeItem(AUTH_TOKEN_KEY);
 
     // Gọi getMe() với credentials: 'include' (trình duyệt tự gửi HttpOnly Cookie)
-    authApi.getMe(token).then((profile) => {
+    authApi.getMe().then((profile) => {
       if (profile) {
         setUser(profile);
       } else {
         // Token hoặc Cookie không còn hợp lệ trên hệ thống backend thực tế
         setUser(null);
         localStorage.removeItem(AUTH_STORAGE_KEY);
-        localStorage.removeItem(AUTH_TOKEN_KEY);
       }
     }).catch((err) => {
       // Nếu là lỗi xác thực (401/403), hủy bỏ phiên ngay
       if (err?.status === 401 || err?.status === 403) {
         setUser(null);
         localStorage.removeItem(AUTH_STORAGE_KEY);
-        localStorage.removeItem(AUTH_TOKEN_KEY);
       }
     });
   }, []);
@@ -88,9 +75,9 @@ export function AuthProvider({ children }) {
   const login = useCallback(async (phone, password) => {
     const data = await authApi.login({ phone, password });
     const authenticatedUser = data.user || data;
-    if (data.accessToken) {
-      localStorage.setItem(AUTH_TOKEN_KEY, data.accessToken);
-    }
+    // [SECURITY_AGENT] Tuân thủ chuẩn OWASP: KHÔNG lưu secret token vào localStorage!
+    // Trình duyệt tự động nhận và bảo vệ accessToken trong HttpOnly Cookie.
+    localStorage.removeItem(AUTH_TOKEN_KEY);
     setUser(authenticatedUser);
     setAuthModalOpen(false);
     return authenticatedUser;
@@ -105,17 +92,16 @@ export function AuthProvider({ children }) {
       saveTasteProfile
     });
     const registeredUser = data.user || data;
-    if (data.accessToken) {
-      localStorage.setItem(AUTH_TOKEN_KEY, data.accessToken);
-    }
+    // [SECURITY_AGENT] Tuân thủ chuẩn OWASP: KHÔNG lưu secret token vào localStorage!
+    localStorage.removeItem(AUTH_TOKEN_KEY);
     setUser(registeredUser);
     setAuthModalOpen(false);
     return registeredUser;
   }, []);
 
   const logout = useCallback(async () => {
-    const token = localStorage.getItem(AUTH_TOKEN_KEY);
-    await authApi.logout(token);
+    // Gọi API logout để Backend đưa token vào Blacklist và xóa sạch HttpOnly Cookie
+    await authApi.logout();
     localStorage.removeItem(AUTH_TOKEN_KEY);
     localStorage.removeItem(AUTH_STORAGE_KEY);
     setUser(null);
