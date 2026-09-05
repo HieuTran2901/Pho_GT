@@ -71,6 +71,16 @@ function TagBadgeIcon({ icon }) {
 
 const formatPrice = (price) => `${price.toLocaleString('vi-VN')}đ`;
 
+/* Mobile Category Short Labels & Representative Emojis for thumb-friendly horizontal swiper */
+const CATEGORY_MOBILE_CONFIG = {
+  all: { shortName: 'Tất Cả', icon: '🍲' },
+  'pho-bo': { shortName: 'Phở Bò', icon: '🥩' },
+  'pho-ga': { shortName: 'Phở Gà', icon: '🍗' },
+  special: { shortName: 'Đặc Biệt', icon: '⭐' },
+  sides: { shortName: 'Kèm & Nước', icon: '🥢' },
+  favorites: { shortName: 'Yêu Thích', icon: null },
+};
+
 /* Individual Menu Card with harmonious layout and hero bowl prominence */
 const MenuCard = React.memo(function MenuCard({
   item,
@@ -349,9 +359,11 @@ function MenuSection({ onAddToCart }) {
   // Flying hearts to favorite tab animation state
   const [flyingHearts, setFlyingHearts] = useState([]);
   const [favTabJiggle, setFavTabJiggle] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
   const favTabTimerRef = useRef(null);
   const addTimerRef = useRef(null);
+  const mobileSearchInputRef = useRef(null);
 
   useEffect(() => {
     return () => {
@@ -359,6 +371,12 @@ function MenuSection({ onAddToCart }) {
       if (addTimerRef.current) clearTimeout(addTimerRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (mobileSearchOpen && mobileSearchInputRef.current) {
+      mobileSearchInputRef.current.focus();
+    }
+  }, [mobileSearchOpen]);
 
   const toggleFavorite = useCallback((item, coords, isAdding) => {
     // 1. Update persistent favorites state
@@ -486,12 +504,19 @@ function MenuSection({ onAddToCart }) {
     dragRef.current.isDragging = false;
   };
 
-  const handleCategoryClick = (catId) => {
+  const handleCategoryClick = (catId, e) => {
     if (dragRef.current.hasDragged) {
       dragRef.current.hasDragged = false;
       return;
     }
     setActiveCategory(catId);
+    if (e && e.currentTarget && typeof e.currentTarget.scrollIntoView === 'function') {
+      e.currentTarget.scrollIntoView({
+        behavior: 'smooth',
+        inline: 'center',
+        block: 'nearest',
+      });
+    }
   };
 
   // Memoized filter logic
@@ -558,87 +583,150 @@ function MenuSection({ onAddToCart }) {
           </p>
         </div>
 
-        {/* Filter Controls: Category Navigation with Left/Right Arrows & Search */}
-        <div ref={controlsRef} className={`flex flex-col lg:flex-row items-center justify-between gap-4 lg:gap-5 mb-8 sm:mb-12 pb-3 sm:pb-4 border-b border-stone-300/60 transition-all duration-700 ${isControlsVisible ? 'reveal-fade-up' : 'opacity-0'}`}>
-          
+        {/* Filter Controls: Category Navigation with Left/Right Arrows & Search (Option 1 Sticky Touch Swiper) */}
+        <div
+          ref={controlsRef}
+          className={`sticky top-[78px] sm:top-[104px] lg:top-[112px] z-30 bg-[#faf6ef]/95 backdrop-blur-md py-2.5 sm:py-3.5 -mx-4 px-4 sm:mx-0 sm:px-0 mb-6 sm:mb-12 border-b border-stone-300/60 shadow-xs flex flex-col lg:flex-row items-center justify-between gap-2.5 lg:gap-5 transition-all duration-700 ${
+            isControlsVisible ? 'reveal-fade-up' : 'opacity-0'
+          }`}
+        >
           {/* Category Carousel Container: flex-1 stretches close to search bar */}
-          <div className="relative flex items-center flex-1 w-full min-w-0 gap-2">
+          <div className="relative flex items-center flex-1 w-full min-w-0 gap-1.5 sm:gap-2">
             
-            {/* Left Scroll Arrow */}
+            {/* Left Scroll Arrow (Desktop only) */}
             <button
               type="button"
               onClick={() => scrollCategories('left')}
               disabled={!canScrollLeft}
               aria-label="Cuộn danh mục sang trái"
-              className="w-9 h-9 rounded-full bg-white border border-stone-200 shadow-sm flex items-center justify-center text-stone-600 hover:text-stone-900 hover:bg-stone-50 hover:shadow transition-all duration-200 shrink-0 active:scale-95 disabled:opacity-20 disabled:pointer-events-none"
+              className="hidden lg:flex w-9 h-9 rounded-full bg-white border border-stone-200 shadow-sm items-center justify-center text-stone-600 hover:text-stone-900 hover:bg-stone-50 hover:shadow transition-all duration-200 shrink-0 active:scale-95 disabled:opacity-20 disabled:pointer-events-none"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
 
-            {/* Scrollable Categories List (Supports Mouse Drag, Touch Swipe & Wheel) */}
+            {/* Scrollable Categories List (Supports Mouse Drag, Native Touch Swipe & Wheel) */}
             <div
               ref={scrollContainerRef}
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseUp}
-              className="flex items-center gap-2 overflow-x-auto scrollbar-none py-1 px-1 scroll-smooth select-none cursor-grab active:cursor-grabbing min-w-0 flex-1"
-              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none py-1 px-0.5 scroll-smooth select-none cursor-grab active:cursor-grabbing min-w-0 flex-1 touch-pan-x"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
             >
-              {allCategories.map((cat) => (
-                <button
-                  key={cat.id}
-                  id={cat.id === 'favorites' ? 'category-tab-favorites' : undefined}
-                  onClick={() => handleCategoryClick(cat.id)}
-                  className={`whitespace-nowrap px-4 sm:px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold tracking-wide transition-all duration-200 flex items-center shrink-0 ${
-                    cat.id === 'favorites' && favTabJiggle
-                      ? 'animate-heart-tab-jiggle ring-2 ring-rose-400/80 shadow-[0_0_16px_rgba(225,29,72,0.4)]'
-                      : ''
-                  } ${
-                    activeCategory === cat.id
-                      ? 'bg-[#96281b] text-white shadow-md shadow-red-950/25'
-                      : 'bg-white text-stone-700 hover:bg-stone-100 hover:text-stone-900 border border-stone-300/80'
-                  }`}
-                >
-                  {cat.id === 'favorites' && (
-                    <Heart
-                      className={`w-3.5 h-3.5 mr-1.5 transition-colors ${
-                        activeCategory === 'favorites'
-                          ? 'fill-white text-white'
-                          : 'fill-rose-500 text-rose-500'
-                      }`}
-                    />
-                  )}
-                  <span>{cat.name}</span>
-                  {cat.id === 'favorites' && favoriteIds.length > 0 && (
-                    <span
-                      className={`ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-black leading-none ${
-                        activeCategory === 'favorites'
-                          ? 'bg-white/20 text-white'
-                          : 'bg-rose-100 text-[#96281b]'
-                      }`}
-                    >
-                      {favoriteIds.length}
+              {allCategories.map((cat) => {
+                const mobileConfig = CATEGORY_MOBILE_CONFIG[cat.id];
+                const isFav = cat.id === 'favorites';
+                const isActive = activeCategory === cat.id;
+
+                return (
+                  <button
+                    key={cat.id}
+                    id={isFav ? 'category-tab-favorites' : undefined}
+                    onClick={(e) => handleCategoryClick(cat.id, e)}
+                    className={`whitespace-nowrap px-3 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold tracking-wide transition-all duration-200 flex items-center shrink-0 active:scale-95 ${
+                      isFav && favTabJiggle
+                        ? 'animate-heart-tab-jiggle ring-2 ring-rose-400/80 shadow-[0_0_16px_rgba(225,29,72,0.4)]'
+                        : ''
+                    } ${
+                      isActive
+                        ? 'bg-[#96281b] text-white shadow-md shadow-red-950/25'
+                        : 'bg-white text-stone-700 hover:bg-stone-100 hover:text-stone-900 border border-stone-300/80 shadow-2xs'
+                    }`}
+                  >
+                    {isFav && (
+                      <Heart
+                        className={`w-3.5 h-3.5 mr-1 sm:mr-1.5 transition-colors ${
+                          isActive
+                            ? 'fill-white text-white'
+                            : 'fill-rose-500 text-rose-500'
+                        }`}
+                      />
+                    )}
+                    {/* Mobile concise label with icon */}
+                    <span className="sm:hidden flex items-center gap-1">
+                      {mobileConfig?.icon && <span>{mobileConfig.icon}</span>}
+                      <span>{mobileConfig?.shortName || cat.name}</span>
                     </span>
-                  )}
-                </button>
-              ))}
+                    {/* Desktop full name */}
+                    <span className="hidden sm:inline">{cat.name}</span>
+
+                    {isFav && favoriteIds.length > 0 && (
+                      <span
+                        className={`ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-black leading-none ${
+                          isActive
+                            ? 'bg-white/20 text-white'
+                            : 'bg-rose-100 text-[#96281b]'
+                        }`}
+                      >
+                        {favoriteIds.length}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
 
-            {/* Right Scroll Arrow */}
+            {/* Right Scroll Arrow (Desktop only) */}
             <button
               type="button"
               onClick={() => scrollCategories('right')}
               disabled={!canScrollRight}
               aria-label="Cuộn danh mục sang phải"
-              className="w-9 h-9 rounded-full bg-white border border-stone-200 shadow-sm flex items-center justify-center text-stone-600 hover:text-stone-900 hover:bg-stone-50 hover:shadow transition-all duration-200 shrink-0 active:scale-95 disabled:opacity-20 disabled:pointer-events-none"
+              className="hidden lg:flex w-9 h-9 rounded-full bg-white border border-stone-200 shadow-sm items-center justify-center text-stone-600 hover:text-stone-900 hover:bg-stone-50 hover:shadow transition-all duration-200 shrink-0 active:scale-95 disabled:opacity-20 disabled:pointer-events-none"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
+
+            {/* Mobile Inline Search Toggle Button */}
+            <button
+              type="button"
+              onClick={() => setMobileSearchOpen((prev) => !prev)}
+              aria-label={mobileSearchOpen ? 'Đóng ô tìm kiếm' : 'Mở ô tìm kiếm'}
+              className={`lg:hidden w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center shrink-0 transition-all duration-200 active:scale-90 ${
+                mobileSearchOpen || searchQuery
+                  ? 'bg-[#96281b] text-white shadow-md'
+                  : 'bg-white text-stone-600 hover:text-stone-900 border border-stone-300/80 shadow-2xs'
+              }`}
+            >
+              <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </button>
           </div>
 
-          {/* Search Input Bar */}
-          <div className="relative w-full lg:w-72 shrink-0">
+          {/* Collapsible Mobile Search Input */}
+          {(mobileSearchOpen || searchQuery) && (
+            <div className="lg:hidden w-full pt-1 sm:pt-2">
+              <div className="relative w-full">
+                <Search className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
+                <input
+                  ref={mobileSearchInputRef}
+                  type="text"
+                  placeholder="Tìm món phở, nguyên liệu..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-14 py-2 text-xs bg-white rounded-full border border-stone-300 focus:outline-none focus:ring-2 focus:ring-[#96281b]/30 focus:border-[#96281b] transition-all shadow-inner"
+                />
+                {searchQuery ? (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-[#96281b] hover:text-[#781f15]"
+                  >
+                    Xóa
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setMobileSearchOpen(false)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-stone-400 hover:text-stone-600 font-medium"
+                  >
+                    Đóng
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Desktop Search Input Bar */}
+          <div className="hidden lg:block relative w-72 shrink-0">
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
             <input
               type="text"
