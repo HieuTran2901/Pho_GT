@@ -48,6 +48,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/orders/quick-reorder").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/orders/history").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/orders/*").permitAll() // Tra cứu theo mã đơn
+                        .requestMatchers("/api/v1/payments/**").permitAll() // Hỗ trợ khởi tạo & kiểm tra thanh toán VietQR / COD
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
