@@ -31,10 +31,50 @@ const NAV_ITEMS = [
 ];
 
 const TIER_CONFIG = {
-  DONG: { name: 'ĐỒNG', icon: '🥉', target: 500, nextTier: 'BẠC' },
-  BAC: { name: 'BẠC', icon: '🥈', target: 1000, nextTier: 'VÀNG' },
-  VANG: { name: 'VÀNG', icon: '🥇', target: 2000, nextTier: 'KIM CƯƠNG' },
-  KIM_CUONG: { name: 'KIM CƯƠNG', icon: '💎', target: 2000, nextTier: 'KIM CƯƠNG' },
+  DONG: {
+    name: 'Khởi Vị',
+    title: 'BẠN KHỞI VỊ',
+    badge: 'Khởi Vị',
+    icon: '🌱',
+    target: 500,
+    nextTier: 'Bạn Đũa',
+    nextGift: 'Dĩa Quẩy Giòn Hoa Mai',
+    giftPoints: 200,
+    perk: 'Ghi nhớ khẩu vị ruột & Tặng 50đ Tri Kỷ',
+  },
+  BAC: {
+    name: 'Bạn Đũa',
+    title: 'BẠN ĐŨA QUEN QUÁN',
+    badge: 'Bạn Đũa',
+    icon: '🥢',
+    target: 1000,
+    nextTier: 'Tri Kỷ',
+    nextGift: 'Trứng Chần Nước Béo & Trà Lài',
+    giftPoints: 750,
+    perk: 'Tặng quẩy giòn mỗi bát & Miễn phí trà thơm',
+  },
+  VANG: {
+    name: 'Tri Kỷ',
+    title: 'BẠN TRI KỶ HÀ THÀNH',
+    badge: 'Tri Kỷ',
+    icon: '⚜️',
+    target: 2000,
+    nextTier: 'Nghệ Nhân',
+    nextGift: 'Phở Thố Đá Bào Ngư Thượng Hạng',
+    giftPoints: 1500,
+    perk: 'Ưu tiên xếp bàn góc phố & Tùy biến nước dùng',
+  },
+  KIM_CUONG: {
+    name: 'Nghệ Nhân',
+    title: 'NGHỆ NHÂN THƯỞNG VỊ 1986',
+    badge: 'Thượng Khách',
+    icon: '👑',
+    target: 2000,
+    nextTier: 'Nghệ Nhân',
+    nextGift: 'Bảo Lưu Đặc Quyền Thượng Hạng',
+    giftPoints: 2000,
+    perk: 'Bàn danh dự bảo lưu & Thưởng phở Đệ Nhất',
+  },
 };
 
 const BROTH_LABELS = {
@@ -78,6 +118,7 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
   const availablePoints = user?.loyaltyAccount?.availablePoints || 50;
   const pointsToNext = Math.max(0, tierInfo.target - totalPoints);
   const progressPercent = Math.min(100, Math.round((totalPoints / tierInfo.target) * 100));
+  const cardNumber = user?.phone ? `#VIP-1986-${user.phone.replace(/\D/g, '').slice(-4) || '8888'}` : '#VIP-1986-8888';
 
   // 1-Click Quick Reorder handler
   const handleQuickReorder = useCallback(() => {
@@ -207,7 +248,7 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
                     <div className="text-xs font-bold truncate max-w-[110px] text-[#2b1810] flex items-center gap-1">
                       <span>{user.fullName}</span>
                       <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-200/80 text-[#8a1e14] font-sans font-bold">
-                        {tierInfo.name}
+                        {tierInfo.badge || tierInfo.name}
                       </span>
                     </div>
                     <div className="text-[10px] text-[#8a1e14] font-sans font-semibold flex items-center gap-1">
@@ -222,50 +263,93 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
                 {userDropdownOpen && (
                   <div className="absolute right-0 mt-2.5 w-80 rounded-2xl bg-[#241712] border-2 border-[#a63a2b]/70 shadow-2xl overflow-hidden z-50 animate-dropdown-heritage text-xs divide-y divide-[#3d2417]">
                     
-                    {/* TẦNG 1: Thẻ Hội Viên Sơn Mài (Digital Lacquer Card) */}
-                    <div className="p-4 bg-gradient-to-br from-[#4a1812] via-[#2f100c] to-[#1e0a07] text-[#fef3e2] relative overflow-hidden">
-                      <div className="absolute top-0 right-0 w-28 h-28 bg-[radial-gradient(#e4aa65_1px,transparent_1px)] [background-size:8px_8px] opacity-20 pointer-events-none"></div>
+                    {/* TẦNG 1: Thẻ Sơn Mài Khảm Vàng (Gold-Inlaid Lacquer Heritage Card) */}
+                    <div className="p-4 bg-gradient-to-br from-[#4a1812] via-[#2f100c] to-[#1a0805] text-[#fef3e2] relative overflow-hidden border-b border-[#a63a2b]/40">
+                      {/* Nền gấm họa tiết hoa văn thời bao cấp */}
+                      <div className="absolute inset-0 bg-[radial-gradient(#e4aa65_1px,transparent_1px)] [background-size:12px_12px] opacity-15 pointer-events-none"></div>
 
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#9b2a1f] to-[#d68a35] p-0.5 shadow-lg shrink-0">
-                            <div className="w-full h-full rounded-full bg-[#1e0a07] flex items-center justify-center font-serif font-bold text-amber-300 text-sm">
+                      {/* Dấu Chiện Son Truyền Thống: PHỞ 1986 TRI KỶ */}
+                      <div className="absolute top-2.5 right-2.5 px-2 py-1 rounded-md border-2 border-red-500/70 bg-red-950/80 text-red-300 flex flex-col items-center justify-center font-serif text-[9px] font-bold leading-tight tracking-wider shadow-inner rotate-3 pointer-events-none">
+                        <span>TRI KỶ</span>
+                        <span className="text-[8px] text-amber-300">1986</span>
+                      </div>
+
+                      {/* Thông tin hội viên */}
+                      <div className="flex items-center gap-3 relative z-10 pr-14">
+                        <div className="relative shrink-0">
+                          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-amber-300 via-[#9b2a1f] to-amber-700 p-0.5 shadow-md">
+                            <div className="w-full h-full rounded-full bg-[#1e0a07] flex items-center justify-center font-serif font-bold text-amber-300 text-base">
                               {user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
                             </div>
                           </div>
-                          <div>
-                            <div className="font-serif font-bold text-sm text-[#fbe5cb] tracking-wide truncate max-w-[150px]">
-                              {user.fullName}
-                            </div>
-                            <div className="text-[11px] text-stone-400 font-mono">{user.phone}</div>
+                          <span className="absolute -bottom-1 -right-1 px-1 py-0.2 rounded-full bg-amber-400 text-[#2b1008] text-[8px] font-black uppercase shadow">
+                            VIP
+                          </span>
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-serif font-bold text-sm text-[#fbe5cb] tracking-wide truncate">
+                            {user.fullName || 'Quý Khách Tri Kỷ'}
+                          </div>
+                          <div className="text-[10px] font-mono text-amber-400/90 tracking-wider">
+                            {cardNumber}
                           </div>
                         </div>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#c88d2b]/25 border border-[#c88d2b]/60 text-amber-200 shrink-0">
-                          {tierInfo.icon} Hạng {tierInfo.name}
-                        </span>
                       </div>
 
-                      {/* Điểm & Thanh Tiến Độ Thăng Hạng */}
-                      <div className="mt-3.5 bg-black/35 rounded-xl p-2.5 border border-white/10">
-                        <div className="flex justify-between items-baseline mb-1">
-                          <span className="text-[11px] text-stone-300">Điểm đổi quà hiện có:</span>
-                          <span className="text-sm font-serif font-extrabold text-[#f3be7a] tracking-tight">
-                            {availablePoints} <span className="text-[10px] font-sans font-medium text-amber-200/80">điểm</span>
-                          </span>
+                      {/* Khối Danh Vị & Điểm Tích Lũy */}
+                      <div className="mt-3 bg-black/40 rounded-xl p-2.5 border border-amber-500/20 shadow-inner relative z-10">
+                        <div className="flex justify-between items-center mb-1.5">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-base leading-none">{tierInfo.icon}</span>
+                            <div>
+                              <div className="text-[9px] text-stone-400 uppercase tracking-wider font-semibold">Danh Vị Hội Viên</div>
+                              <div className="text-xs font-serif font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-300 to-amber-400">
+                                {tierInfo.title}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right pl-2 border-l border-white/10 shrink-0">
+                            <div className="text-[9px] text-stone-400">Điểm Đổi Quà</div>
+                            <div className="text-sm font-serif font-extrabold text-amber-300 leading-tight">
+                              {availablePoints} <span className="text-[9px] font-sans font-normal text-stone-400">điểm</span>
+                            </div>
+                          </div>
                         </div>
-                        {/* Progress Bar */}
-                        <div className="w-full h-1.5 bg-stone-800 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-gradient-to-r from-[#9b2a1f] to-[#e4aa65] rounded-full transition-all duration-500"
-                            style={{ width: `${progressPercent}%` }}
-                          ></div>
+
+                        {/* Thanh Hành Trình Thăng Hạng & Milestone Quà Tặng */}
+                        <div className="mt-2 pt-2 border-t border-white/5">
+                          <div className="flex justify-between items-center text-[10px] text-stone-300 mb-1">
+                            <span>Lên bậc <strong className="text-amber-300">"{tierInfo.nextTier}"</strong></span>
+                            <span className="text-amber-400 font-medium">
+                              {pointsToNext > 0 ? `Còn ${pointsToNext}đ` : 'Hạng cao nhất'}
+                            </span>
+                          </div>
+
+                          {/* Progress Track */}
+                          <div className="w-full h-2 bg-stone-900 rounded-full overflow-hidden p-0.5 border border-white/10 relative">
+                            <div
+                              className="h-full bg-gradient-to-r from-[#9b2a1f] via-amber-500 to-[#e4aa65] rounded-full transition-all duration-500 shadow-sm"
+                              style={{ width: `${progressPercent}%` }}
+                            ></div>
+                          </div>
+
+                          {/* Mốc Quà Tặng Gần Nhất */}
+                          <div className="flex justify-between items-center mt-1.5 text-[10px]">
+                            <span className="text-stone-400 truncate max-w-[210px] flex items-center gap-1">
+                              <span className="text-amber-400">🎁</span>
+                              <span>Mốc {tierInfo.giftPoints}đ: <strong className="text-stone-300">{tierInfo.nextGift}</strong></span>
+                            </span>
+                            <span className="text-[9px] text-amber-300 font-mono shrink-0">
+                              {totalPoints}/{tierInfo.target}đ
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex justify-between items-center mt-1.5 text-[10px] text-stone-400">
-                          <span>{totalPoints} / {tierInfo.target}đ</span>
-                          <span className="text-amber-300 font-medium">
-                            {pointsToNext > 0 ? `Còn ${pointsToNext}đ ➔ Hạng ${tierInfo.nextTier}` : 'Hạng cao nhất'}
-                          </span>
-                        </div>
+                      </div>
+
+                      {/* Đặc Quyền Độc Bản (Micro-Perk Ribbon) */}
+                      <div className="mt-2.5 pt-2 border-t border-amber-500/15 flex items-center gap-1.5 text-[10px] text-amber-200/90 relative z-10">
+                        <Sparkles className="w-3 h-3 text-amber-400 shrink-0" />
+                        <span className="truncate">Đặc quyền: <strong className="text-[#fbe5cb]">{tierInfo.perk}</strong></span>
                       </div>
                     </div>
 
@@ -480,23 +564,23 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
                 <div className="p-3.5 bg-gradient-to-br from-[#4a1812] via-[#2f100c] to-[#1e0a07] text-[#fef3e2]">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#9b2a1f] to-[#d68a35] p-0.5 shadow shrink-0">
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#9b2a1f] to-[#d68a35] p-0.5 shadow shrink-0">
                         <div className="w-full h-full rounded-full bg-[#1e0a07] flex items-center justify-center font-serif font-bold text-amber-300 text-xs">
                           {user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
                         </div>
                       </div>
                       <div>
                         <div className="font-serif font-bold text-sm text-[#fbe5cb] leading-tight">{user.fullName}</div>
-                        <div className="text-[10px] text-stone-400 font-mono">{user.phone}</div>
+                        <div className="text-[10px] font-mono text-amber-400/90">{cardNumber}</div>
                       </div>
                     </div>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#c88d2b]/30 border border-[#c88d2b]/60 text-amber-200">
-                      {tierInfo.icon} Hạng {tierInfo.name}
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#c88d2b]/30 border border-[#c88d2b]/60 text-amber-200 flex items-center gap-1">
+                      <span>{tierInfo.icon}</span> <span>{tierInfo.badge || tierInfo.name}</span>
                     </span>
                   </div>
 
                   <div className="mt-2.5 pt-2 border-t border-white/10 flex items-center justify-between text-[11px]">
-                    <span className="text-stone-300">Điểm đổi quà:</span>
+                    <span className="text-stone-300">Điểm Tri Kỷ đổi quà:</span>
                     <span className="font-serif font-bold text-amber-300 text-xs">{availablePoints} điểm</span>
                   </div>
                 </div>
