@@ -106,6 +106,7 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
   const [activeTab, setActiveTab] = useState('hero');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [mobileMemberSheetOpen, setMobileMemberSheetOpen] = useState(false);
   const dropdownRef = useRef(null);
 
   const { user, isAuthenticated, openAuthModal, logout } = useAuth();
@@ -128,19 +129,22 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
     user?.tasteProfile?.crullerPref ? (CRULLER_LABELS[user.tasteProfile.crullerPref] || user.tasteProfile.crullerPref) : 'Thêm quẩy'
   ].join(' • ');
 
+  // Favorite dish reference for 1-Click Quick Reorder
+  const favoriteDish = {
+    id: 'fav_pho_' + (user?.tasteProfile?.favoriteDishId || '1986'),
+    name: user?.tasteProfile?.favoriteDishName || 'Phở Bò Tái Nạm Gầu Giòn 1986',
+    price: 85000,
+    image: 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&w=400&q=80',
+    customNote: user?.tasteProfile?.customNote || 'Chuẩn vị truyền thống 1986 (Đã lưu)'
+  };
+
   // 1-Click Quick Reorder handler
   const handleQuickReorder = useCallback(() => {
     if (onAddToCart) {
-      const favoriteDish = {
-        id: 'fav_pho_' + (user?.tasteProfile?.favoriteDishId || Date.now()),
-        name: user?.tasteProfile?.favoriteDishName || 'Phở Bò Tái Nạm Gầu Giòn 1986',
-        price: 85000,
-        image: 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&w=400&q=80',
-        customNote: user?.tasteProfile?.customNote || 'Chuẩn vị truyền thống 1986 (Đã lưu)'
-      };
       onAddToCart(favoriteDish);
       setUserDropdownOpen(false);
       setMobileMenuOpen(false);
+      setMobileMemberSheetOpen(false);
       if (onToast) onToast(`Đã thêm bát phở ruột vào giỏ hàng thành công!`);
     } else if (onOpenCart) {
       onOpenCart();
@@ -160,7 +164,8 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
   }, [userDropdownOpen]);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 font-sans shadow-md">
+    <>
+      <header className="fixed top-0 left-0 right-0 z-50 font-sans shadow-md">
       {/* 1. Top vintage announcement bar */}
       <div className="bg-[#1b261d] text-amber-100/90 text-xs py-2 px-4 sm:px-8 border-b border-amber-900/30">
         <div className="max-w-[1700px] mx-auto flex flex-wrap justify-between items-center gap-2">
@@ -186,24 +191,24 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
         <div className="max-w-[1700px] mx-auto flex items-center justify-between gap-4">
           
           {/* Logo Section */}
-          <a href="#hero" className="flex items-center gap-3 shrink-0 group">
+          <a href="#hero" className="flex items-center gap-2 sm:gap-3 shrink-0 group">
             {/* Vintage Round Seal */}
-            <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-full border-2 border-[#9b2a1f] p-0.5 flex items-center justify-center bg-white shadow-sm group-hover:scale-105 transition-transform">
-              <div className="w-full h-full rounded-full border border-dashed border-[#9b2a1f] flex flex-col items-center justify-center text-[#9b2a1f] leading-none py-1">
-                <span className="text-[8px] font-bold uppercase tracking-tighter">SINCE</span>
-                <Utensils className="w-4 h-4 my-0.5" />
-                <span className="text-[8px] font-bold">1986</span>
+            <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-full border-2 border-[#9b2a1f] p-0.5 flex items-center justify-center bg-white shadow-sm group-hover:scale-105 transition-transform shrink-0">
+              <div className="w-full h-full rounded-full border border-dashed border-[#9b2a1f] flex flex-col items-center justify-center text-[#9b2a1f] leading-none py-0.5 sm:py-1">
+                <span className="text-[7px] sm:text-[8px] font-bold uppercase tracking-tighter">SINCE</span>
+                <Utensils className="w-3.5 h-3.5 sm:w-4 sm:h-4 my-0.5" />
+                <span className="text-[7px] sm:text-[8px] font-bold">1986</span>
               </div>
             </div>
 
             <div className="text-left">
-              <div className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-[#223326] leading-none">
+              <div className="font-serif text-xl sm:text-3xl font-bold tracking-tight text-[#223326] leading-none">
                 PHỞ GIA TRUYỀN
               </div>
-              <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] font-serif text-[#9b2a1f] tracking-wider uppercase font-semibold mt-1">
-                <span className="w-4 h-px bg-[#9b2a1f]/60"></span>
+              <div className="flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[11px] font-serif text-[#9b2a1f] tracking-wider uppercase font-semibold mt-1">
+                <span className="w-3 sm:w-4 h-px bg-[#9b2a1f]/60"></span>
                 <span>TINH HOA PHỞ VIỆT TỪ NĂM 1986</span>
-                <span className="w-4 h-px bg-[#9b2a1f]/60"></span>
+                <span className="w-3 sm:w-4 h-px bg-[#9b2a1f]/60"></span>
               </div>
             </div>
           </a>
@@ -542,10 +547,18 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
               </button>
             )}
 
-            {/* Hotline button */}
+            {/* Hotline button - Compact on mobile, full on tablet/desktop */}
             <a
               href="tel:19008686"
-              className="flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full bg-[#96281b] hover:bg-[#7e2015] text-white shadow-md transition-all group"
+              title="Hotline đặt hàng: 1900 8686"
+              aria-label="Gọi hotline 1900 8686"
+              className="sm:hidden w-9 h-9 rounded-full bg-[#96281b] hover:bg-[#7e2015] text-white flex items-center justify-center shadow-md transition-all shrink-0 active:scale-95"
+            >
+              <Phone className="w-4 h-4 text-amber-200 animate-pulse" />
+            </a>
+            <a
+              href="tel:19008686"
+              className="hidden sm:flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full bg-[#96281b] hover:bg-[#7e2015] text-white shadow-md transition-all group shrink-0"
             >
               <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center">
                 <Phone className="w-3.5 h-3.5 text-amber-200 animate-pulse" />
@@ -613,7 +626,13 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
           <div className="pt-2 border-t border-stone-300/80">
             {isAuthenticated && user ? (
               <div className="rounded-2xl bg-[#241712] border border-[#a63a2b]/70 overflow-hidden shadow-lg text-xs">
-                <div className="p-3.5 bg-gradient-to-br from-[#4a1812] via-[#2f100c] to-[#1e0a07] text-[#fef3e2]">
+                <div 
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setMobileMemberSheetOpen(true);
+                  }}
+                  className="p-3.5 bg-gradient-to-br from-[#4a1812] via-[#2f100c] to-[#1e0a07] text-[#fef3e2] cursor-pointer hover:opacity-95 transition-opacity"
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                       <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#9b2a1f] to-[#d68a35] p-0.5 shadow shrink-0">
@@ -634,6 +653,10 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
                   <div className="mt-2.5 pt-2 border-t border-white/10 flex items-center justify-between text-[11px]">
                     <span className="text-stone-300">Điểm Tri Kỷ đổi quà:</span>
                     <span className="font-serif font-bold text-amber-300 text-xs">{availablePoints} điểm</span>
+                  </div>
+                  <div className="text-[10px] text-amber-300/80 mt-1 flex items-center gap-1 font-serif">
+                    <span>Chạm để mở thẻ Tri Kỷ chi tiết</span>
+                    <ArrowRight className="w-3 h-3" />
                   </div>
                 </div>
 
@@ -673,6 +696,249 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
         </div>
       )}
     </header>
+
+    {/* 3. Mobile Bottom Navigation Bar (Fixed bottom on md:hidden) */}
+    <nav 
+      aria-label="Thanh điều hướng di động"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#f7f4ed]/95 backdrop-blur-md border-t border-stone-300/90 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] px-2 py-1.5 pb-[calc(0.4rem+env(safe-area-inset-bottom,0px))]"
+    >
+      <div className="flex items-center justify-around max-w-md mx-auto relative">
+        {/* Tab 1: Trang chủ */}
+        <a
+          href="#hero"
+          onClick={() => setActiveTab('hero')}
+          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all ${
+            activeTab === 'hero' ? 'text-[#9b2a1f]' : 'text-stone-600 hover:text-stone-900'
+          }`}
+        >
+          <Home className="w-5 h-5 mb-0.5" />
+          <span className={`text-[10px] ${activeTab === 'hero' ? 'font-bold' : 'font-medium'}`}>Trang chủ</span>
+        </a>
+
+        {/* Tab 2: Thực đơn */}
+        <a
+          href="#menu"
+          onClick={() => setActiveTab('menu')}
+          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all ${
+            activeTab === 'menu' ? 'text-[#9b2a1f]' : 'text-stone-600 hover:text-stone-900'
+          }`}
+        >
+          <Utensils className="w-5 h-5 mb-0.5" />
+          <span className={`text-[10px] ${activeTab === 'menu' ? 'font-bold' : 'font-medium'}`}>Thực đơn</span>
+        </a>
+
+        {/* Tab 3: Giỏ hàng (Floating Center Elevated Button) */}
+        <div className="flex flex-col items-center -mt-5">
+          <button
+            onClick={onOpenCart}
+            aria-label="Xem giỏ hàng"
+            className={`relative w-12 h-12 rounded-full bg-gradient-to-tr from-[#9b2a1f] to-[#b33324] text-amber-100 flex items-center justify-center shadow-lg border-2 border-[#f7f4ed] hover:scale-105 active:scale-95 transition-all ${
+              isCartJiggling ? 'animate-cart-jiggle ring-2 ring-amber-400' : ''
+            }`}
+          >
+            <ShoppingBag className="w-5 h-5" />
+            {cartCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-amber-400 text-[#7a1c12] text-[10px] font-black flex items-center justify-center shadow">
+                {cartCount}
+              </span>
+            )}
+          </button>
+          <span className="text-[10px] font-bold text-[#9b2a1f] mt-0.5">Giỏ hàng</span>
+        </div>
+
+        {/* Tab 4: Hội viên / Bát quen */}
+        <button
+          onClick={() => {
+            if (isAuthenticated && user) {
+              setMobileMemberSheetOpen(true);
+            } else {
+              openAuthModal('login');
+            }
+          }}
+          className="flex flex-col items-center justify-center py-1 px-2 rounded-xl text-stone-600 hover:text-stone-900 transition-all relative"
+        >
+          {isAuthenticated && user ? (
+            <div className="relative">
+              <div className="w-5 h-5 rounded-full bg-[#9b2a1f] text-amber-200 text-[10px] font-bold flex items-center justify-center font-serif">
+                {user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
+              </div>
+              <span className="absolute -bottom-1 -right-1 text-[8px] leading-none">
+                {tierInfo.icon}
+              </span>
+            </div>
+          ) : (
+            <User className="w-5 h-5 mb-0.5" />
+          )}
+          <span className="text-[10px] font-medium mt-0.5">
+            {isAuthenticated && user ? 'Bát quen' : 'Hội viên'}
+          </span>
+        </button>
+
+        {/* Tab 5: Đặt bàn */}
+        <a
+          href="#order"
+          onClick={() => {
+            setActiveTab('order');
+            if (onOpenOrder) onOpenOrder();
+          }}
+          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all ${
+            activeTab === 'order' ? 'text-[#9b2a1f]' : 'text-stone-600 hover:text-stone-900'
+          }`}
+        >
+          <Bike className="w-5 h-5 mb-0.5" />
+          <span className={`text-[10px] ${activeTab === 'order' ? 'font-bold' : 'font-medium'}`}>Đặt bàn</span>
+        </a>
+      </div>
+    </nav>
+
+    {/* 4. Mobile Member Bottom Sheet (Heritage Bento Pass) */}
+    {mobileMemberSheetOpen && isAuthenticated && user && (
+      <div className="md:hidden fixed inset-0 z-50 flex flex-col justify-end">
+        {/* Backdrop overlay */}
+        <div 
+          className="absolute inset-0 bg-black/60 backdrop-blur-xs animate-fadeIn"
+          onClick={() => setMobileMemberSheetOpen(false)}
+        />
+
+        {/* Bottom Sheet Container */}
+        <div className="relative w-full bg-[#160d0a] text-[#fbf6ee] rounded-t-3xl border-t-2 border-amber-500/40 shadow-2xl max-h-[85vh] flex flex-col overflow-hidden animate-bottom-sheet-up">
+          {/* Sheet Handle Bar */}
+          <div className="pt-3 pb-1 flex justify-center cursor-pointer" onClick={() => setMobileMemberSheetOpen(false)}>
+            <div className="w-12 h-1.5 rounded-full bg-stone-600/70" />
+          </div>
+
+          {/* Header with Close */}
+          <div className="px-5 py-2 flex items-center justify-between border-b border-white/10">
+            <div className="flex items-center gap-2">
+              <span className="text-base">{tierInfo.icon}</span>
+              <span className="font-serif font-bold text-sm tracking-wide text-amber-200">
+                THẺ HỘI VIÊN TRI KỶ 1986
+              </span>
+            </div>
+            <button
+              onClick={() => setMobileMemberSheetOpen(false)}
+              className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-stone-400 hover:text-white"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Scrollable Content */}
+          <div className="p-4 overflow-y-auto space-y-3 pb-6">
+            {/* Member Card */}
+            <div className="rounded-2xl p-4 bg-gradient-to-br from-[#4a1812] via-[#2f100c] to-[#1e0a07] border border-[#a63a2b]/70 shadow-lg relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-400/5 rounded-full blur-2xl pointer-events-none" />
+              
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#9b2a1f] to-[#d68a35] p-0.5 shadow shrink-0">
+                    <div className="w-full h-full rounded-full bg-[#1e0a07] flex items-center justify-center font-serif font-bold text-amber-300 text-base">
+                      {user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="font-serif font-bold text-base text-[#fbe5cb] leading-tight">{user.fullName}</div>
+                    <div className="text-[11px] font-mono text-amber-400/90">{cardNumber}</div>
+                  </div>
+                </div>
+                <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-[#c88d2b]/30 border border-[#c88d2b]/60 text-amber-200 flex items-center gap-1">
+                  <span>{tierInfo.icon}</span>
+                  <span>{tierInfo.badge || tierInfo.name}</span>
+                </span>
+              </div>
+
+              {/* Progress bar */}
+              <div className="mt-3.5 pt-3 border-t border-white/10">
+                <div className="flex justify-between text-[11px] text-stone-300 mb-1">
+                  <span>Tiến độ thăng hạng {tierInfo.nextTier}:</span>
+                  <span className="font-bold text-amber-300">{totalPoints} / {tierInfo.target} điểm</span>
+                </div>
+                <div className="w-full h-2 rounded-full bg-black/40 overflow-hidden p-0.5 border border-amber-500/20">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-300 transition-all duration-500"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+                <div className="text-[10px] text-amber-200/80 mt-1 flex items-center justify-between">
+                  <span>Còn {pointsToNext} điểm lên hạng {tierInfo.nextTier}</span>
+                  <span>{availablePoints} điểm Tri Kỷ</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Gu Phở Của Tôi & Bát Ruột Bento Card */}
+            <div className="rounded-2xl p-3.5 bg-[#251713] border border-amber-900/40 space-y-2.5">
+              <div className="flex items-center justify-between text-xs font-serif font-bold text-amber-200">
+                <span className="flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  BÁT QUEN & KHẨU VỊ CỦA BẠN
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-sans font-medium">
+                  Đã lưu
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3 bg-[#1b100d] rounded-xl p-2.5 border border-white/5">
+                <div className="w-12 h-12 rounded-xl overflow-hidden border border-amber-500/40 shrink-0 bg-stone-900">
+                  <img
+                    src={favoriteDish.image}
+                    alt={favoriteDish.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="font-serif font-bold text-sm text-white truncate">
+                    {favoriteDish.name}
+                  </div>
+                  <div className="text-amber-400 font-mono font-bold text-xs mt-0.5">
+                    {favoriteDish.price ? favoriteDish.price.toLocaleString('vi-VN') : '85.000'}đ
+                  </div>
+                  <div className="text-[10px] text-stone-400 truncate mt-0.5">
+                    {tasteSummary}
+                  </div>
+                </div>
+              </div>
+
+              {/* 1-Click Quick Reorder Button */}
+              <button
+                onClick={handleQuickReorder}
+                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#9b2a1f] to-[#7f1d14] hover:from-[#b33324] hover:to-[#96281b] text-amber-100 font-serif font-bold text-xs flex items-center justify-center gap-2 shadow-md active:scale-98 transition-all"
+              >
+                <Zap className="w-4 h-4 text-amber-300 animate-bounce" />
+                <span>1-Click Đặt Lại Bát Ruột</span>
+              </button>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <a
+                href="#menu"
+                onClick={() => {
+                  setActiveTab('menu');
+                  setMobileMemberSheetOpen(false);
+                }}
+                className="py-2.5 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-stone-300 text-xs font-medium text-center border border-white/10 flex items-center justify-center gap-1.5"
+              >
+                <Utensils className="w-3.5 h-3.5 text-amber-400" />
+                <span>Khám phá món</span>
+              </a>
+              <button
+                onClick={() => {
+                  logout();
+                  setMobileMemberSheetOpen(false);
+                  if (onToast) onToast('Bạn đã đăng xuất tài khoản thành công!');
+                }}
+                className="py-2.5 px-3 rounded-xl bg-red-950/30 hover:bg-red-900/40 text-red-300 text-xs font-medium border border-red-900/50 flex items-center justify-center gap-1.5"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Đăng xuất</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+  </>
   );
 }
 
