@@ -327,6 +327,46 @@ function Testimonials() {
   const collapseTimerRef = useRef(null);
   const feedbackTimerRef = useRef(null);
 
+  // Dynamic Animated Counter for 4.9 and 15.200+ reviews
+  const [counts, setCounts] = useState({ rating: '0.0', reviews: '0' });
+  const hasAnimatedCounterRef = useRef(false);
+
+  useEffect(() => {
+    if (!isVisible || hasAnimatedCounterRef.current) return;
+    hasAnimatedCounterRef.current = true;
+
+    const duration = 1300; // ms
+    const startTime = performance.now();
+    let animId = null;
+
+    // Ease-out exponential formula for silky smooth deceleration
+    const easeOutExpo = (x) => (x === 1 ? 1 : 1 - Math.pow(2, -10 * x));
+
+    const step = (now) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      const eased = easeOutExpo(progress);
+
+      const curRating = (eased * 4.9).toFixed(1);
+      const curReviews = Math.floor(eased * 15200);
+
+      setCounts({
+        rating: progress >= 1 ? '4.9' : curRating,
+        reviews: progress >= 1 ? '15.200' : curReviews.toLocaleString('vi-VN'),
+      });
+
+      if (progress < 1) {
+        animId = requestAnimationFrame(step);
+      }
+    };
+
+    animId = requestAnimationFrame(step);
+
+    return () => {
+      if (animId) cancelAnimationFrame(animId);
+    };
+  }, [isVisible]);
+
   useEffect(() => {
     return () => {
       if (collapseTimerRef.current) clearTimeout(collapseTimerRef.current);
@@ -439,14 +479,18 @@ function Testimonials() {
           {/* Trust Barometer Capsule */}
           <div className="inline-flex flex-wrap items-center justify-center gap-3 bg-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-2xl border border-amber-200/80 shadow-sm">
             <div className="flex items-center gap-2 pr-3.5 border-r border-stone-200">
-              <span className="text-xl sm:text-2xl font-serif font-black text-amber-600">4.9</span>
+              <span className="text-xl sm:text-2xl font-serif font-black text-amber-600 min-w-[2.2rem] text-center inline-block tabular-nums">
+                {counts.rating}
+              </span>
               <div className="text-left">
                 <div className="flex text-amber-400 text-xs">
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                   ))}
                 </div>
-                <div className="text-[10px] sm:text-[11px] text-stone-500 font-medium">15.200+ đánh giá</div>
+                <div className="text-[10px] sm:text-[11px] text-stone-500 font-medium tabular-nums">
+                  {counts.reviews}+ đánh giá
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
