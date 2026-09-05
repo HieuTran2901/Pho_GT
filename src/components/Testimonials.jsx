@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Star, Quote, BadgeCheck, PenLine, BookOpen, ChevronDown, ChevronUp, X, Search } from 'lucide-react';
 import { TESTIMONIALS } from '../data/menuData';
 import useScrollReveal from '../hooks/useScrollReveal';
@@ -21,6 +21,18 @@ const ReviewsBottomSheet = React.memo(function ReviewsBottomSheet({
   const [sheetSearch, setSheetSearch] = useState('');
   const [sheetCategory, setSheetCategory] = useState('all');
   const [sheetVisibleCount, setSheetVisibleCount] = useState(6);
+  const sheetScrollRef = useRef(null);
+
+  const handleLoadMoreSheet = useCallback(() => {
+    setSheetVisibleCount((prev) => prev + 4);
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        if (sheetScrollRef.current) {
+          sheetScrollRef.current.scrollBy({ top: 160, behavior: 'smooth' });
+        }
+      }, 80);
+    });
+  }, []);
 
   // Lock body scroll only while sheet is mounted/open
   useEffect(() => {
@@ -136,7 +148,7 @@ const ReviewsBottomSheet = React.memo(function ReviewsBottomSheet({
         </div>
 
         {/* Scrollable Reviews List */}
-        <div className="overflow-y-auto p-4 space-y-3.5 flex-1 overscroll-contain">
+        <div ref={sheetScrollRef} className="overflow-y-auto p-4 space-y-3.5 flex-1 overscroll-contain">
           {sheetDisplayedReviews.length === 0 ? (
             <div className="py-12 text-center text-stone-500">
               <p className="text-sm font-medium">Không tìm thấy cảm nhận phù hợp.</p>
@@ -203,7 +215,7 @@ const ReviewsBottomSheet = React.memo(function ReviewsBottomSheet({
             <div className="text-center pt-2 pb-1">
               <button
                 type="button"
-                onClick={() => setSheetVisibleCount((prev) => prev + 4)}
+                onClick={handleLoadMoreSheet}
                 className="w-full py-2.5 rounded-xl bg-white border border-stone-300 text-xs font-bold text-stone-700 hover:bg-stone-50 shadow-2xs cursor-pointer"
               >
                 Tải thêm {Math.min(4, sheetFilteredReviews.length - sheetVisibleCount)} cảm nhận khác ↓
@@ -245,11 +257,20 @@ function Testimonials() {
   // Mobile Bottom Sheet Open State only (isolated from internal sheet state)
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
 
+  // Timer ref for smooth collapse coordination
+  const collapseTimerRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (collapseTimerRef.current) clearTimeout(collapseTimerRef.current);
+    };
+  }, []);
+
   // Reset PC pagination count when category changes
-  const handleCategoryChange = (catId) => {
+  const handleCategoryChange = useCallback((catId) => {
     setSelectedCategory(catId);
     setPcVisibleCount(INITIAL_PC_COUNT);
-  };
+  }, []);
 
   // Main filtered reviews
   const filteredReviews = useMemo(() => {
@@ -266,18 +287,46 @@ function Testimonials() {
   const remainingCount = Math.max(0, filteredReviews.length - pcVisibleCount);
   const progressPercentage = Math.min(100, Math.round((pcDisplayedReviews.length / filteredReviews.length) * 100));
 
-  const handleLoadMorePc = () => {
+  const handleLoadMorePc = useCallback(() => {
+    const currentCount = pcVisibleCount;
     setPcVisibleCount((prev) => Math.min(filteredReviews.length, prev + 3));
-  };
 
-  const handleCollapsePc = () => {
-    setPcVisibleCount(INITIAL_PC_COUNT);
-  };
+    // Smoothly guide user's eye to newly revealed cards
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const gridEl = document.getElementById('testimonials-grid');
+        if (gridEl && gridEl.children.length > currentCount) {
+          const firstNewCard = gridEl.children[currentCount];
+          if (firstNewCard) {
+            firstNewCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        }
+      }, 80);
+    });
+  }, [pcVisibleCount, filteredReviews.length]);
+
+  const handleCollapsePc = useCallback(() => {
+    const headerEl = document.getElementById('testimonials-header') || document.getElementById('reviews');
+
+    // Step 1: Smoothly return viewport to testimonials header BEFORE collapsing DOM height
+    if (headerEl) {
+      const yOffset = window.innerWidth >= 1024 ? -120 : -90;
+      const targetY = headerEl.getBoundingClientRect().top + window.pageYOffset + yOffset;
+      window.scrollTo({ top: targetY, behavior: 'smooth' });
+    }
+
+    // Step 2: Coordinate state update after scroll has initiated to prevent layout drop/jump
+    if (collapseTimerRef.current) clearTimeout(collapseTimerRef.current);
+    collapseTimerRef.current = setTimeout(() => {
+      setPcVisibleCount(INITIAL_PC_COUNT);
+    }, 280);
+  }, []);
 
   // Render individual review card
   const renderCard = (review, idx, isCarousel = false) => (
     <div
       key={review.id}
+      id={isCarousel ? undefined : `testimonial-card-${review.id}`}
       className={`bg-white rounded-3xl p-6 sm:p-7 shadow-md border transition-all duration-300 relative flex flex-col justify-between ${
         isCarousel ? 'min-w-[285px] max-w-[285px] snap-start' : 'hover:shadow-2xl hover:-translate-y-1'
       } ${
@@ -343,7 +392,10 @@ function Testimonials() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header with Trust Barometer */}
-        <div className={`text-center max-w-3xl mx-auto mb-8 transition-all duration-700 ${isVisible ? 'reveal-fade-up' : 'opacity-0'}`}>
+        <div
+          id="testimonials-header"
+          className={`text-center max-w-3xl mx-auto mb-8 transition-all duration-700 ${isVisible ? 'reveal-fade-up' : 'opacity-0'}`}
+        >
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-red/10 border border-brand-red/20 text-brand-red text-xs font-bold uppercase tracking-wider mb-3">
             <span>★ THỰC KHÁCH NÓI VỀ CHÚNG TÔI</span>
           </div>
@@ -459,7 +511,10 @@ function Testimonials() {
         {/* ========================================================= */}
         {/* PC / TABLET VIEW (>= sm): PROGRESSIVE MASONRY GRID        */}
         {/* ========================================================= */}
-        <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div
+          id="testimonials-grid"
+          className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
+        >
           {pcDisplayedReviews.map((review, idx) => renderCard(review, idx, false))}
         </div>
 
