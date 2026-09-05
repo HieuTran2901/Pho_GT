@@ -106,6 +106,7 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
   const [activeTab, setActiveTab] = useState('hero');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [dropdownTab, setDropdownTab] = useState('membership');
   const dropdownRef = useRef(null);
 
   const { user, isAuthenticated, openAuthModal, logout } = useAuth();
@@ -259,275 +260,287 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
                   <ChevronDown className={`w-3.5 h-3.5 text-stone-500 transition-transform duration-200 ${userDropdownOpen ? 'rotate-180 text-[#8a1e14]' : ''}`} />
                 </button>
 
-                {/* Member Dropdown Popup: Hộp Sơn Mài Thưởng Khách 1986 */}
+                {/* Member Dropdown Popup: Hộp Sơn Mài Thưởng Khách 1986 (Dual-Tab Architecture) */}
                 {userDropdownOpen && (
-                  <div className="absolute right-0 mt-2.5 w-80 rounded-2xl bg-[#1c0f0a] border border-[#d49e58]/40 shadow-[0_20px_50px_rgba(0,0,0,0.85)] overflow-hidden z-50 animate-dropdown-heritage text-xs">
+                  <div className="absolute right-0 mt-2.5 w-80 rounded-2xl bg-[#1a0d09] border border-[#d49e58]/40 shadow-[0_20px_50px_rgba(0,0,0,0.85)] overflow-hidden z-50 animate-dropdown-heritage text-xs">
                     
-                    {/* TẦNG 1: Thẻ Sơn Mài Khảm Vàng (Gold-Inlaid Lacquer Heritage Card) */}
-                    <div className="p-4 bg-gradient-to-br from-[#4a1812] via-[#2f100c] to-[#1a0805] text-[#fef3e2] relative overflow-hidden border-b border-[#a63a2b]/40">
-                      {/* Nền gấm họa tiết hoa văn thời bao cấp */}
-                      <div className="absolute inset-0 bg-[radial-gradient(#e4aa65_1px,transparent_1px)] [background-size:12px_12px] opacity-15 pointer-events-none"></div>
-
-                      {/* Dấu Chiện Son Truyền Thống: PHỞ 1986 TRI KỶ */}
-                      <div className="absolute top-2.5 right-2.5 px-2 py-1 rounded-md border-2 border-red-500/70 bg-red-950/80 text-red-300 flex flex-col items-center justify-center font-serif text-[9px] font-bold leading-tight tracking-wider shadow-inner rotate-3 pointer-events-none">
-                        <span>TRI KỶ</span>
-                        <span className="text-[8px] text-amber-300">1986</span>
-                      </div>
-
-                      {/* Thông tin hội viên */}
-                      <div className="flex items-center gap-3 relative z-10 pr-14">
-                        <div className="relative shrink-0">
-                          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-amber-300 via-[#9b2a1f] to-amber-700 p-0.5 shadow-md">
-                            <div className="w-full h-full rounded-full bg-[#1e0a07] flex items-center justify-center font-serif font-bold text-amber-300 text-base">
-                              {user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
-                            </div>
-                          </div>
-                          <span className="absolute -bottom-1 -right-1 px-1 py-0.2 rounded-full bg-amber-400 text-[#2b1008] text-[8px] font-black uppercase shadow">
-                            VIP
-                          </span>
-                        </div>
-                        <div className="min-w-0">
-                          <div className="font-serif font-bold text-sm text-[#fbe5cb] tracking-wide truncate">
-                            {user.fullName || 'Quý Khách Tri Kỷ'}
-                          </div>
-                          <div className="text-[10px] font-mono text-amber-400/90 tracking-wider">
-                            {cardNumber}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Khối Danh Vị & Điểm Tích Lũy */}
-                      <div className="mt-3 bg-black/40 rounded-xl p-2.5 border border-amber-500/20 shadow-inner relative z-10">
-                        <div className="flex justify-between items-center mb-1.5">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-base leading-none">{tierInfo.icon}</span>
-                            <div>
-                              <div className="text-[9px] text-stone-400 uppercase tracking-wider font-semibold">Danh Vị Hội Viên</div>
-                              <div className="text-xs font-serif font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-300 to-amber-400">
-                                {tierInfo.title}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="text-right pl-2 border-l border-white/10 shrink-0">
-                            <div className="text-[9px] text-stone-400">Điểm Đổi Quà</div>
-                            <div className="text-sm font-serif font-extrabold text-amber-300 leading-tight">
-                              {availablePoints} <span className="text-[9px] font-sans font-normal text-stone-400">điểm</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Thanh Hành Trình Thăng Hạng & Milestone Quà Tặng */}
-                        <div className="mt-2 pt-2 border-t border-white/5">
-                          <div className="flex justify-between items-center text-[10px] text-stone-300 mb-1">
-                            <span>Lên bậc <strong className="text-amber-300">"{tierInfo.nextTier}"</strong></span>
-                            <span className="text-amber-400 font-medium">
-                              {pointsToNext > 0 ? `Còn ${pointsToNext}đ` : 'Hạng cao nhất'}
-                            </span>
-                          </div>
-
-                          {/* Progress Track */}
-                          <div className="w-full h-2 bg-stone-900 rounded-full overflow-hidden p-0.5 border border-white/10 relative">
-                            <div
-                              className="h-full bg-gradient-to-r from-[#9b2a1f] via-amber-500 to-[#e4aa65] rounded-full transition-all duration-500 shadow-sm"
-                              style={{ width: `${progressPercent}%` }}
-                            ></div>
-                          </div>
-
-                          {/* Mốc Quà Tặng Gần Nhất */}
-                          <div className="flex justify-between items-center mt-1.5 text-[10px]">
-                            <span className="text-stone-400 truncate max-w-[210px] flex items-center gap-1">
-                              <span className="text-amber-400">🎁</span>
-                              <span>Mốc {tierInfo.giftPoints}đ: <strong className="text-stone-300">{tierInfo.nextGift}</strong></span>
-                            </span>
-                            <span className="text-[9px] text-amber-300 font-mono shrink-0">
-                              {totalPoints}/{tierInfo.target}đ
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Đặc Quyền Độc Bản (Micro-Perk Ribbon) */}
-                      <div className="mt-2.5 pt-2 border-t border-amber-500/15 flex items-center gap-1.5 text-[10px] text-amber-200/90 relative z-10">
-                        <Sparkles className="w-3 h-3 text-amber-400 shrink-0" />
-                        <span className="truncate">Đặc quyền: <strong className="text-[#fbe5cb]">{tierInfo.perk}</strong></span>
-                      </div>
-                    </div>
-
-                    {/* TẦNG 2: Khay Bát Phở Ruột Khẩu Vị Cố Tri (Signature Pho Bento) */}
-                    <div className="p-3.5 bg-gradient-to-b from-[#24120c] to-[#1a0c08] border-b border-amber-900/40">
-                      {/* Tiêu đề khay món ruột */}
-                      <div className="flex items-center justify-between mb-2.5">
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-                          <span className="font-serif font-bold text-xs text-[#fbe5cb] tracking-wide uppercase">
-                            Khẩu Vị Ruột Cố Tri
-                          </span>
-                        </div>
-                        <a
-                          href="#menu"
-                          onClick={() => setUserDropdownOpen(false)}
-                          className="text-[10px] text-amber-400/90 hover:text-amber-200 font-medium transition-colors flex items-center gap-0.5"
-                        >
-                          <span>Chỉnh gu</span>
-                          <span>✏️</span>
-                        </a>
-                      </div>
-
-                      {/* Card Món Ăn: Nền Men Gốm Viền Chỉ Vàng */}
-                      <div className="rounded-xl p-2.5 bg-gradient-to-br from-[#3a1c14]/70 to-[#1a0c08]/90 border border-amber-500/25 shadow-md relative overflow-hidden group">
-                        {/* Hơi nước bốc nhẹ */}
-                        <div className="absolute -top-1 right-2 text-stone-500/30 text-xs pointer-events-none animate-pulse">♨️</div>
-
-                        {/* Hàng 1: Ảnh món + Tên món + Giá */}
-                        <div className="flex items-center gap-2.5">
-                          <div className="relative shrink-0 w-12 h-12 rounded-lg overflow-hidden border border-amber-400/40 shadow-inner">
-                            <img 
-                              src="https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&w=200&q=80" 
-                              alt="Bát Phở Ruột" 
-                              className="w-12 h-12 object-cover group-hover:scale-110 transition-transform duration-300"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-                          </div>
-
-                          <div className="min-w-0 flex-1">
-                            <div className="font-serif font-bold text-[13px] text-white group-hover:text-amber-200 transition-colors truncate">
-                              {user.tasteProfile?.favoriteDishName || 'Phở Bò Tái Nạm Gầu Giòn'}
-                            </div>
-                            <div className="flex items-center justify-between mt-0.5">
-                              <span className="text-amber-400 font-bold font-mono text-xs">85.000đ</span>
-                              <span className="text-[9px] text-stone-400 font-sans italic bg-black/40 px-1.5 py-0.2 rounded border border-white/5">
-                                Bát Đệ Nhất
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Hàng 2: Dải Gia Vị Men Gốm (Spice Pills) */}
-                        <div className="mt-2.5 pt-2 border-t border-amber-500/15 flex flex-wrap gap-1">
-                          {user.tasteProfile?.brothType ? (
-                            <span className="px-2 py-0.5 rounded-full bg-[#140a07]/80 border border-amber-500/20 text-[#f2d8be] text-[9px] flex items-center gap-1 font-medium">
-                              <span>🍲</span>
-                              <span>{BROTH_LABELS[user.tasteProfile.brothType] || user.tasteProfile.brothType}</span>
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 rounded-full bg-[#140a07]/80 border border-amber-500/20 text-[#f2d8be] text-[9px] flex items-center gap-1 font-medium">
-                              <span>🍲</span>
-                              <span>Nước đậm béo</span>
-                            </span>
-                          )}
-
-                          {user.tasteProfile?.onionStyle ? (
-                            <span className="px-2 py-0.5 rounded-full bg-[#140a07]/80 border border-amber-500/20 text-[#f2d8be] text-[9px] flex items-center gap-1 font-medium">
-                              <span>🧅</span>
-                              <span>{ONION_LABELS[user.tasteProfile.onionStyle] || user.tasteProfile.onionStyle}</span>
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 rounded-full bg-[#140a07]/80 border border-amber-500/20 text-[#f2d8be] text-[9px] flex items-center gap-1 font-medium">
-                              <span>🧅</span>
-                              <span>Đầu hành giòn</span>
-                            </span>
-                          )}
-
-                          {user.tasteProfile?.crullerPref ? (
-                            <span className="px-2 py-0.5 rounded-full bg-[#140a07]/80 border border-amber-500/20 text-[#f2d8be] text-[9px] flex items-center gap-1 font-medium">
-                              <span>🥢</span>
-                              <span>{CRULLER_LABELS[user.tasteProfile.crullerPref] || user.tasteProfile.crullerPref}</span>
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 rounded-full bg-[#140a07]/80 border border-amber-500/20 text-[#f2d8be] text-[9px] flex items-center gap-1 font-medium">
-                              <span>🥢</span>
-                              <span>Kèm quẩy giòn</span>
-                            </span>
-                          )}
-
-                          {user.tasteProfile?.herbStyle && (
-                            <span className="px-2 py-0.5 rounded-full bg-[#140a07]/80 border border-amber-500/20 text-[#f2d8be] text-[9px] flex items-center gap-1 font-medium">
-                              <span>🌿</span>
-                              <span>{HERB_LABELS[user.tasteProfile.herbStyle] || user.tasteProfile.herbStyle}</span>
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Ghi chú gu riêng của thực khách */}
-                        <div className="mt-1.5 text-[10px] text-amber-200/75 italic truncate flex items-center gap-1">
-                          <span className="text-amber-400/80 font-serif">“</span>
-                          <span className="truncate">{user.tasteProfile?.customNote || 'Nước dùng trong ngọt thanh tủy bò, hành trần kỹ'}</span>
-                          <span className="text-amber-400/80 font-serif">”</span>
-                        </div>
-                      </div>
-
-                      {/* 1-Click Quick Reorder Button: Kim Ấn Gọi Món */}
+                    {/* THANH ĐIỀU HƯỚNG TAB ĐÔI (DUAL-TAB SWITCHER) */}
+                    <div className="flex border-b border-amber-900/40 bg-black/40 p-1 gap-1">
                       <button
-                        onClick={handleQuickReorder}
-                        className="mt-3 w-full py-2 rounded-xl bg-gradient-to-r from-[#9b2a1f] via-[#b33224] to-[#801c13] hover:from-[#b53225] hover:via-[#c93c2c] hover:to-[#912217] text-[#fff6e8] font-serif font-bold text-xs shadow-lg shadow-red-950/60 flex items-center justify-center gap-2 border border-amber-400/30 hover:border-amber-300 transition-all group active:scale-95"
+                        type="button"
+                        onClick={() => setDropdownTab('membership')}
+                        className={`flex-1 py-1.5 rounded-lg font-serif font-bold text-[11px] transition-all flex items-center justify-center gap-1 ${
+                          dropdownTab === 'membership'
+                            ? 'bg-gradient-to-r from-[#9b2a1f] to-[#7a1c12] text-amber-100 shadow border border-amber-400/30'
+                            : 'text-stone-400 hover:text-amber-200 hover:bg-white/5'
+                        }`}
                       >
-                        <span className="w-4 h-4 rounded-full bg-amber-400 text-black flex items-center justify-center text-[10px] font-black group-hover:scale-110 transition-transform">
-                          ⚡
-                        </span>
-                        <span className="tracking-wide">1-Click Đặt Lại Bát Này</span>
+                        <span>⚜️</span>
+                        <span>Thẻ Hội Viên</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setDropdownTab('dish')}
+                        className={`flex-1 py-1.5 rounded-lg font-serif font-bold text-[11px] transition-all flex items-center justify-center gap-1 ${
+                          dropdownTab === 'dish'
+                            ? 'bg-gradient-to-r from-[#9b2a1f] to-[#7a1c12] text-amber-100 shadow border border-amber-400/30'
+                            : 'text-stone-400 hover:text-amber-200 hover:bg-white/5'
+                        }`}
+                      >
+                        <span>🍜</span>
+                        <span>Bát Phở Ruột</span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
                       </button>
                     </div>
 
-                    {/* TẦNG 3: Danh Mục Tiện Ích Trực Quan (Pill Container) */}
-                    <div className="p-2 space-y-0.5 bg-[#150a07] border-b border-white/5">
+                    {/* TAB 1: THẺ HỘI VIÊN & ĐIỂM THƯỞNG */}
+                    {dropdownTab === 'membership' && (
+                      <div className="p-3.5 bg-gradient-to-br from-[#3b1510] via-[#240d09] to-[#140604] text-[#fef3e2] relative overflow-hidden">
+                        {/* Nền gấm hoa văn */}
+                        <div className="absolute inset-0 bg-[radial-gradient(#e4aa65_1px,transparent_1px)] [background-size:12px_12px] opacity-15 pointer-events-none"></div>
+
+                        {/* Dấu Chiện Son: TRI KỶ 1986 */}
+                        <div className="absolute top-2.5 right-2.5 px-2 py-1 rounded-md border-2 border-red-500/70 bg-red-950/80 text-red-300 flex flex-col items-center justify-center font-serif text-[9px] font-bold leading-tight tracking-wider shadow-inner rotate-3 pointer-events-none">
+                          <span>TRI KỶ</span>
+                          <span className="text-[8px] text-amber-300">1986</span>
+                        </div>
+
+                        {/* Avatar & Tên & Mã thẻ */}
+                        <div className="flex items-center gap-2.5 relative z-10 pr-14">
+                          <div className="relative shrink-0">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-300 via-[#9b2a1f] to-amber-700 p-0.5 shadow-md">
+                              <div className="w-full h-full rounded-full bg-[#1e0a07] flex items-center justify-center font-serif font-bold text-amber-300 text-sm">
+                                {user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
+                              </div>
+                            </div>
+                            <span className="absolute -bottom-1 -right-1 px-1 py-0.2 rounded-full bg-amber-400 text-[#2b1008] text-[8px] font-black uppercase shadow">
+                              VIP
+                            </span>
+                          </div>
+                          <div className="min-w-0">
+                            <div className="font-serif font-bold text-sm text-[#fbe5cb] tracking-wide truncate">
+                              {user.fullName || 'Quý Khách Tri Kỷ'}
+                            </div>
+                            <div className="text-[10px] font-mono text-amber-400/90 tracking-wider">
+                              {cardNumber}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Khối Danh Vị & Điểm Tích Lũy */}
+                        <div className="mt-3 bg-black/40 rounded-xl p-2.5 border border-amber-500/20 shadow-inner relative z-10">
+                          <div className="flex justify-between items-center mb-1.5">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-base leading-none">{tierInfo.icon}</span>
+                              <div>
+                                <div className="text-[9px] text-stone-400 uppercase tracking-wider font-semibold">Danh Vị Hội Viên</div>
+                                <div className="text-xs font-serif font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-300 to-amber-400">
+                                  {tierInfo.title}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-right pl-2 border-l border-white/10 shrink-0">
+                              <div className="text-[9px] text-stone-400">Điểm Đổi Quà</div>
+                              <div className="text-sm font-serif font-extrabold text-amber-300 leading-tight">
+                                {availablePoints} <span className="text-[9px] font-sans font-normal text-stone-400">điểm</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Hành trình thăng hạng */}
+                          <div className="mt-2 pt-2 border-t border-white/5">
+                            <div className="flex justify-between items-center text-[10px] text-stone-300 mb-1">
+                              <span>Lên bậc <strong className="text-amber-300">"{tierInfo.nextTier}"</strong></span>
+                              <span className="text-amber-400 font-medium">
+                                {pointsToNext > 0 ? `Còn ${pointsToNext}đ` : 'Hạng cao nhất'}
+                              </span>
+                            </div>
+
+                            {/* Progress Track */}
+                            <div className="w-full h-1.5 bg-stone-900 rounded-full overflow-hidden p-0.5 border border-white/10 relative">
+                              <div
+                                className="h-full bg-gradient-to-r from-[#9b2a1f] via-amber-500 to-[#e4aa65] rounded-full transition-all duration-500 shadow-sm"
+                                style={{ width: `${progressPercent}%` }}
+                              ></div>
+                            </div>
+
+                            {/* Mốc Quà Tặng Gần Nhất */}
+                            <div className="flex justify-between items-center mt-1.5 text-[10px]">
+                              <span className="text-stone-400 truncate max-w-[185px] flex items-center gap-1">
+                                <span className="text-amber-400">🎁</span>
+                                <span>Mốc {tierInfo.giftPoints}đ: <strong className="text-stone-300">{tierInfo.nextGift}</strong></span>
+                              </span>
+                              <a
+                                href="#menu"
+                                onClick={() => setUserDropdownOpen(false)}
+                                className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold flex items-center gap-0.5 shrink-0"
+                              >
+                                <span>Đổi quà</span>
+                                <ArrowRight className="w-2.5 h-2.5" />
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Đặc Quyền Độc Bản */}
+                        <div className="mt-2.5 pt-2 border-t border-amber-500/15 flex items-center gap-1.5 text-[10px] text-amber-200/90 relative z-10">
+                          <Sparkles className="w-3 h-3 text-amber-400 shrink-0" />
+                          <span className="truncate">Đặc quyền: <strong className="text-[#fbe5cb]">{tierInfo.perk}</strong></span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* TAB 2: BÁT PHỞ RUỘT & GỌI MÓN (PHO TASTE CAPSULE) */}
+                    {dropdownTab === 'dish' && (
+                      <div className="p-3.5 bg-gradient-to-b from-[#24120c] to-[#150a07] text-[#fef3e2] space-y-2.5">
+                        {/* Tiêu đề */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                            <span className="font-serif font-bold text-xs text-[#fbe5cb] tracking-wide uppercase">
+                              Khẩu Vị Ruột Cố Tri
+                            </span>
+                          </div>
+                          <a
+                            href="#menu"
+                            onClick={() => setUserDropdownOpen(false)}
+                            className="text-[10px] text-amber-400/90 hover:text-amber-200 font-medium transition-colors flex items-center gap-0.5"
+                          >
+                            <span>Chỉnh gu</span>
+                            <span>✏️</span>
+                          </a>
+                        </div>
+
+                        {/* Card Món Ăn: Nền Men Gốm Viền Chỉ Vàng */}
+                        <div className="rounded-xl p-2.5 bg-gradient-to-br from-[#3a1c14]/70 to-[#1a0c08]/90 border border-amber-500/25 shadow-md relative overflow-hidden group">
+                          <div className="absolute -top-1 right-2 text-stone-500/30 text-xs pointer-events-none animate-pulse">♨️</div>
+
+                          {/* Ảnh + Tên + Giá */}
+                          <div className="flex items-center gap-2.5">
+                            <div className="relative shrink-0 w-12 h-12 rounded-lg overflow-hidden border border-amber-400/40 shadow-inner">
+                              <img 
+                                src="https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&w=200&q=80" 
+                                alt="Bát Phở Ruột" 
+                                className="w-12 h-12 object-cover group-hover:scale-110 transition-transform duration-300"
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                              <div className="font-serif font-bold text-[13px] text-white group-hover:text-amber-200 transition-colors truncate">
+                                {user.tasteProfile?.favoriteDishName || 'Phở Bò Tái Nạm Gầu Giòn'}
+                              </div>
+                              <div className="flex items-center justify-between mt-0.5">
+                                <span className="text-amber-400 font-bold font-mono text-xs">85.000đ</span>
+                                <span className="text-[9px] text-stone-400 font-sans italic bg-black/40 px-1.5 py-0.2 rounded border border-white/5">
+                                  Bát Đệ Nhất
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Dải Gia Vị Men Gốm */}
+                          <div className="mt-2.5 pt-2 border-t border-amber-500/15 flex flex-wrap gap-1">
+                            {user.tasteProfile?.brothType ? (
+                              <span className="px-2 py-0.5 rounded-full bg-[#140a07]/80 border border-amber-500/20 text-[#f2d8be] text-[9px] flex items-center gap-1 font-medium">
+                                <span>🍲</span>
+                                <span>{BROTH_LABELS[user.tasteProfile.brothType] || user.tasteProfile.brothType}</span>
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-full bg-[#140a07]/80 border border-amber-500/20 text-[#f2d8be] text-[9px] flex items-center gap-1 font-medium">
+                                <span>🍲</span>
+                                <span>Nước đậm béo</span>
+                              </span>
+                            )}
+
+                            {user.tasteProfile?.onionStyle ? (
+                              <span className="px-2 py-0.5 rounded-full bg-[#140a07]/80 border border-amber-500/20 text-[#f2d8be] text-[9px] flex items-center gap-1 font-medium">
+                                <span>🧅</span>
+                                <span>{ONION_LABELS[user.tasteProfile.onionStyle] || user.tasteProfile.onionStyle}</span>
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-full bg-[#140a07]/80 border border-amber-500/20 text-[#f2d8be] text-[9px] flex items-center gap-1 font-medium">
+                                <span>🧅</span>
+                                <span>Đầu hành giòn</span>
+                              </span>
+                            )}
+
+                            {user.tasteProfile?.crullerPref ? (
+                              <span className="px-2 py-0.5 rounded-full bg-[#140a07]/80 border border-amber-500/20 text-[#f2d8be] text-[9px] flex items-center gap-1 font-medium">
+                                <span>🥢</span>
+                                <span>{CRULLER_LABELS[user.tasteProfile.crullerPref] || user.tasteProfile.crullerPref}</span>
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-full bg-[#140a07]/80 border border-amber-500/20 text-[#f2d8be] text-[9px] flex items-center gap-1 font-medium">
+                                <span>🥢</span>
+                                <span>Kèm quẩy giòn</span>
+                              </span>
+                            )}
+
+                            {user.tasteProfile?.herbStyle && (
+                              <span className="px-2 py-0.5 rounded-full bg-[#140a07]/80 border border-amber-500/20 text-[#f2d8be] text-[9px] flex items-center gap-1 font-medium">
+                                <span>🌿</span>
+                                <span>{HERB_LABELS[user.tasteProfile.herbStyle] || user.tasteProfile.herbStyle}</span>
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Ghi chú */}
+                          <div className="mt-1.5 text-[10px] text-amber-200/75 italic truncate flex items-center gap-1">
+                            <span className="text-amber-400/80 font-serif">“</span>
+                            <span className="truncate">{user.tasteProfile?.customNote || 'Nước dùng trong ngọt thanh tủy bò, hành trần kỹ'}</span>
+                            <span className="text-amber-400/80 font-serif">”</span>
+                          </div>
+                        </div>
+
+                        {/* 1-Click CTA */}
+                        <button
+                          onClick={handleQuickReorder}
+                          className="w-full py-2 rounded-xl bg-gradient-to-r from-[#9b2a1f] via-[#b33224] to-[#801c13] hover:from-[#b53225] hover:via-[#c93c2c] hover:to-[#912217] text-[#fff6e8] font-serif font-bold text-xs shadow-lg shadow-red-950/60 flex items-center justify-center gap-2 border border-amber-400/30 hover:border-amber-300 transition-all group active:scale-95"
+                        >
+                          <span className="w-4 h-4 rounded-full bg-amber-400 text-black flex items-center justify-center text-[10px] font-black group-hover:scale-110 transition-transform">
+                            ⚡
+                          </span>
+                          <span className="tracking-wide">1-Click Đặt Lại Bát Này (85.000đ)</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {/* FOOTER TIỆN ÍCH LƯỚI NGANG 3 CỘT (HORIZONTAL ACTION GRID) */}
+                    <div className="grid grid-cols-3 border-t border-white/10 bg-[#120704] text-[10px] divide-x divide-white/5 text-center">
                       <a
                         href="#order"
                         onClick={() => setUserDropdownOpen(false)}
-                        className="px-3 py-2 rounded-xl hover:bg-white/5 flex items-center justify-between text-stone-300 hover:text-amber-100 transition-all"
+                        className="py-2.5 px-1 hover:bg-white/5 text-stone-300 hover:text-amber-200 transition-colors flex flex-col items-center justify-center gap-0.5"
                       >
-                        <div className="flex items-center gap-2.5">
-                          <FileText className="w-3.5 h-3.5 text-amber-400" />
-                          <span className="font-medium text-[11px]">Lịch sử đơn hàng</span>
+                        <div className="flex items-center gap-1 font-bold text-amber-400 font-mono text-xs">
+                          <FileText className="w-3 h-3 text-amber-400" />
+                          <span>{user.loyaltyAccount?.totalOrdersCount || 0}</span>
                         </div>
-                        <span className="px-2 py-0.5 rounded-full bg-amber-950/80 border border-amber-600/40 text-amber-300 text-[10px] font-mono font-bold">
-                          {user.loyaltyAccount?.totalOrdersCount || 0} đơn
-                        </span>
+                        <div className="text-[10px] text-stone-300 font-medium">Đơn hàng</div>
                       </a>
-                      
+
                       <a
                         href="#menu"
                         onClick={() => setUserDropdownOpen(false)}
-                        className="px-3 py-2 rounded-xl hover:bg-white/5 flex items-center justify-between text-stone-300 hover:text-amber-100 transition-all"
+                        className="py-2.5 px-1 hover:bg-white/5 text-stone-300 hover:text-amber-200 transition-colors flex flex-col items-center justify-center gap-0.5"
                       >
-                        <div className="flex items-center gap-2.5">
-                          <Gift className="w-3.5 h-3.5 text-amber-400" />
-                          <span className="font-medium text-[11px]">Kho quà & Đổi điểm</span>
-                        </div>
-                        <span className="text-amber-400 text-[10px] font-bold flex items-center gap-0.5">
-                          <span>Đổi quà</span>
-                          <ArrowRight className="w-2.5 h-2.5" />
-                        </span>
+                        <Gift className="w-3.5 h-3.5 text-amber-400" />
+                        <div className="text-[10px] text-stone-300 font-medium">Đổi quà</div>
                       </a>
 
-                      <a
-                        href="#order"
-                        onClick={() => setUserDropdownOpen(false)}
-                        className="px-3 py-2 rounded-xl hover:bg-white/5 flex items-center gap-2.5 text-stone-300 hover:text-amber-100 transition-all"
-                      >
-                        <MapPin className="w-3.5 h-3.5 text-amber-400" />
-                        <span className="font-medium text-[11px]">Sổ địa chỉ nhận phở</span>
-                      </a>
-                    </div>
-
-                    {/* TẦNG 4: Footer Hỗ Trợ & Đăng Xuất */}
-                    <div className="p-2.5 bg-[#120704] flex items-center justify-between text-[11px]">
-                      <a
-                        href="tel:19008686"
-                        className="text-stone-400 hover:text-amber-200 font-mono flex items-center gap-1 transition-colors"
-                      >
-                        <Phone className="w-3 h-3 text-amber-500" />
-                        <span>1900 8686</span>
-                      </a>
                       <button
+                        type="button"
                         onClick={() => {
                           logout();
                           setUserDropdownOpen(false);
                           if (onToast) onToast('Bạn đã đăng xuất tài khoản thành công!');
                         }}
-                        className="px-2.5 py-1 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-950/40 font-bold flex items-center gap-1 transition-all"
+                        className="py-2.5 px-1 hover:bg-red-950/40 text-red-400 hover:text-red-300 font-bold transition-colors flex flex-col items-center justify-center gap-0.5"
                       >
                         <LogOut className="w-3.5 h-3.5" />
-                        <span>Đăng xuất</span>
+                        <div className="text-[10px]">Đăng xuất</div>
                       </button>
                     </div>
 
