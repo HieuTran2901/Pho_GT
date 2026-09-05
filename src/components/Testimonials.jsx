@@ -251,7 +251,7 @@ const TestimonialCard = React.memo(function TestimonialCard({ review, idx, isCar
   return (
     <div
       id={isCarousel ? undefined : `testimonial-card-${review.id}`}
-      className={`bg-white rounded-3xl p-6 sm:p-7 shadow-md border transition-all duration-300 relative flex flex-col justify-between ${
+      className={`bg-white rounded-3xl p-6 sm:p-7 shadow-md border transition-all duration-300 relative flex flex-col justify-between overflow-hidden ${
         isCarousel ? 'min-w-[285px] max-w-[285px] snap-start' : 'hover:shadow-2xl hover:-translate-y-1'
       } ${
         !isCarousel && idx === 1
@@ -268,7 +268,7 @@ const TestimonialCard = React.memo(function TestimonialCard({ review, idx, isCar
             ))}
           </div>
           {review.badge && (
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200/80 shrink-0">
+            <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200/80 shrink-0 shadow-2xs">
               {review.badge}
             </span>
           )}
@@ -289,7 +289,7 @@ const TestimonialCard = React.memo(function TestimonialCard({ review, idx, isCar
       </div>
 
       {/* Reviewer Info */}
-      <div className="flex items-center gap-3 pt-3.5 border-t border-stone-100 mt-2">
+      <div className="flex items-center gap-3 pt-3.5 border-t border-stone-100 mt-2 relative z-10">
         <img
           src={review.avatar}
           alt={review.name}
@@ -306,8 +306,8 @@ const TestimonialCard = React.memo(function TestimonialCard({ review, idx, isCar
         </div>
       </div>
 
-      {/* Watermark Quote Icon */}
-      <Quote className="w-10 h-10 text-stone-100/90 absolute top-5 right-5 -z-0 pointer-events-none" />
+      {/* Watermark Quote Icon - Repositioned to bottom-right to prevent badge collision */}
+      <Quote className="w-14 h-14 text-stone-200/60 absolute bottom-3 right-4 pointer-events-none -z-0" />
     </div>
   );
 });
