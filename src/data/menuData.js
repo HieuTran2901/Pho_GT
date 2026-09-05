@@ -231,6 +231,156 @@ export const MENU_ITEMS = [
       'Thanh lọc vị giác',
       'Hương thơm thanh tao'
     ]
+  },
+  {
+    id: 10,
+    name: 'Phở Tái Bắp Bò Hoa',
+    category: 'pho-bo',
+    price: 70000,
+    tag: 'Hảo Hạng',
+    tagIcon: 'star',
+    portion: 'Tô thường',
+    theme: 'red',
+    description: 'Bắp bò hoa thái mỏng trần tái giữ trọn vị ngọt đậm đà, thớ thịt gân giòn sần sật hòa quyện trong nước dùng ninh 24h.',
+    image: 'https://images.unsplash.com/photo-1594041680534-e8c8cdebd659?auto=format&fit=crop&w=800&q=80',
+    ingredients: ['Bắp bò hoa tươi', 'Bánh phở tráng tay', 'Gừng nướng hạ thổ', 'Nước dùng trong vắt'],
+    featurePills: [
+      { label: 'Bắp hoa', sub: 'Giòn sần sật', type: 'meat' },
+      { label: 'Bánh phở', sub: 'Tráng tay tươi', type: 'noodle' },
+      { label: 'Nước dùng', sub: 'Ninh 24h', type: 'broth' },
+      { label: 'Hành hoa', sub: 'Thơm lừng', type: 'herb' }
+    ],
+    highlights: [
+      'Bắp bò hoa giòn ngọt',
+      'Thịt bò tơ tươi trong ngày',
+      'Nước dùng thanh trong',
+      'Bánh phở dai mềm mướt'
+    ]
+  },
+  {
+    id: 11,
+    name: 'Phở Bò Tái Gầu Giòn',
+    category: 'pho-bo',
+    price: 65000,
+    tag: 'Béo Ngậy',
+    tagIcon: 'flame',
+    portion: 'Tô thường',
+    theme: 'red',
+    description: 'Gầu bò hoa luộc chín tới thơm giòn béo ngậy kết hợp thịt bò tái mềm mọng nước, chan nước dùng thanh ngọt tủy xương.',
+    image: 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&w=800&q=80',
+    ingredients: ['Gầu giòn hảo hạng', 'Thịt tái mềm', 'Hành lá tươi', 'Nước dùng thanh'],
+    featurePills: [
+      { label: 'Gầu giòn', sub: 'Béo ngậy', type: 'meat' },
+      { label: 'Bò tái', sub: 'Mềm mọng', type: 'meat' },
+      { label: 'Nước dùng', sub: 'Đậm đà', type: 'broth' },
+      { label: 'Hành hoa', sub: 'Tươi sạch', type: 'herb' }
+    ],
+    highlights: [
+      'Gầu bò giòn sần sật',
+      'Thịt bò tái ngọt mềm',
+      'Nước dùng đậm vị truyền thống',
+      'Hương thơm thảo mộc xưa'
+    ]
+  },
+  {
+    id: 12,
+    name: 'Phở Gà Xé Lòng Trứng Non',
+    category: 'pho-ga',
+    price: 75000,
+    tag: 'Đặc Sắc',
+    tagIcon: 'sparkles',
+    portion: 'Tô lớn',
+    theme: 'red',
+    description: 'Thịt ức và đùi gà xé phay bùi ngọt, kèm chùm trứng non vàng ươm béo ngậy và bộ lòng mề gà rim thơm nức mũi.',
+    image: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80',
+    ingredients: ['Gà đồi xé phay', 'Chùm trứng non', 'Lòng mề rim', 'Lá chanh tươi'],
+    featurePills: [
+      { label: 'Gà đồi', sub: 'Xé phay ngọt', type: 'meat' },
+      { label: 'Trứng non', sub: 'Vàng ươm béo', type: 'egg' },
+      { label: 'Lòng mề', sub: 'Rim thơm', type: 'special' },
+      { label: 'Lá chanh', sub: 'Thái chỉ', type: 'herb' }
+    ],
+    highlights: [
+      'Trứng non vàng ươm béo bùi',
+      'Thịt gà đồi ta chắc ngọt',
+      'Lòng mề rim gia truyền',
+      'Nước dùng gà thanh dịu'
+    ]
+  },
+  {
+    id: 13,
+    name: 'Phở Gà Trộn Chua Ngọt Hà Thành',
+    category: 'pho-ga',
+    price: 65000,
+    tag: 'Món Hot',
+    tagIcon: 'star',
+    portion: 'Tô thường',
+    theme: 'green',
+    description: 'Bánh phở mềm trộn sốt tương ớt chua ngọt gia truyền, thịt gà đồi xé, lạc rang giòn bùi và hành phi vàng ruộm.',
+    image: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=800&q=80',
+    ingredients: ['Gà đồi xé', 'Sốt trộn bí truyền', 'Lạc rang & hành phi', 'Rau thơm các loại'],
+    featurePills: [
+      { label: 'Gà đồi', sub: 'Thịt chắc giòn', type: 'meat' },
+      { label: 'Sốt trộn', sub: 'Chua ngọt 1986', type: 'spice' },
+      { label: 'Lạc rang', sub: 'Giòn bùi thơm', type: 'special' },
+      { label: 'Hành phi', sub: 'Vàng ruộm', type: 'herb' }
+    ],
+    highlights: [
+      'Sốt trộn chua ngọt thanh tao',
+      'Gà đồi da giòn thịt ngọt',
+      'Lạc rang bùi, hành phi giòn',
+      'Tặng kèm bát nước dùng nóng'
+    ]
+  },
+  {
+    id: 14,
+    name: 'Phở Thố Đá Núi Lửa Sôi Sùng Sục',
+    category: 'special',
+    price: 95000,
+    tag: 'Đỉnh Cao',
+    tagIcon: 'flame',
+    portion: 'Thố đá nóng',
+    theme: 'green',
+    description: 'Nước dùng sôi sùng sục trong thố đá nóng 300 độ C, giữ nhiệt suốt bữa ăn; thực khách tự tay nhúng thịt bò tươi và bánh phở.',
+    image: 'https://images.unsplash.com/photo-1631709497146-a239ef373cf1?auto=format&fit=crop&w=800&q=80',
+    ingredients: ['Thịt bò hảo hạng', 'Thố đá giữ nhiệt 300°C', 'Trứng gà ta', 'Nước dùng cốt bò'],
+    featurePills: [
+      { label: 'Thố đá', sub: 'Nóng 300°C', type: 'flame' },
+      { label: 'Bò tơ tươi', sub: 'Tự tay nhúng', type: 'meat' },
+      { label: 'Nước cốt', sub: 'Sôi sùng sục', type: 'broth' },
+      { label: 'Trứng gà', sub: 'Lòng đào béo', type: 'egg' }
+    ],
+    highlights: [
+      'Nóng bỏng tay tới giọt cuối cùng',
+      'Trải nghiệm tự tay nhúng thịt bò',
+      'Hương vị bùng nổ trong thố đá',
+      'Thịt bò tơ hảo hạng tươi mềm'
+    ]
+  },
+  {
+    id: 15,
+    name: 'Sữa Đậu Nành Lá Dứa Thơm Mát',
+    category: 'sides',
+    price: 18000,
+    tag: 'Giải Nhiệt',
+    tagIcon: 'leaf',
+    portion: 'Ly đá',
+    theme: 'red',
+    description: 'Đậu nành hạt tuyển nấu cùng lá dứa tươi xay nhuyễn, vị ngọt dịu thanh mát, cân bằng hoàn hảo sau bát phở nóng.',
+    image: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=800&q=80',
+    ingredients: ['Đậu nành hạt nguyên chất', 'Lá dứa tươi nếp', 'Đường phèn thanh'],
+    featurePills: [
+      { label: 'Đậu nành', sub: 'Nguyên chất', type: 'tea' },
+      { label: 'Lá dứa', sub: 'Tươi nếp thơm', type: 'herb' },
+      { label: 'Đường phèn', sub: 'Ngọt dịu', type: 'spice' },
+      { label: 'Thức uống', sub: 'Thanh nhiệt', type: 'special' }
+    ],
+    highlights: [
+      'Đậu nành xay tươi mỗi sáng',
+      'Hương lá dứa thơm mát dịu',
+      'Đường phèn ngọt thanh không gắt',
+      'Hòa quyện hoàn hảo với phở nóng'
+    ]
   }
 ];
 
