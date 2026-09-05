@@ -10,7 +10,23 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     try {
       const saved = localStorage.getItem(AUTH_STORAGE_KEY);
-      return saved ? JSON.parse(saved) : null;
+      const token = localStorage.getItem(AUTH_TOKEN_KEY);
+      // Dọn dẹp dữ liệu mock hoặc session giả lập còn sót lại từ trước
+      if (token && token.startsWith('mock_jwt_token')) {
+        localStorage.removeItem(AUTH_STORAGE_KEY);
+        localStorage.removeItem(AUTH_TOKEN_KEY);
+        return null;
+      }
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed?.id && String(parsed.id).startsWith('usr_')) {
+          localStorage.removeItem(AUTH_STORAGE_KEY);
+          localStorage.removeItem(AUTH_TOKEN_KEY);
+          return null;
+        }
+        return parsed;
+      }
+      return null;
     } catch {
       return null;
     }
@@ -33,12 +49,30 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const token = localStorage.getItem(AUTH_TOKEN_KEY);
     if (token) {
+      // Dọn dẹp nếu phát hiện token giả lập cũ
+      if (token.startsWith('mock_jwt_token')) {
+        setUser(null);
+        localStorage.removeItem(AUTH_STORAGE_KEY);
+        localStorage.removeItem(AUTH_TOKEN_KEY);
+        return;
+      }
+
       authApi.getMe(token).then((profile) => {
         if (profile) {
           setUser(profile);
+        } else {
+          // Token không còn hợp lệ trên hệ thống backend thực tế
+          setUser(null);
+          localStorage.removeItem(AUTH_STORAGE_KEY);
+          localStorage.removeItem(AUTH_TOKEN_KEY);
         }
-      }).catch(() => {
-        // Giữ phiên hiện tại nếu backend offline
+      }).catch((err) => {
+        // Nếu là lỗi xác thực (401/403), hủy bỏ phiên ngay
+        if (err?.status === 401 || err?.status === 403) {
+          setUser(null);
+          localStorage.removeItem(AUTH_STORAGE_KEY);
+          localStorage.removeItem(AUTH_TOKEN_KEY);
+        }
       });
     }
   }, []);

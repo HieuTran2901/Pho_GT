@@ -6,6 +6,8 @@
 const API_BASE_URL = (typeof import.meta !== 'undefined' && import.meta?.env?.VITE_API_BASE_URL) 
   || 'http://localhost:8080/api/v1/auth';
 
+const FRIENDLY_NETWORK_ERROR = 'Dạ, quán đang tạm thời gián đoạn kết nối. Quý khách vui lòng kiểm tra lại đường truyền mạng hoặc thử lại sau ít phút nhé!';
+
 /**
  * Handle API HTTP responses and error formatting
  */
@@ -14,7 +16,13 @@ async function handleResponse(response) {
 
   if (!response.ok) {
     const errorMsg = (json && (json.message || json.error)) 
-      || `Lỗi máy chủ (${response.status}): Vui lòng thử lại sau.`;
+      || (response.status === 401 
+          ? 'Số điện thoại hoặc mật khẩu chưa chính xác. Quý khách vui lòng kiểm tra lại nhé!'
+          : response.status === 404
+          ? 'Không tìm thấy thông tin tài khoản. Quý khách vui lòng đăng ký mới nhé!'
+          : response.status >= 500
+          ? 'Dạ, quán đang bảo trì hệ thống một chút. Quý khách vui lòng quay lại sau ít phút nhé!'
+          : 'Dạ, yêu cầu chưa thể thực hiện lúc này. Quý khách vui lòng thử lại sau nhé!');
     const error = new Error(errorMsg);
     error.status = response.status;
     error.data = json;
@@ -47,34 +55,9 @@ export const authApi = {
 
       return await handleResponse(response);
     } catch (err) {
-      // Fallback khi backend chưa bật: thông báo và giả lập an toàn
-      if (err.name === 'TypeError' && err.message.includes('fetch')) {
-        console.warn('[authApi] Backend chưa bật, kích hoạt chế độ giả lập cục bộ.');
-        return {
-          user: {
-            id: 'usr_' + Date.now(),
-            phone,
-            fullName,
-            role: 'CUSTOMER',
-            loyaltyAccount: {
-              totalPoints: 50,
-              availablePoints: 50,
-              membershipTier: 'DONG',
-              totalOrdersCount: 0,
-              totalSpent: 0
-            },
-            tasteProfile: saveTasteProfile ? {
-              brothType: 'DAM_DA',
-              onionStyle: 'NHIEU_HANH',
-              herbStyle: 'DU_RAU',
-              spicyLevel: 1,
-              crullerPref: 'QUAY_GION',
-              customNote: 'Chuẩn vị phở gia truyền 1986 (Đã lưu)'
-            } : null
-          },
-          accessToken: 'mock_jwt_token_' + Date.now(),
-          pointsEarned: 50
-        };
+      // Bắt lỗi mất kết nối mạng hoặc Backend chưa phản hồi với câu từ thân thiện
+      if (err.name === 'TypeError' || err.message?.includes('fetch') || err.message?.includes('NetworkError')) {
+        throw new Error(FRIENDLY_NETWORK_ERROR);
       }
       throw err;
     }
@@ -96,34 +79,9 @@ export const authApi = {
 
       return await handleResponse(response);
     } catch (err) {
-      // Fallback khi backend chưa bật: thông báo và giả lập
-      if (err.name === 'TypeError' && err.message.includes('fetch')) {
-        console.warn('[authApi] Backend chưa bật, kích hoạt chế độ giả lập cục bộ.');
-        return {
-          user: {
-            id: 'usr_' + Date.now(),
-            phone,
-            fullName: phone === '0988888888' ? 'Nguyễn Văn Hiếu' : 'Khách Quen 1986',
-            role: 'CUSTOMER',
-            loyaltyAccount: {
-              totalPoints: 135,
-              availablePoints: 135,
-              membershipTier: 'DONG',
-              totalOrdersCount: 2,
-              totalSpent: 170000
-            },
-            tasteProfile: {
-              favoriteDishName: 'Phở Bò Tái Nạm Gầu Giòn 1986',
-              brothType: 'BEO_NGAY',
-              onionStyle: 'HANH_TRAN',
-              herbStyle: 'DU_RAU',
-              spicyLevel: 2,
-              crullerPref: 'QUAY_GION',
-              customNote: 'Cho nhiều nước béo thơm và hành trần riêng'
-            }
-          },
-          accessToken: 'mock_jwt_token_' + Date.now()
-        };
+      // Bắt lỗi mất kết nối mạng hoặc Backend chưa phản hồi với câu từ thân thiện
+      if (err.name === 'TypeError' || err.message?.includes('fetch') || err.message?.includes('NetworkError')) {
+        throw new Error(FRIENDLY_NETWORK_ERROR);
       }
       throw err;
     }
