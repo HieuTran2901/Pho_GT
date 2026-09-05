@@ -537,25 +537,29 @@ function MenuSection({ onAddToCart }) {
   }, [onAddToCart]);
 
   return (
-    <section id="menu" className="py-24 bg-[#faf6ef] relative border-t border-stone-200/80">
+    <section id="menu" className="py-8 sm:py-16 lg:py-24 bg-[#faf6ef] relative border-t border-stone-200/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header */}
-        <div ref={headerRef} className={`text-center max-w-3xl mx-auto mb-14 transition-all duration-700 ${isHeaderVisible ? 'reveal-fade-up' : 'opacity-0'}`}>
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#96281b]/10 text-[#96281b] text-xs font-bold uppercase tracking-wider mb-3 border border-[#96281b]/20">
-            <Sparkles className="w-3.5 h-3.5" />
+        <div ref={headerRef} className={`text-center max-w-3xl mx-auto mb-6 sm:mb-10 lg:mb-14 transition-all duration-700 ${isHeaderVisible ? 'reveal-fade-up' : 'opacity-0'}`}>
+          <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-0.5 sm:py-1 rounded-full bg-[#96281b]/10 text-[#96281b] text-[11px] sm:text-xs font-bold uppercase tracking-wider mb-2 sm:mb-3 border border-[#96281b]/20">
+            <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
             Thực Đơn Tinh Hoa
           </div>
-          <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-[#1b3425] mb-4">
+          <h2 className="font-serif text-2xl sm:text-4xl lg:text-5xl font-bold text-[#1b3425] mb-2 sm:mb-4 leading-tight">
             Bát Phở Chuẩn Vị — Ấm Lòng Thực Khách
           </h2>
-          <p className="text-stone-600 text-sm sm:text-base leading-relaxed">
+          {/* Mobile concise sentence (< sm) vs Full paragraph (>= sm) */}
+          <p className="text-stone-600 text-xs leading-relaxed sm:hidden px-2">
+            Phục vụ nóng bỏng tay, giữ trọn vị ngọt tủy xương & bánh phở tráng tươi mỗi sớm mai.
+          </p>
+          <p className="hidden sm:block text-stone-600 text-sm sm:text-base leading-relaxed">
             Mỗi bát phở được phục vụ nóng bỏng tay, giữ trọn vẹn vị ngọt đậm đà từ tủy xương, thịt bò mềm mại cùng bánh phở dai mướt tráng thủ công mỗi sớm mai.
           </p>
         </div>
 
         {/* Filter Controls: Category Navigation with Left/Right Arrows & Search */}
-        <div ref={controlsRef} className={`flex flex-col lg:flex-row items-center justify-between gap-4 lg:gap-5 mb-12 pb-4 border-b border-stone-300/60 transition-all duration-700 ${isControlsVisible ? 'reveal-fade-up' : 'opacity-0'}`}>
+        <div ref={controlsRef} className={`flex flex-col lg:flex-row items-center justify-between gap-4 lg:gap-5 mb-8 sm:mb-12 pb-3 sm:pb-4 border-b border-stone-300/60 transition-all duration-700 ${isControlsVisible ? 'reveal-fade-up' : 'opacity-0'}`}>
           
           {/* Category Carousel Container: flex-1 stretches close to search bar */}
           <div className="relative flex items-center flex-1 w-full min-w-0 gap-2">
