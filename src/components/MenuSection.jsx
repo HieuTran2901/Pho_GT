@@ -517,6 +517,7 @@ function MenuSection({ onAddToCart }) {
   const mobileSearchInputRef = useRef(null);
   const isManualScrollingRef = useRef(false);
   const scrollLockTimerRef = useRef(null);
+  const activeCategoryRef = useRef('all');
 
   const toggleGroupExpand = useCallback((catId) => {
     setExpandedGroups((prev) => ({
@@ -674,6 +675,18 @@ function MenuSection({ onAddToCart }) {
     dragRef.current.isDragging = false;
   };
 
+  const centerCategoryTab = useCallback((catId) => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const tabEl = document.getElementById(`category-tab-${catId}`);
+    if (!tabEl) return;
+    const tabLeft = tabEl.offsetLeft;
+    const tabWidth = tabEl.offsetWidth;
+    const containerWidth = container.clientWidth;
+    const targetScrollLeft = tabLeft - (containerWidth / 2) + (tabWidth / 2);
+    container.scrollTo({ left: Math.max(0, targetScrollLeft), behavior: 'smooth' });
+  }, []);
+
   const scrollToCategorySection = useCallback((catId) => {
     const sectionEl = document.getElementById(`category-section-${catId}`);
     if (!sectionEl) return;
@@ -682,21 +695,16 @@ function MenuSection({ onAddToCart }) {
     window.scrollTo({ top: y, behavior: 'smooth' });
   }, []);
 
-  const handleCategoryClick = useCallback((catId, e) => {
+  const handleCategoryClick = useCallback((catId) => {
     if (dragRef.current.hasDragged) {
       dragRef.current.hasDragged = false;
       return;
     }
 
-    if (e && e.currentTarget && typeof e.currentTarget.scrollIntoView === 'function') {
-      e.currentTarget.scrollIntoView({
-        behavior: 'smooth',
-        inline: 'center',
-        block: 'nearest',
-      });
-    }
+    centerCategoryTab(catId);
 
     if (catId === 'favorites') {
+      activeCategoryRef.current = 'favorites';
       setActiveCategory('favorites');
       return;
     }
@@ -706,6 +714,7 @@ function MenuSection({ onAddToCart }) {
     }
 
     isManualScrollingRef.current = true;
+    activeCategoryRef.current = catId;
     setActiveCategory(catId);
 
     if (catId === 'all') {
@@ -723,7 +732,7 @@ function MenuSection({ onAddToCart }) {
     scrollLockTimerRef.current = setTimeout(() => {
       isManualScrollingRef.current = false;
     }, 850);
-  }, [searchQuery, scrollToCategorySection]);
+  }, [searchQuery, scrollToCategorySection, centerCategoryTab]);
 
   // Bidirectional ScrollSpy Listener: Highlights active category tab when scrolling through sections
   useEffect(() => {
@@ -755,21 +764,20 @@ function MenuSection({ onAddToCart }) {
         }
       }
 
-      setActiveCategory((prev) => {
-        if (prev !== currentActive && prev !== 'favorites' && !searchQuery) {
-          const tabEl = document.getElementById(`category-tab-${currentActive}`);
-          if (tabEl && typeof tabEl.scrollIntoView === 'function') {
-            tabEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-          }
-          return currentActive;
-        }
-        return prev;
-      });
+      if (
+        activeCategoryRef.current !== currentActive &&
+        activeCategoryRef.current !== 'favorites' &&
+        !searchQuery
+      ) {
+        activeCategoryRef.current = currentActive;
+        setActiveCategory(currentActive);
+        centerCategoryTab(currentActive);
+      }
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [activeCategory, searchQuery]);
+  }, [activeCategory, searchQuery, centerCategoryTab]);
 
   // Memoized filter logic
   const filteredItems = useMemo(() => {
@@ -875,7 +883,7 @@ function MenuSection({ onAddToCart }) {
                   <button
                     key={cat.id}
                     id={`category-tab-${cat.id}`}
-                    onClick={(e) => handleCategoryClick(cat.id, e)}
+                    onClick={() => handleCategoryClick(cat.id)}
                     className={`whitespace-nowrap px-3 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold tracking-wide transition-all duration-200 flex items-center shrink-0 active:scale-95 ${
                       isFav && favTabJiggle
                         ? 'animate-heart-tab-jiggle ring-2 ring-rose-400/80 shadow-[0_0_16px_rgba(225,29,72,0.4)]'
