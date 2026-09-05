@@ -429,7 +429,7 @@ function OrderSection() {
                         name="branch"
                         value={formData.branch}
                         onChange={handleInputChange}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#2e1d15] border border-white/15 text-white text-base sm:text-sm focus:outline-none focus:border-amber-400 transition-colors"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#2e1d15] border border-white/15 text-white text-base sm:text-sm focus:outline-none focus:border-amber-400 transition-colors [color-scheme:dark]"
                       >
                         <option value="hanoi-hangbac">Hà Nội: 45 Hàng Bạc, Hoàn Kiếm (Cơ sở gốc 1986)</option>
                         <option value="hanoi-lyquocsu">Hà Nội: 10 Lý Quốc Sư, Hoàn Kiếm</option>
@@ -497,7 +497,7 @@ function OrderSection() {
                         required
                         value={formData.date}
                         onChange={handleInputChange}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white text-base sm:text-sm focus:outline-none focus:border-amber-400 transition-colors"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white text-base sm:text-sm focus:outline-none focus:border-amber-400 transition-colors [color-scheme:dark]"
                       />
                     </div>
                     <div>
@@ -510,7 +510,7 @@ function OrderSection() {
                         required
                         value={formData.time}
                         onChange={handleInputChange}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white text-base sm:text-sm focus:outline-none focus:border-amber-400 transition-colors"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white text-base sm:text-sm focus:outline-none focus:border-amber-400 transition-colors [color-scheme:dark]"
                       />
                     </div>
                   </div>
@@ -568,7 +568,7 @@ function OrderSection() {
                       </span>
                     ) : (
                       <>
-                        <Send className="w-4 h-4" />
+                        <Send className="w-4 h-4 text-white" />
                         <span>
                           {formData.orderType === 'dine-in' ? 'Xác Nhận Đặt Bàn Tại Quán' : 'Xác Nhận Đặt Giao Phở'}
                         </span>

@@ -723,4 +723,23 @@
   animation: passCardFloat 4s ease-in-out infinite;
 }
 
+/* Ensure date and time picker native indicator icons are crisp white on dark order inputs */
+input[type="date"],
+input[type="time"],
+select {
+  color-scheme: dark;
+}
 
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(1);
+  opacity: 0.9;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+  transform: scale(1.08);
+}
