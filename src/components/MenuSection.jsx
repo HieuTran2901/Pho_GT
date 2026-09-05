@@ -515,7 +515,7 @@ function MenuSection({ onAddToCart }) {
   const [expandedGroups, setExpandedGroups] = useState({});
 
   const favTabTimerRef = useRef(null);
-  const addTimerRef = useRef(null);
+  const addTimersRef = useRef({});
   const mobileSearchInputRef = useRef(null);
   const isManualScrollingRef = useRef(false);
   const scrollLockTimerRef = useRef(null);
@@ -591,7 +591,7 @@ function MenuSection({ onAddToCart }) {
   useEffect(() => {
     return () => {
       if (favTabTimerRef.current) clearTimeout(favTabTimerRef.current);
-      if (addTimerRef.current) clearTimeout(addTimerRef.current);
+      Object.values(addTimersRef.current).forEach(clearTimeout);
       if (scrollLockTimerRef.current) clearTimeout(scrollLockTimerRef.current);
     };
   }, []);
@@ -879,10 +879,14 @@ function MenuSection({ onAddToCart }) {
     }
 
     onAddToCart(item, { startX, startY });
-    setAddedItemIds((prev) => [...prev, item.id]);
-    if (addTimerRef.current) clearTimeout(addTimerRef.current);
-    addTimerRef.current = setTimeout(() => {
+    setAddedItemIds((prev) => (prev.includes(item.id) ? prev : [...prev, item.id]));
+
+    if (addTimersRef.current[item.id]) {
+      clearTimeout(addTimersRef.current[item.id]);
+    }
+    addTimersRef.current[item.id] = setTimeout(() => {
       setAddedItemIds((prev) => prev.filter((id) => id !== item.id));
+      delete addTimersRef.current[item.id];
     }, 1200);
   }, [onAddToCart]);
 
