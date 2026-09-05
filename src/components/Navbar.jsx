@@ -83,30 +83,10 @@ const BROTH_LABELS = {
   THANH: 'Nước thanh trong'
 };
 
-const ONION_LABELS = {
-  HANH_TRAN: 'Hành trần',
-  NHIEU_HANH: 'Nhiều hành hoa',
-  IT_HANH: 'Ít hành',
-  DAU_HANH: 'Đầu hành giòn'
-};
-
-const HERB_LABELS = {
-  DU_RAU: 'Đủ rau thơm',
-  KHONG_RAU_MUI: 'Không rau mùi',
-  KHONG_HANH_TAY: 'Không hành tây'
-};
-
-const CRULLER_LABELS = {
-  QUAY_GION: 'Quẩy giòn',
-  QUAY_MEM: 'Quẩy mềm',
-  KHONG_QUAY: 'Không quẩy'
-};
-
 function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJiggling, onToast }) {
   const [activeTab, setActiveTab] = useState('hero');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-  const [dropdownTab, setDropdownTab] = useState('membership');
   const dropdownRef = useRef(null);
 
   const { user, isAuthenticated, openAuthModal, logout } = useAuth();
@@ -120,7 +100,6 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
   const pointsToNext = Math.max(0, tierInfo.target - totalPoints);
   const progressPercent = Math.min(100, Math.round((totalPoints / tierInfo.target) * 100));
   const cardNumber = user?.phone ? `#VIP-1986-${user.phone.replace(/\D/g, '').slice(-4) || '8888'}` : '#VIP-1986-8888';
-  const formattedCardNum = user?.phone ? `1986 • 8888 • ${user.phone.replace(/\D/g, '').slice(-4) || '0988'}` : '1986 • 8888 • 0988';
 
   // 1-Click Quick Reorder handler
   const handleQuickReorder = useCallback(() => {
@@ -261,281 +240,144 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
                   <ChevronDown className={`w-3.5 h-3.5 text-stone-500 transition-transform duration-200 ${userDropdownOpen ? 'rotate-180 text-[#8a1e14]' : ''}`} />
                 </button>
 
-                {/* Member Dropdown Popup: Hộp Sơn Mài Thưởng Khách 1986 (Dual-Tab Architecture) */}
+                {/* Member Dropdown Popup: Đảo Ẩm Thực Indochine Minimal Khảm Vàng (Ý Tưởng Dung Hợp 04 + 01) */}
                 {userDropdownOpen && (
-                  <div className="absolute right-0 mt-2.5 w-80 rounded-2xl bg-[#1a0d09] border border-[#d49e58]/40 shadow-[0_20px_50px_rgba(0,0,0,0.85)] overflow-hidden z-50 animate-dropdown-heritage text-xs">
+                  <div className="absolute right-0 mt-2.5 w-80 rounded-2xl bg-[#180a07]/95 backdrop-blur-md border border-[#d49e58]/40 shadow-[0_20px_50px_rgba(0,0,0,0.85)] overflow-hidden z-50 animate-dropdown-heritage text-xs">
                     
-                    {/* THANH ĐIỀU HƯỚNG TAB ĐÔI (DUAL-TAB SWITCHER) */}
-                    <div className="flex border-b border-amber-900/40 bg-black/40 p-1 gap-1">
-                      <button
-                        type="button"
-                        onClick={() => setDropdownTab('membership')}
-                        className={`flex-1 py-1.5 rounded-lg font-serif font-bold text-[11px] transition-all flex items-center justify-center gap-1 ${
-                          dropdownTab === 'membership'
-                            ? 'bg-gradient-to-r from-[#9b2a1f] to-[#7a1c12] text-amber-100 shadow border border-amber-400/30'
-                            : 'text-stone-400 hover:text-amber-200 hover:bg-white/5'
-                        }`}
-                      >
-                        <span>⚜️</span>
-                        <span>Thẻ Hội Viên</span>
-                      </button>
+                    {/* HÀNG 1: HEADER VIP & DẤU CHIỆN HOÀNG GIA */}
+                    <div className="p-3 bg-gradient-to-r from-[#2c0e09] via-[#1f0b07] to-[#150705] border-b border-amber-900/40 flex items-center justify-between">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="relative shrink-0">
+                          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-400 via-amber-600 to-amber-900 p-0.5 shadow-md">
+                            <div className="w-full h-full rounded-full bg-[#180805] text-amber-300 flex items-center justify-center text-xs font-serif font-bold">
+                              {user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
+                            </div>
+                          </div>
+                          <span className="absolute -bottom-0.5 -right-0.5 text-[9px] leading-none" title={tierInfo.name}>
+                            {tierInfo.icon}
+                          </span>
+                        </div>
 
-                      <button
-                        type="button"
-                        onClick={() => setDropdownTab('dish')}
-                        className={`flex-1 py-1.5 rounded-lg font-serif font-bold text-[11px] transition-all flex items-center justify-center gap-1 ${
-                          dropdownTab === 'dish'
-                            ? 'bg-gradient-to-r from-[#9b2a1f] to-[#7a1c12] text-amber-100 shadow border border-amber-400/30'
-                            : 'text-stone-400 hover:text-amber-200 hover:bg-white/5'
-                        }`}
-                      >
-                        <span>🍜</span>
-                        <span>Bát Phở Ruột</span>
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
-                      </button>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-serif font-bold text-xs text-white truncate max-w-[120px]">
+                              {user.fullName || 'Quý Khách'}
+                            </span>
+                            <span className="px-1.5 py-0.2 rounded border border-red-500/70 bg-red-950/80 text-red-300 font-serif text-[8px] font-bold uppercase tracking-wider shrink-0 shadow-xs">
+                              TRI KỶ 1986
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 text-[10px] mt-0.5">
+                            <span className="font-serif font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-300 to-amber-400 truncate">
+                              {tierInfo.title}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <span className="px-1.5 py-0.5 rounded bg-black/40 text-amber-300/90 border border-amber-500/30 text-[9px] font-mono shrink-0 shadow-inner">
+                        {cardNumber}
+                      </span>
                     </div>
 
-                    {/* TAB 1: THẺ HỘI VIÊN SƠN MÀI CẨN VÀNG (PHYSICAL HERITAGE PASS) */}
-                    {dropdownTab === 'membership' && (
-                      <div className="p-2.5 bg-gradient-to-b from-[#1c0a07] to-[#100402] text-[#fef3e2]">
-                        
-                        {/* THẺ VIP KIM BÀI THỰC THỂ */}
-                        <div className="relative rounded-xl p-3 bg-gradient-to-br from-[#4a140e] via-[#2a0c07] to-[#140503] border border-[#e4aa65]/50 shadow-[0_10px_25px_rgba(0,0,0,0.8)] overflow-hidden">
-                          {/* Nền gấm hoa văn chìm */}
-                          <div className="absolute inset-0 bg-[radial-gradient(#e4aa65_1px,transparent_1px)] [background-size:10px_10px] opacity-20 pointer-events-none"></div>
-
-                          {/* Hàng 1: Vi mạch gốm sứ mạ vàng & Dấu Chiện Son */}
-                          <div className="flex items-center justify-between relative z-10">
-                            <div className="flex items-center gap-2">
-                              {/* Vi Mạch Gốm Sứ Vàng 18K (Ceramic Smart Chip) */}
-                              <div className="w-6 h-4.5 rounded bg-gradient-to-br from-amber-300 via-amber-400 to-amber-700 border border-amber-200/70 p-0.5 shadow flex items-center justify-center">
-                                <div className="w-full h-full border border-amber-900/50 rounded-xs grid grid-cols-2 gap-0.5 opacity-70">
-                                  <div className="border-r border-amber-900/50"></div>
-                                  <div></div>
-                                </div>
-                              </div>
-                              <span className="font-serif text-[9px] font-bold tracking-widest text-amber-300 uppercase">
-                                PHỞ 1986 VIP
-                              </span>
-                            </div>
-
-                            {/* Dấu Chiện Son Hoàng Gia */}
-                            <div className="px-1.5 py-0.5 rounded border border-red-500/80 bg-red-900/80 text-red-200 font-serif text-[8px] font-black tracking-widest uppercase rotate-2 shadow">
-                              TRI KỶ 1986
-                            </div>
-                          </div>
-
-                          {/* Hàng 2: Danh Vị Độc Bản & Số Thẻ Dập Nổi Ánh Kim */}
-                          <div className="mt-3 relative z-10">
-                            <div className="text-[8px] uppercase tracking-wider text-amber-300/70 font-semibold">
-                              Danh Vị Độc Bản
-                            </div>
-                            <div className="text-[13px] font-serif font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#fff2cc] via-[#e2b364] to-[#ffd67a] flex items-center gap-1 mt-0.5">
-                              <span>{tierInfo.icon}</span>
-                              <span>{tierInfo.title}</span>
-                            </div>
-                            {/* Số thẻ dập nổi định dạng thẻ ngân hàng di sản */}
-                            <div className="text-[11px] font-mono text-amber-200/90 tracking-widest font-semibold mt-0.5">
-                              {formattedCardNum}
-                            </div>
-                          </div>
-
-                          {/* Hàng 3: Tên Chủ Thẻ & Điểm Đổi Quà */}
-                          <div className="mt-2.5 pt-2 border-t border-amber-500/20 flex items-end justify-between relative z-10">
-                            <div className="min-w-0 pr-2">
-                              <div className="text-[8px] uppercase tracking-wider text-stone-400">Chủ Thẻ</div>
-                              <div className="font-serif font-bold text-xs text-white tracking-wide uppercase truncate max-w-[140px]">
-                                {user.fullName || 'Quý Khách Tri Kỷ'}
-                              </div>
-                            </div>
-                            <div className="text-right shrink-0">
-                              <div className="text-[8px] uppercase tracking-wider text-stone-400">Điểm Đổi Quà</div>
-                              <div className="text-sm font-serif font-black text-amber-300 leading-none">
-                                {availablePoints} <span className="text-[9px] font-sans font-normal text-stone-400">điểm</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* THƯỚC ĐO HÀNH TRÌNH QUÀ TẶNG (TÁCH BIỆT DƯỚI THẺ) */}
-                        <div className="mt-2 p-2 rounded-xl bg-black/40 border border-amber-500/15">
-                          <div className="flex justify-between items-center text-[10px] text-stone-300 mb-1">
-                            <span>Lên bậc <strong className="text-amber-300">"{tierInfo.nextTier}"</strong></span>
-                            <span className="text-amber-400 font-medium">
-                              {pointsToNext > 0 ? `Còn ${pointsToNext}đ` : 'Hạng cao nhất'}
-                            </span>
-                          </div>
-
-                          {/* Progress Track */}
-                          <div className="w-full h-1.5 bg-stone-900 rounded-full overflow-hidden p-0.5 border border-white/5 relative">
-                            <div
-                              className="h-full bg-gradient-to-r from-red-600 via-amber-500 to-amber-300 rounded-full transition-all duration-500 shadow-sm"
-                              style={{ width: `${progressPercent}%` }}
-                            ></div>
-                          </div>
-
-                          {/* Mốc Quà Tặng Gần Nhất */}
-                          <div className="flex justify-between items-center mt-1 text-[9px] text-stone-400">
-                            <span className="truncate max-w-[180px] flex items-center gap-1">
-                              <span>🎁</span>
-                              <span>Mốc {tierInfo.giftPoints}đ: <strong className="text-stone-300">{tierInfo.nextGift}</strong></span>
-                            </span>
-                            <a
-                              href="#menu"
-                              onClick={() => setUserDropdownOpen(false)}
-                              className="text-amber-400 hover:text-amber-300 font-semibold flex items-center gap-0.5 shrink-0"
-                            >
-                              <span>Đổi quà</span>
-                              <ArrowRight className="w-2.5 h-2.5" />
-                            </a>
-                          </div>
-                        </div>
-
-                        {/* ĐẶC QUYỀN TINH GIẢN */}
-                        <div className="mt-2 px-1 flex items-center gap-1.5 text-[10px] text-amber-200/90">
+                    {/* HÀNG 2: THƯỚC ĐO HÀNH TRÌNH QUÀ TẶNG & ĐIỂM NGỰ */}
+                    <div className="px-3 py-2 bg-black/30 border-b border-amber-900/30">
+                      <div className="flex items-center justify-between text-[10px] mb-1">
+                        <div className="flex items-center gap-1 text-stone-300">
                           <Sparkles className="w-3 h-3 text-amber-400 shrink-0" />
-                          <span className="truncate">Đặc quyền: <strong className="text-[#fbe5cb]">{tierInfo.perk}</strong></span>
+                          <span className="text-amber-200 font-bold font-mono text-[11px]">{availablePoints}đ</span>
+                          <span className="text-stone-400 text-[9px]">Tri Kỷ</span>
+                        </div>
+                        <div className="text-stone-400 text-[9px]">
+                          {pointsToNext > 0 ? (
+                            <span>Lên <strong className="text-amber-300 font-semibold">"{tierInfo.nextTier}"</strong>: còn <strong className="text-amber-300 font-mono">{pointsToNext}đ</strong></span>
+                          ) : (
+                            <span className="text-amber-300 font-semibold">Đỉnh Thượng Khách</span>
+                          )}
                         </div>
                       </div>
-                    )}
 
-                    {/* TAB 2: BÁT PHỞ RUỘT & GỌI MÓN (PHO TASTE CAPSULE) */}
-                    {dropdownTab === 'dish' && (
-                      <div className="p-3.5 bg-gradient-to-b from-[#24120c] to-[#150a07] text-[#fef3e2] space-y-2.5">
-                        {/* Tiêu đề */}
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-                            <span className="font-serif font-bold text-xs text-[#fbe5cb] tracking-wide uppercase">
-                              Khẩu Vị Ruột Cố Tri
-                            </span>
+                      {/* Thanh Tiến Độ */}
+                      <div className="w-full h-1.5 bg-stone-900 rounded-full overflow-hidden p-0.5 border border-white/5 relative">
+                        <div
+                          className="h-full bg-gradient-to-r from-red-600 via-amber-500 to-amber-300 rounded-full transition-all duration-500 shadow-sm"
+                          style={{ width: `${progressPercent}%` }}
+                        ></div>
+                      </div>
+
+                      {/* Mốc Quà Gần Nhất */}
+                      <div className="flex items-center justify-between mt-1 text-[9px]">
+                        <span className="text-stone-400 truncate max-w-[190px] flex items-center gap-1">
+                          <span>🎁</span>
+                          <span>Mốc {tierInfo.giftPoints}đ: <strong className="text-amber-200 font-normal truncate">{tierInfo.nextGift}</strong></span>
+                        </span>
+                        <a
+                          href="#menu"
+                          onClick={() => setUserDropdownOpen(false)}
+                          className="text-amber-400 hover:text-amber-300 font-medium flex items-center gap-0.5 shrink-0 transition-colors"
+                        >
+                          <span>Đổi quà</span>
+                          <ArrowRight className="w-2.5 h-2.5" />
+                        </a>
+                      </div>
+                    </div>
+
+                    {/* HÀNG 3: BÁT PHỞ RUỘT INLINE & 1-CLICK ĐẶT LẠI */}
+                    <div className="p-2.5 bg-gradient-to-b from-[#1f0d09]/90 to-[#140604]/90">
+                      <div className="rounded-xl p-2 bg-gradient-to-r from-[#32130c]/80 via-[#220c07]/90 to-[#180704]/90 border border-amber-500/20 shadow-inner flex items-center justify-between gap-2 group hover:border-amber-500/40 transition-colors">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="relative shrink-0 w-10 h-10 rounded-lg overflow-hidden border border-amber-400/40 shadow">
+                            <img
+                              src="https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&w=150&q=80"
+                              alt="Bát phở ruột"
+                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
                           </div>
-                          <a
-                            href="#menu"
-                            onClick={() => setUserDropdownOpen(false)}
-                            className="text-[10px] text-amber-400/90 hover:text-amber-200 font-medium transition-colors flex items-center gap-0.5"
-                          >
-                            <span>Chỉnh gu</span>
-                            <span>✏️</span>
-                          </a>
-                        </div>
 
-                        {/* Card Món Ăn: Nền Men Gốm Viền Chỉ Vàng */}
-                        <div className="rounded-xl p-2.5 bg-gradient-to-br from-[#3a1c14]/70 to-[#1a0c08]/90 border border-amber-500/25 shadow-md relative overflow-hidden group">
-                          <div className="absolute -top-1 right-2 text-stone-500/30 text-xs pointer-events-none animate-pulse">♨️</div>
-
-                          {/* Ảnh + Tên + Giá */}
-                          <div className="flex items-center gap-2.5">
-                            <div className="relative shrink-0 w-12 h-12 rounded-lg overflow-hidden border border-amber-400/40 shadow-inner">
-                              <img 
-                                src="https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&w=200&q=80" 
-                                alt="Bát Phở Ruột" 
-                                className="w-12 h-12 object-cover group-hover:scale-110 transition-transform duration-300"
-                              />
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                          <div className="min-w-0">
+                            <div className="font-serif font-bold text-xs text-white group-hover:text-amber-200 transition-colors truncate">
+                              {user.tasteProfile?.favoriteDishName || 'Phở Bò Tái Nạm Gầu Giòn'}
                             </div>
-
-                            <div className="min-w-0 flex-1">
-                              <div className="font-serif font-bold text-[13px] text-white group-hover:text-amber-200 transition-colors truncate">
-                                {user.tasteProfile?.favoriteDishName || 'Phở Bò Tái Nạm Gầu Giòn'}
-                              </div>
-                              <div className="flex items-center justify-between mt-0.5">
-                                <span className="text-amber-400 font-bold font-mono text-xs">85.000đ</span>
-                                <span className="text-[9px] text-stone-400 font-sans italic bg-black/40 px-1.5 py-0.2 rounded border border-white/5">
-                                  Bát Đệ Nhất
-                                </span>
-                              </div>
+                            <div className="flex items-center gap-1.5 text-[9px] mt-0.5">
+                              <span className="text-amber-400 font-bold font-mono text-[10px]">85.000đ</span>
+                              <span className="w-0.5 h-2.5 bg-stone-700"></span>
+                              <span className="text-stone-300 truncate max-w-[100px]">
+                                {user.tasteProfile?.brothType ? (BROTH_LABELS[user.tasteProfile.brothType] || user.tasteProfile.brothType) : 'Nước đậm đà'}
+                              </span>
                             </div>
-                          </div>
-
-                          {/* Dải Gia Vị Men Gốm */}
-                          <div className="mt-2.5 pt-2 border-t border-amber-500/15 flex flex-wrap gap-1">
-                            {user.tasteProfile?.brothType ? (
-                              <span className="px-2 py-0.5 rounded-full bg-[#140a07]/80 border border-amber-500/20 text-[#f2d8be] text-[9px] flex items-center gap-1 font-medium">
-                                <span>🍲</span>
-                                <span>{BROTH_LABELS[user.tasteProfile.brothType] || user.tasteProfile.brothType}</span>
-                              </span>
-                            ) : (
-                              <span className="px-2 py-0.5 rounded-full bg-[#140a07]/80 border border-amber-500/20 text-[#f2d8be] text-[9px] flex items-center gap-1 font-medium">
-                                <span>🍲</span>
-                                <span>Nước đậm béo</span>
-                              </span>
-                            )}
-
-                            {user.tasteProfile?.onionStyle ? (
-                              <span className="px-2 py-0.5 rounded-full bg-[#140a07]/80 border border-amber-500/20 text-[#f2d8be] text-[9px] flex items-center gap-1 font-medium">
-                                <span>🧅</span>
-                                <span>{ONION_LABELS[user.tasteProfile.onionStyle] || user.tasteProfile.onionStyle}</span>
-                              </span>
-                            ) : (
-                              <span className="px-2 py-0.5 rounded-full bg-[#140a07]/80 border border-amber-500/20 text-[#f2d8be] text-[9px] flex items-center gap-1 font-medium">
-                                <span>🧅</span>
-                                <span>Đầu hành giòn</span>
-                              </span>
-                            )}
-
-                            {user.tasteProfile?.crullerPref ? (
-                              <span className="px-2 py-0.5 rounded-full bg-[#140a07]/80 border border-amber-500/20 text-[#f2d8be] text-[9px] flex items-center gap-1 font-medium">
-                                <span>🥢</span>
-                                <span>{CRULLER_LABELS[user.tasteProfile.crullerPref] || user.tasteProfile.crullerPref}</span>
-                              </span>
-                            ) : (
-                              <span className="px-2 py-0.5 rounded-full bg-[#140a07]/80 border border-amber-500/20 text-[#f2d8be] text-[9px] flex items-center gap-1 font-medium">
-                                <span>🥢</span>
-                                <span>Kèm quẩy giòn</span>
-                              </span>
-                            )}
-
-                            {user.tasteProfile?.herbStyle && (
-                              <span className="px-2 py-0.5 rounded-full bg-[#140a07]/80 border border-amber-500/20 text-[#f2d8be] text-[9px] flex items-center gap-1 font-medium">
-                                <span>🌿</span>
-                                <span>{HERB_LABELS[user.tasteProfile.herbStyle] || user.tasteProfile.herbStyle}</span>
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Ghi chú */}
-                          <div className="mt-1.5 text-[10px] text-amber-200/75 italic truncate flex items-center gap-1">
-                            <span className="text-amber-400/80 font-serif">“</span>
-                            <span className="truncate">{user.tasteProfile?.customNote || 'Nước dùng trong ngọt thanh tủy bò, hành trần kỹ'}</span>
-                            <span className="text-amber-400/80 font-serif">”</span>
                           </div>
                         </div>
 
-                        {/* 1-Click CTA */}
                         <button
                           onClick={handleQuickReorder}
-                          className="w-full py-2 rounded-xl bg-gradient-to-r from-[#9b2a1f] via-[#b33224] to-[#801c13] hover:from-[#b53225] hover:via-[#c93c2c] hover:to-[#912217] text-[#fff6e8] font-serif font-bold text-xs shadow-lg shadow-red-950/60 flex items-center justify-center gap-2 border border-amber-400/30 hover:border-amber-300 transition-all group active:scale-95"
+                          className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-[#9b2a1f] to-[#78180f] hover:from-[#b33224] hover:to-[#8f1f14] text-amber-100 font-serif font-bold text-[10px] shadow border border-amber-400/30 flex items-center gap-1 shrink-0 active:scale-95 transition-all group/btn"
+                          title="Đặt lại bát phở ruột vào giỏ hàng ngay lập tức"
                         >
-                          <span className="w-4 h-4 rounded-full bg-amber-400 text-black flex items-center justify-center text-[10px] font-black group-hover:scale-110 transition-transform">
-                            ⚡
-                          </span>
-                          <span className="tracking-wide">1-Click Đặt Lại Bát Này (85.000đ)</span>
+                          <Zap className="w-3 h-3 text-amber-300 group-hover/btn:scale-110 transition-transform" />
+                          <span>Đặt lại ⚡</span>
                         </button>
                       </div>
-                    )}
+                    </div>
 
-                    {/* FOOTER TIỆN ÍCH LƯỚI NGANG 3 CỘT (HORIZONTAL ACTION GRID) */}
-                    <div className="grid grid-cols-3 border-t border-white/10 bg-[#120704] text-[10px] divide-x divide-white/5 text-center">
+                    {/* HÀNG 4: FOOTER TIỆN ÍCH LƯỚI NGANG 3 CỘT */}
+                    <div className="grid grid-cols-3 border-t border-amber-900/30 bg-[#0e0403] text-[10px] divide-x divide-white/5 text-center">
                       <a
                         href="#order"
                         onClick={() => setUserDropdownOpen(false)}
-                        className="py-2.5 px-1 hover:bg-white/5 text-stone-300 hover:text-amber-200 transition-colors flex flex-col items-center justify-center gap-0.5"
+                        className="py-2 px-1 hover:bg-white/5 text-stone-300 hover:text-amber-200 transition-colors flex items-center justify-center gap-1"
                       >
-                        <div className="flex items-center gap-1 font-bold text-amber-400 font-mono text-xs">
-                          <FileText className="w-3 h-3 text-amber-400" />
-                          <span>{user.loyaltyAccount?.totalOrdersCount || 0}</span>
-                        </div>
-                        <div className="text-[10px] text-stone-300 font-medium">Đơn hàng</div>
+                        <FileText className="w-3 h-3 text-amber-400/90" />
+                        <span>{user.loyaltyAccount?.totalOrdersCount || 0} đơn hàng</span>
                       </a>
 
                       <a
                         href="#menu"
                         onClick={() => setUserDropdownOpen(false)}
-                        className="py-2.5 px-1 hover:bg-white/5 text-stone-300 hover:text-amber-200 transition-colors flex flex-col items-center justify-center gap-0.5"
+                        className="py-2 px-1 hover:bg-white/5 text-stone-300 hover:text-amber-200 transition-colors flex items-center justify-center gap-1"
                       >
-                        <Gift className="w-3.5 h-3.5 text-amber-400" />
-                        <div className="text-[10px] text-stone-300 font-medium">Đổi quà</div>
+                        <Gift className="w-3 h-3 text-amber-400/90" />
+                        <span>Kho quà</span>
                       </a>
 
                       <button
@@ -545,10 +387,10 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
                           setUserDropdownOpen(false);
                           if (onToast) onToast('Bạn đã đăng xuất tài khoản thành công!');
                         }}
-                        className="py-2.5 px-1 hover:bg-red-950/40 text-red-400 hover:text-red-300 font-bold transition-colors flex flex-col items-center justify-center gap-0.5"
+                        className="py-2 px-1 hover:bg-red-950/40 text-red-400 hover:text-red-300 font-medium transition-colors flex items-center justify-center gap-1"
                       >
-                        <LogOut className="w-3.5 h-3.5" />
-                        <div className="text-[10px]">Đăng xuất</div>
+                        <LogOut className="w-3 h-3" />
+                        <span>Đăng xuất</span>
                       </button>
                     </div>
 
