@@ -723,6 +723,22 @@
   animation: passCardFloat 4s ease-in-out infinite;
 }
 
+@keyframes accordionDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-accordion {
+  animation: accordionDown 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
 /* Ensure date and time picker native indicator icons are crisp white on dark order inputs */
 input[type="date"],
 input[type="time"],

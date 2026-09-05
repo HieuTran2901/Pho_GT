@@ -1,5 +1,20 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Phone, CheckCircle2, Send, ChefHat, ArrowLeft, QrCode, Banknote, Clock, Copy, Check } from 'lucide-react';
+import {
+  Phone,
+  CheckCircle2,
+  Send,
+  ChefHat,
+  ArrowLeft,
+  QrCode,
+  Banknote,
+  Clock,
+  Copy,
+  Check,
+  ChevronDown,
+  CreditCard,
+  Sparkles,
+  ShieldCheck
+} from 'lucide-react';
 import useScrollReveal from '../hooks/useScrollReveal';
 import { useAuth } from '../context/AuthContext';
 import { paymentApi } from '../services/paymentApi';
@@ -19,6 +34,57 @@ const TASTE_PREFERENCES = [
   'Không mì chính',
   'Thêm quẩy giòn'
 ];
+
+const EXTENDED_PAYMENT_METHODS = [
+  {
+    id: 'MOMO',
+    name: 'Ví MoMo',
+    subname: '1-Chạm liên kết',
+    badge: 'MoMo',
+    badgeBg: 'bg-[#a50064]/25 border-[#a50064]/40 text-pink-300'
+  },
+  {
+    id: 'VNPAY',
+    name: 'VNPAY-QR',
+    subname: '30+ Ngân hàng',
+    badge: 'VNPAY',
+    badgeBg: 'bg-[#005baa]/25 border-[#005baa]/40 text-blue-300'
+  },
+  {
+    id: 'ZALOPAY',
+    name: 'Ví ZaloPay',
+    subname: 'Mở qua Zalo',
+    badge: 'Zalo',
+    badgeBg: 'bg-[#0068ff]/25 border-[#0068ff]/40 text-cyan-300'
+  },
+  {
+    id: 'CREDIT_CARD',
+    name: 'Thẻ Quốc Tế',
+    subname: 'Visa / Master',
+    isCard: true,
+    badgeBg: 'bg-amber-500/20 border-amber-500/40 text-amber-300'
+  }
+];
+
+const PAYMENT_GUIDANCE = {
+  VIETQR: 'Quý khách chọn VietQR: Được ưu tiên xếp bàn đẹp & tặng kèm đĩa quẩy nóng giòn.',
+  POST_PAID_AT_STORE: 'Quý khách chọn Trả sau tại quán: Bàn được giữ miễn phí 30 phút, thanh toán tại quầy.',
+  COD: 'Quý khách chọn Tiền mặt khi nhận phở: Kiểm tra bát phở nóng 90°C rồi mới thanh toán cho shipper.',
+  MOMO: 'Quý khách chọn Ví MoMo: Tự động chuyển hướng xác nhận thanh toán an toàn 1-chạm qua ứng dụng MoMo.',
+  VNPAY: 'Quý khách chọn VNPAY-QR: Hỗ trợ quét mã VNPAY qua 30+ ứng dụng ngân hàng và ví điện tử.',
+  ZALOPAY: 'Quý khách chọn Ví ZaloPay: Xác nhận thanh toán trực tiếp qua ví ZaloPay hoặc ứng dụng Zalo.',
+  CREDIT_CARD: 'Quý khách chọn Thẻ Quốc Tế: Hỗ trợ thẻ tín dụng/ghi nợ Visa, Mastercard bảo mật chuẩn OTP 3D-Secure.'
+};
+
+const PAYMENT_CTA_LABELS = {
+  VIETQR: 'Mở Mã Quét VietQR Tiếp Theo →',
+  POST_PAID_AT_STORE: 'Xác Nhận Giữ Chỗ Tại Quán →',
+  COD: 'Xác Nhận Đặt Giao Phở (COD) →',
+  MOMO: 'Thanh Toán Qua Ví MoMo →',
+  VNPAY: 'Mở Cổng VNPAY-QR →',
+  ZALOPAY: 'Thanh Toán Qua ZaloPay →',
+  CREDIT_CARD: 'Thanh Toán Bằng Thẻ Quốc Tế →'
+};
 
 function OrderSection() {
   const [sectionRef, isVisible] = useScrollReveal({ threshold: 0.12 });
@@ -41,6 +107,7 @@ function OrderSection() {
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState('forward');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('POST_PAID_AT_STORE');
+  const [isMoreMethodsOpen, setIsMoreMethodsOpen] = useState(false);
   const [paymentData, setPaymentData] = useState(null);
   const [bookingCode, setBookingCode] = useState('');
   const [isCopied, setIsCopied] = useState(false);
@@ -188,6 +255,7 @@ function OrderSection() {
       note: ''
     });
     setSelectedPaymentMethod('POST_PAID_AT_STORE');
+    setIsMoreMethodsOpen(false);
   };
 
   return (
@@ -616,16 +684,55 @@ function OrderSection() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-stone-200 mb-2.5">
-                      Chọn phương thức thanh toán & xác nhận:
-                    </label>
+                    <div className="flex items-center justify-between mb-2.5">
+                      <label className="block text-xs font-bold text-stone-200">
+                        Chọn phương thức thanh toán & xác nhận:
+                      </label>
+                      <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
+                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>Bảo mật 256-bit SSL</span>
+                      </span>
+                    </div>
 
-                    {/* Dine-In Payment Options */}
-                    {formData.orderType === 'dine-in' && (
+                    {/* ======================================================= */}
+                    {/* PHẦN 1: 2 PHƯƠNG THỨC ĐỀ XUẤT CHÍNH (SMART RECOMMENDED) */}
+                    {/* ======================================================= */}
+                    {formData.orderType === 'dine-in' ? (
                       <div className="space-y-2.5">
+                        {/* Option 1: VietQR (Recommended) */}
+                        <label className={`flex items-start gap-3 p-3.5 rounded-2xl border cursor-pointer transition-all ${
+                          selectedPaymentMethod === 'VIETQR'
+                            ? 'bg-amber-950/40 border-amber-400 shadow-md ring-1 ring-amber-400/30'
+                            : 'bg-white/5 border-white/10 hover:border-amber-400/50'
+                        }`}>
+                          <input
+                            type="radio"
+                            name="payment_method"
+                            value="VIETQR"
+                            checked={selectedPaymentMethod === 'VIETQR'}
+                            onChange={() => setSelectedPaymentMethod('VIETQR')}
+                            className="mt-1 accent-amber-500"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-bold text-white flex items-center gap-1.5">
+                                <QrCode className="w-4 h-4 text-amber-400" />
+                                Quét mã VietQR Napas 247
+                              </span>
+                              <span className="text-[10px] bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 px-2 py-0.5 rounded-full font-extrabold shadow-xs">
+                                Khuyên Dùng • Tặng Quẩy
+                              </span>
+                            </div>
+                            <p className="text-xs text-stone-400 mt-1 leading-relaxed">
+                              Quét mã qua app ngân hàng bất kỳ. Quán chuẩn bị sẵn bàn đẹp kèm ưu tiên tặng quẩy nóng giòn & trà sen.
+                            </p>
+                          </div>
+                        </label>
+
+                        {/* Option 2: Post Paid */}
                         <label className={`flex items-start gap-3 p-3.5 rounded-2xl border cursor-pointer transition-all ${
                           selectedPaymentMethod === 'POST_PAID_AT_STORE'
-                            ? 'bg-amber-950/30 border-amber-400 shadow-xs'
+                            ? 'bg-amber-950/40 border-amber-400 shadow-md ring-1 ring-amber-400/30'
                             : 'bg-white/5 border-white/10 hover:border-amber-400/50'
                         }`}>
                           <input
@@ -647,48 +754,17 @@ function OrderSection() {
                               </span>
                             </div>
                             <p className="text-xs text-stone-400 mt-1 leading-relaxed">
-                              Bàn được giữ miễn phí. Quý khách tới quán đọc số điện thoại để nhận bàn và thanh toán tại quầy thu ngân sau khi dùng bữa.
-                            </p>
-                          </div>
-                        </label>
-
-                        <label className={`flex items-start gap-3 p-3.5 rounded-2xl border cursor-pointer transition-all ${
-                          selectedPaymentMethod === 'VIETQR'
-                            ? 'bg-amber-950/30 border-amber-400 shadow-xs'
-                            : 'bg-white/5 border-white/10 hover:border-amber-400/50'
-                        }`}>
-                          <input
-                            type="radio"
-                            name="payment_method"
-                            value="VIETQR"
-                            checked={selectedPaymentMethod === 'VIETQR'}
-                            onChange={() => setSelectedPaymentMethod('VIETQR')}
-                            className="mt-1 accent-amber-500"
-                          />
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-bold text-white flex items-center gap-1.5">
-                                <QrCode className="w-4 h-4 text-amber-400" />
-                                Quét mã VietQR Napas 247
-                              </span>
-                              <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-bold border border-amber-500/30">
-                                Tự động xác nhận
-                              </span>
-                            </div>
-                            <p className="text-xs text-stone-400 mt-1 leading-relaxed">
-                              Quét mã qua ứng dụng ngân hàng để chuyển khoản. Quán chuẩn bị sẵn bàn đẹp kèm ưu tiên tặng quẩy nóng giòn & trà sen.
+                              Bàn được giữ miễn phí. Quý khách tới quán đọc số điện thoại để nhận bàn và thanh toán tại quầy sau bữa ăn.
                             </p>
                           </div>
                         </label>
                       </div>
-                    )}
-
-                    {/* Delivery Payment Options */}
-                    {formData.orderType === 'delivery' && (
+                    ) : (
                       <div className="space-y-2.5">
+                        {/* Delivery Option 1: COD */}
                         <label className={`flex items-start gap-3 p-3.5 rounded-2xl border cursor-pointer transition-all ${
                           selectedPaymentMethod === 'COD'
-                            ? 'bg-amber-950/30 border-amber-400 shadow-xs'
+                            ? 'bg-amber-950/40 border-amber-400 shadow-md ring-1 ring-amber-400/30'
                             : 'bg-white/5 border-white/10 hover:border-amber-400/50'
                         }`}>
                           <input
@@ -706,7 +782,7 @@ function OrderSection() {
                                 Tiền mặt khi nhận phở (COD)
                               </span>
                               <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-bold border border-emerald-500/30">
-                                An tâm
+                                An tâm 100%
                               </span>
                             </div>
                             <p className="text-xs text-stone-400 mt-1 leading-relaxed">
@@ -715,9 +791,10 @@ function OrderSection() {
                           </div>
                         </label>
 
+                        {/* Delivery Option 2: VietQR */}
                         <label className={`flex items-start gap-3 p-3.5 rounded-2xl border cursor-pointer transition-all ${
                           selectedPaymentMethod === 'VIETQR'
-                            ? 'bg-amber-950/30 border-amber-400 shadow-xs'
+                            ? 'bg-amber-950/40 border-amber-400 shadow-md ring-1 ring-amber-400/30'
                             : 'bg-white/5 border-white/10 hover:border-amber-400/50'
                         }`}>
                           <input
@@ -745,6 +822,78 @@ function OrderSection() {
                         </label>
                       </div>
                     )}
+
+                    {/* ======================================================= */}
+                    {/* NÚT MỞ RỘNG (COLLAPSIBLE TOGGLE TRIGGER)                */}
+                    {/* ======================================================= */}
+                    <div className="pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsMoreMethodsOpen(!isMoreMethodsOpen)}
+                        className="w-full py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-stone-300 hover:text-white text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer"
+                      >
+                        <span>
+                          {isMoreMethodsOpen
+                            ? 'Thu gọn phương thức thanh toán khác'
+                            : '+ Xem thêm phương thức thanh toán khác (MoMo, VNPAY, Thẻ Quốc Tế...)'}
+                        </span>
+                        <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isMoreMethodsOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                    </div>
+
+                    {/* ======================================================= */}
+                    {/* PHẦN 2: LƯỚI BIỂU TƯỢNG 2 CỘT (COMPACT GRID TILES)      */}
+                    {/* ======================================================= */}
+                    {isMoreMethodsOpen && (
+                      <div className="pt-2.5 space-y-2.5 animate-accordion">
+                        <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
+                          {EXTENDED_PAYMENT_METHODS.map((method) => {
+                            const isSelected = selectedPaymentMethod === method.id;
+                            return (
+                              <button
+                                key={method.id}
+                                type="button"
+                                onClick={() => setSelectedPaymentMethod(method.id)}
+                                className={`p-2.5 sm:p-3 rounded-xl border text-left cursor-pointer transition-all flex items-center gap-2.5 relative group ${
+                                  isSelected
+                                    ? 'border-amber-400 bg-amber-950/40 ring-1 ring-amber-400/40 shadow-xs'
+                                    : 'border-white/10 bg-white/5 hover:border-white/20'
+                                }`}
+                              >
+                                <div className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 ${method.badgeBg}`}>
+                                  {method.isCard ? (
+                                    <CreditCard className="w-4 h-4 text-amber-300" />
+                                  ) : (
+                                    <span className="text-[10px] font-black">{method.badge}</span>
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-xs font-bold text-stone-200 truncate group-hover:text-white">
+                                    {method.name}
+                                  </div>
+                                  <div className="text-[10px] text-stone-400 truncate">
+                                    {method.subname}
+                                  </div>
+                                </div>
+                                {isSelected && (
+                                  <div className="w-4 h-4 rounded-full bg-amber-500 text-stone-950 text-[10px] font-bold flex items-center justify-center shrink-0 shadow-xs">
+                                    <Check className="w-2.5 h-2.5 stroke-[3]" />
+                                  </div>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Dynamic Micro-Guidance Box */}
+                        <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center gap-2 text-xs text-amber-200 animate-fadeIn">
+                          <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+                          <span className="leading-snug">
+                            {PAYMENT_GUIDANCE[selectedPaymentMethod] || 'Phương thức thanh toán bảo mật và tiện lợi.'}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Action Buttons for Step 2 */}
@@ -770,7 +919,7 @@ function OrderSection() {
                         </span>
                       ) : (
                         <span>
-                          {selectedPaymentMethod === 'VIETQR' ? 'Mở Mã Quét VietQR →' : 'Xác Nhận Giữ Chỗ Ngay →'}
+                          {PAYMENT_CTA_LABELS[selectedPaymentMethod] || 'Xác Nhận Giữ Chỗ Ngay →'}
                         </span>
                       )}
                     </button>
@@ -946,6 +1095,14 @@ function OrderSection() {
                                 ? 'Tại quầy sau khi ăn'
                                 : selectedPaymentMethod === 'COD'
                                 ? 'Tiền mặt khi nhận phở'
+                                : selectedPaymentMethod === 'MOMO'
+                                ? 'Ví điện tử MoMo'
+                                : selectedPaymentMethod === 'VNPAY'
+                                ? 'Cổng VNPAY-QR'
+                                : selectedPaymentMethod === 'ZALOPAY'
+                                ? 'Ví điện tử ZaloPay'
+                                : selectedPaymentMethod === 'CREDIT_CARD'
+                                ? 'Thẻ Quốc Tế (Visa/Master)'
                                 : 'Đã thanh toán VietQR ✓'}
                             </div>
                           </div>

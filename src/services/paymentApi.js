@@ -49,6 +49,14 @@ export const paymentApi = {
         ? 'Bàn của quý khách đã được giữ chỗ trong 30 phút. Quý khách vui lòng thanh toán tại quầy thu ngân sau khi dùng bữa.'
         : paymentMethod === 'COD'
         ? 'Đơn hàng đã được ghi nhận. Quý khách vui lòng chuẩn bị đúng số tiền khi nhận phở từ nhân viên giao hàng.'
+        : paymentMethod === 'MOMO'
+        ? 'Quý khách vui lòng quét mã MoMo hoặc xác nhận chuyển khoản siêu tốc qua ứng dụng MoMo.'
+        : paymentMethod === 'VNPAY'
+        ? 'Quý khách vui lòng quét mã VNPAY-QR qua ứng dụng ngân hàng hoặc ví VNPAY.'
+        : paymentMethod === 'ZALOPAY'
+        ? 'Quý khách vui lòng xác nhận thanh toán trực tiếp qua ví điện tử ZaloPay.'
+        : paymentMethod === 'CREDIT_CARD'
+        ? 'Cổng thanh toán thẻ Visa/Mastercard bảo mật 3D-Secure với mã OTP từ ngân hàng phát hành.'
         : 'Quý khách vui lòng mở ứng dụng ngân hàng và quét mã VietQR trên để thanh toán trong vòng 15 phút.'
     };
   },
