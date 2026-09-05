@@ -1,9 +1,21 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Phone, CheckCircle2, Send, ChefHat } from 'lucide-react';
 import useScrollReveal from '../hooks/useScrollReveal';
+import { useAuth } from '../context/AuthContext';
+
+const TASTE_PREFERENCES = [
+  'Nhiều hành',
+  'Nước béo',
+  'Đầu hành giòn',
+  'Hành trần',
+  'Không mì chính',
+  'Thêm quẩy giòn'
+];
 
 function OrderSection() {
   const [sectionRef, isVisible] = useScrollReveal({ threshold: 0.12 });
+  const { user } = useAuth();
+
   const [formData, setFormData] = useState({
     orderType: 'dine-in', // dine-in or delivery
     customerName: '',
@@ -20,6 +32,29 @@ function OrderSection() {
   const [isLoading, setIsLoading] = useState(false);
 
   const submitTimerRef = useRef(null);
+
+  // Auto-fill user contact info if available and field is empty
+  useEffect(() => {
+    if (user) {
+      setFormData((prev) => ({
+        ...prev,
+        customerName: prev.customerName || user.fullName || '',
+        phone: prev.phone || user.phone || '',
+      }));
+    }
+  }, [user]);
+
+  const handleToggleTaste = useCallback((pref) => {
+    setFormData((prev) => {
+      const current = (prev.note || '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const exists = current.includes(pref);
+      const updated = exists ? current.filter((s) => s !== pref) : [...current, pref];
+      return { ...prev, note: updated.join(', ') };
+    });
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -43,8 +78,8 @@ function OrderSection() {
     setIsSubmitted(false);
     setFormData({
       orderType: 'dine-in',
-      customerName: '',
-      phone: '',
+      customerName: user?.fullName || '',
+      phone: user?.phone || '',
       branch: 'hanoi-hangbac',
       guestCount: '2',
       date: '',
@@ -176,7 +211,7 @@ function OrderSection() {
 
           {/* Right form card */}
           <div className={`lg:col-span-7 transition-all duration-700 ${isVisible ? 'reveal-slide-right' : 'opacity-0'}`}>
-            <div className="bg-[#241710] border border-amber-900/40 rounded-3xl p-6 sm:p-10 shadow-2xl relative">
+            <div className="bg-[#241710] border border-amber-900/40 rounded-3xl p-4 sm:p-8 lg:p-10 shadow-2xl relative">
               
               {isSubmitted ? (
                 /* Success State */
@@ -201,15 +236,15 @@ function OrderSection() {
                 /* Interactive Form State */
                 <form onSubmit={handleSubmit} className="space-y-4">
                   
-                  {/* Order Type Toggle */}
-                  <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-black/30 border border-white/10 mb-4">
+                  {/* Order Type Segmented Switcher */}
+                  <div className="grid grid-cols-2 p-1 rounded-xl bg-black/40 border border-white/10 mb-4 text-xs sm:text-sm font-semibold">
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, orderType: 'dine-in' })}
-                      className={`py-2 text-xs sm:text-sm font-bold rounded-lg transition-all ${
+                      className={`py-2 sm:py-2.5 rounded-lg transition-all ${
                         formData.orderType === 'dine-in'
-                          ? 'bg-brand-red text-white shadow-md'
-                          : 'text-stone-400 hover:text-white'
+                          ? 'bg-brand-red text-white shadow-sm font-bold'
+                          : 'text-stone-400 hover:text-stone-200'
                       }`}
                     >
                       Đặt Bàn Tại Quán
@@ -217,10 +252,10 @@ function OrderSection() {
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, orderType: 'delivery' })}
-                      className={`py-2 text-xs sm:text-sm font-bold rounded-lg transition-all ${
+                      className={`py-2 sm:py-2.5 rounded-lg transition-all ${
                         formData.orderType === 'delivery'
-                          ? 'bg-brand-red text-white shadow-md'
-                          : 'text-stone-400 hover:text-white'
+                          ? 'bg-brand-red text-white shadow-sm font-bold'
+                          : 'text-stone-400 hover:text-stone-200'
                       }`}
                     >
                       Giao Phở Tận Nơi
@@ -228,47 +263,47 @@ function OrderSection() {
                   </div>
 
                   {/* Customer Name & Phone */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
                       <label className="block text-xs font-semibold text-stone-300 mb-1.5">
-                        Họ và Tên Quý Khách *
+                        Họ và tên quý khách *
                       </label>
                       <input
                         type="text"
                         required
-                        placeholder="Nguyễn Văn A"
+                        placeholder="Ví dụ: Nguyễn Văn A"
                         value={formData.customerName}
                         onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-                        className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white placeholder-stone-500 text-sm focus:outline-none focus:border-amber-400"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white placeholder-stone-500 text-xs sm:text-sm focus:outline-none focus:border-amber-400 transition-colors"
                       />
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-stone-300 mb-1.5">
-                        Số Điện Thoại Liên Hệ *
+                        Số điện thoại liên hệ *
                       </label>
                       <input
                         type="tel"
                         required
-                        placeholder="0912 345 678"
+                        placeholder="Ví dụ: 0912 345 678"
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white placeholder-stone-500 text-sm focus:outline-none focus:border-amber-400"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white placeholder-stone-500 text-xs sm:text-sm focus:outline-none focus:border-amber-400 transition-colors"
                       />
                     </div>
                   </div>
 
                   {/* Branch & Guests (or Address) */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
                       <label className="block text-xs font-semibold text-stone-300 mb-1.5">
-                        Chọn Cơ Sở Gần Bạn
+                        Cơ sở phục vụ *
                       </label>
                       <select
                         value={formData.branch}
                         onChange={(e) => setFormData({ ...formData, branch: e.target.value })}
-                        className="w-full px-4 py-2.5 rounded-xl bg-[#2e1d15] border border-white/15 text-white text-sm focus:outline-none focus:border-amber-400"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#2e1d15] border border-white/15 text-white text-xs sm:text-sm focus:outline-none focus:border-amber-400 transition-colors"
                       >
-                        <option value="hanoi-hangbac">Hà Nội: 45 Hàng Bạc, Hoàn Kiếm</option>
+                        <option value="hanoi-hangbac">Hà Nội: 45 Hàng Bạc, Hoàn Kiếm (Cơ sở gốc 1986)</option>
                         <option value="hanoi-lyquocsu">Hà Nội: 10 Lý Quốc Sư, Hoàn Kiếm</option>
                         <option value="hcm-quan1">TP.HCM: 88 Pasteur, Quận 1</option>
                         <option value="hcm-quan3">TP.HCM: 152 Võ Thị Sáu, Quận 3</option>
@@ -278,74 +313,111 @@ function OrderSection() {
                     {formData.orderType === 'dine-in' ? (
                       <div>
                         <label className="block text-xs font-semibold text-stone-300 mb-1.5">
-                          Số Lượng Người
+                          Số lượng khách *
                         </label>
-                        <select
-                          value={formData.guestCount}
-                          onChange={(e) => setFormData({ ...formData, guestCount: e.target.value })}
-                          className="w-full px-4 py-2.5 rounded-xl bg-[#2e1d15] border border-white/15 text-white text-sm focus:outline-none focus:border-amber-400"
-                        >
-                          <option value="1">1 Người (Bàn đơn)</option>
-                          <option value="2">2 Người (Bàn đôi)</option>
-                          <option value="4">3 - 4 Người (Bàn gia đình)</option>
-                          <option value="8">5 - 8 Người (Bàn tiệc nhóm)</option>
-                          <option value="10">Trên 8 Người</option>
-                        </select>
+                        <div className="grid grid-cols-4 gap-1.5">
+                          {[
+                            { val: '1', label: '1 người' },
+                            { val: '2', label: '2 người' },
+                            { val: '4', label: '3 - 4' },
+                            { val: '8', label: 'Từ 5+' }
+                          ].map((item) => (
+                            <button
+                              key={item.val}
+                              type="button"
+                              onClick={() => setFormData({ ...formData, guestCount: item.val })}
+                              className={`py-2 rounded-lg border text-xs font-medium transition-all ${
+                                formData.guestCount === item.val
+                                  ? 'bg-amber-500/20 border-amber-400 text-amber-200 font-bold'
+                                  : 'bg-white/5 border-white/10 text-stone-300 hover:bg-white/10'
+                              }`}
+                            >
+                              {item.label}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     ) : (
                       <div>
                         <label className="block text-xs font-semibold text-stone-300 mb-1.5">
-                          Địa Chỉ Nhận Hàng *
+                          Địa chỉ nhận hàng *
                         </label>
                         <input
                           type="text"
                           required
-                          placeholder="Số nhà, tên đường, phường..."
+                          placeholder="Số nhà, tên đường, phường/xã..."
                           value={formData.address}
                           onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                          className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white placeholder-stone-500 text-sm focus:outline-none focus:border-amber-400"
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white placeholder-stone-500 text-xs sm:text-sm focus:outline-none focus:border-amber-400 transition-colors"
                         />
                       </div>
                     )}
                   </div>
 
-                  {/* Date and Time */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Date and Time (2-column row) */}
+                  <div className="grid grid-cols-2 gap-3 sm:gap-4">
                     <div>
                       <label className="block text-xs font-semibold text-stone-300 mb-1.5">
-                        Ngày Dùng Bữa
+                        Ngày dùng bữa *
                       </label>
                       <input
                         type="date"
+                        required
                         value={formData.date}
                         onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                        className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white text-sm focus:outline-none focus:border-amber-400"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white text-xs sm:text-sm focus:outline-none focus:border-amber-400 transition-colors"
                       />
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-stone-300 mb-1.5">
-                        Khung Giờ Dự Kiến
+                        Khung giờ dự kiến *
                       </label>
                       <input
                         type="time"
+                        required
                         value={formData.time}
                         onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                        className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white text-sm focus:outline-none focus:border-amber-400"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white text-xs sm:text-sm focus:outline-none focus:border-amber-400 transition-colors"
                       />
                     </div>
                   </div>
 
-                  {/* Notes */}
+                  {/* Taste Preferences & Notes */}
                   <div>
-                    <label className="block text-xs font-semibold text-stone-300 mb-1.5">
-                      Ghi Chú Thêm (Khẩu vị, hành, nước béo,...)
-                    </label>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-semibold text-stone-300">
+                        Yêu cầu khẩu vị riêng (nếu có)
+                      </label>
+                      <span className="text-[11px] text-stone-400">Chọn nhanh:</span>
+                    </div>
+
+                    {/* Clean Taste Specification Chips (No emoji) */}
+                    <div className="flex flex-wrap gap-1.5 mb-2.5">
+                      {TASTE_PREFERENCES.map((pref) => {
+                        const isSelected = formData.note && formData.note.includes(pref);
+                        return (
+                          <button
+                            key={pref}
+                            type="button"
+                            onClick={() => handleToggleTaste(pref)}
+                            className={`px-2.5 py-1 rounded-lg text-xs transition-all border ${
+                              isSelected
+                                ? 'bg-amber-500/20 border-amber-400 text-amber-200 font-semibold'
+                                : 'bg-white/5 border-white/10 text-stone-300 hover:bg-white/10'
+                            }`}
+                          >
+                            + {pref}
+                          </button>
+                        );
+                      })}
+                    </div>
+
                     <textarea
                       rows="2"
-                      placeholder="Ví dụ: Ăn nhiều hành, không mì chính, xin thêm ớt chưng cay..."
+                      placeholder="Ghi chú thêm: bàn gần cửa sổ, ăn cay, xin thêm ớt chưng..."
                       value={formData.note}
                       onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-                      className="w-full px-4 py-2 rounded-xl bg-white/5 border border-white/15 text-white placeholder-stone-500 text-sm focus:outline-none focus:border-amber-400 resize-none"
+                      className="w-full px-3.5 py-2 rounded-xl bg-white/5 border border-white/15 text-white placeholder-stone-500 text-xs sm:text-sm focus:outline-none focus:border-amber-400 resize-none transition-colors"
                     ></textarea>
                   </div>
 
@@ -353,17 +425,19 @@ function OrderSection() {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full py-3.5 rounded-xl bg-gradient-to-r from-brand-red to-amber-600 hover:from-brand-redhover hover:to-amber-700 text-white font-bold text-sm sm:text-base shadow-lg transition-all flex items-center justify-center gap-2"
+                    className="w-full py-3 sm:py-3.5 rounded-xl bg-gradient-to-r from-brand-red to-amber-600 hover:from-brand-redhover hover:to-amber-700 text-white font-bold text-xs sm:text-sm shadow-lg transition-all flex items-center justify-center gap-2 active:scale-98 cursor-pointer"
                   >
                     {isLoading ? (
                       <span className="flex items-center gap-2">
                         <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                        Đang Xử Lý Đơn...
+                        <span>Đang Xử Lý Yêu Cầu...</span>
                       </span>
                     ) : (
                       <>
                         <Send className="w-4 h-4" />
-                        <span>Xác Nhận Đặt Bàn / Giao Phở</span>
+                        <span>
+                          {formData.orderType === 'dine-in' ? 'Xác Nhận Đặt Bàn Tại Quán' : 'Xác Nhận Đặt Giao Phở'}
+                        </span>
                       </>
                     )}
                   </button>
