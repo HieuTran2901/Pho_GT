@@ -259,9 +259,9 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
                   <ChevronDown className={`w-3.5 h-3.5 text-stone-500 transition-transform duration-200 ${userDropdownOpen ? 'rotate-180 text-[#8a1e14]' : ''}`} />
                 </button>
 
-                {/* Member Dropdown Popup: Sổ Tay Tri Kỷ 1986 */}
+                {/* Member Dropdown Popup: Hộp Sơn Mài Thưởng Khách 1986 */}
                 {userDropdownOpen && (
-                  <div className="absolute right-0 mt-2.5 w-80 rounded-2xl bg-[#241712] border-2 border-[#a63a2b]/70 shadow-2xl overflow-hidden z-50 animate-dropdown-heritage text-xs divide-y divide-[#3d2417]">
+                  <div className="absolute right-0 mt-2.5 w-80 rounded-2xl bg-[#1c0f0a] border border-[#d49e58]/40 shadow-[0_20px_50px_rgba(0,0,0,0.85)] overflow-hidden z-50 animate-dropdown-heritage text-xs">
                     
                     {/* TẦNG 1: Thẻ Sơn Mài Khảm Vàng (Gold-Inlaid Lacquer Heritage Card) */}
                     <div className="p-4 bg-gradient-to-br from-[#4a1812] via-[#2f100c] to-[#1a0805] text-[#fef3e2] relative overflow-hidden border-b border-[#a63a2b]/40">
@@ -353,79 +353,133 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
                       </div>
                     </div>
 
-                    {/* TẦNG 2: Bát Phở Khẩu Vị Ruột (Pho Taste Capsule) */}
-                    <div className="p-3.5 bg-[#2c1b14]/90">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-serif font-bold text-[#f0caa0] flex items-center gap-1.5">
-                          <span className="text-amber-500">🍜</span> Bát Phở Ruột Đã Lưu
-                        </span>
+                    {/* TẦNG 2: Khay Bát Phở Ruột Khẩu Vị Cố Tri (Signature Pho Bento) */}
+                    <div className="p-3.5 bg-gradient-to-b from-[#24120c] to-[#1a0c08] border-b border-amber-900/40">
+                      {/* Tiêu đề khay món ruột */}
+                      <div className="flex items-center justify-between mb-2.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                          <span className="font-serif font-bold text-xs text-[#fbe5cb] tracking-wide uppercase">
+                            Khẩu Vị Ruột Cố Tri
+                          </span>
+                        </div>
                         <a
                           href="#menu"
                           onClick={() => setUserDropdownOpen(false)}
-                          className="text-[10px] text-amber-400 hover:text-amber-300 underline font-medium"
+                          className="text-[10px] text-amber-400/90 hover:text-amber-200 font-medium transition-colors flex items-center gap-0.5"
                         >
-                          Sửa gu
+                          <span>Chỉnh gu</span>
+                          <span>✏️</span>
                         </a>
                       </div>
-                      
-                      {user.tasteProfile ? (
-                        <>
-                          <div className="flex flex-wrap gap-1.5 mb-2">
-                            {user.tasteProfile.brothType && (
-                              <span className="px-2 py-0.5 rounded-md bg-[#3d2417] border border-[#633a24] text-[#e0c3a8] text-[10px]">
-                                {BROTH_LABELS[user.tasteProfile.brothType] || user.tasteProfile.brothType}
-                              </span>
-                            )}
-                            {user.tasteProfile.onionStyle && (
-                              <span className="px-2 py-0.5 rounded-md bg-[#3d2417] border border-[#633a24] text-[#e0c3a8] text-[10px]">
-                                {ONION_LABELS[user.tasteProfile.onionStyle] || user.tasteProfile.onionStyle}
-                              </span>
-                            )}
-                            {user.tasteProfile.herbStyle && (
-                              <span className="px-2 py-0.5 rounded-md bg-[#3d2417] border border-[#633a24] text-[#e0c3a8] text-[10px]">
-                                {HERB_LABELS[user.tasteProfile.herbStyle] || user.tasteProfile.herbStyle}
-                              </span>
-                            )}
-                            {user.tasteProfile.crullerPref && (
-                              <span className="px-2 py-0.5 rounded-md bg-[#3d2417] border border-[#633a24] text-[#e0c3a8] text-[10px]">
-                                {CRULLER_LABELS[user.tasteProfile.crullerPref] || user.tasteProfile.crullerPref}
-                              </span>
-                            )}
-                          </div>
-                          {user.tasteProfile.customNote && (
-                            <p className="text-[10px] text-stone-400 italic mb-2.5 line-clamp-1">
-                              "{user.tasteProfile.customNote}"
-                            </p>
-                          )}
-                        </>
-                      ) : (
-                        <p className="text-[10px] text-stone-400 italic mb-2.5">
-                          Chuẩn vị phở gia truyền Hà Nội 1986
-                        </p>
-                      )}
 
-                      {/* 1-Click Quick Reorder Button */}
+                      {/* Card Món Ăn: Nền Men Gốm Viền Chỉ Vàng */}
+                      <div className="rounded-xl p-2.5 bg-gradient-to-br from-[#3a1c14]/70 to-[#1a0c08]/90 border border-amber-500/25 shadow-md relative overflow-hidden group">
+                        {/* Hơi nước bốc nhẹ */}
+                        <div className="absolute -top-1 right-2 text-stone-500/30 text-xs pointer-events-none animate-pulse">♨️</div>
+
+                        {/* Hàng 1: Ảnh món + Tên món + Giá */}
+                        <div className="flex items-center gap-2.5">
+                          <div className="relative shrink-0 w-12 h-12 rounded-lg overflow-hidden border border-amber-400/40 shadow-inner">
+                            <img 
+                              src="https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&w=200&q=80" 
+                              alt="Bát Phở Ruột" 
+                              className="w-12 h-12 object-cover group-hover:scale-110 transition-transform duration-300"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <div className="font-serif font-bold text-[13px] text-white group-hover:text-amber-200 transition-colors truncate">
+                              {user.tasteProfile?.favoriteDishName || 'Phở Bò Tái Nạm Gầu Giòn'}
+                            </div>
+                            <div className="flex items-center justify-between mt-0.5">
+                              <span className="text-amber-400 font-bold font-mono text-xs">85.000đ</span>
+                              <span className="text-[9px] text-stone-400 font-sans italic bg-black/40 px-1.5 py-0.2 rounded border border-white/5">
+                                Bát Đệ Nhất
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Hàng 2: Dải Gia Vị Men Gốm (Spice Pills) */}
+                        <div className="mt-2.5 pt-2 border-t border-amber-500/15 flex flex-wrap gap-1">
+                          {user.tasteProfile?.brothType ? (
+                            <span className="px-2 py-0.5 rounded-full bg-[#140a07]/80 border border-amber-500/20 text-[#f2d8be] text-[9px] flex items-center gap-1 font-medium">
+                              <span>🍲</span>
+                              <span>{BROTH_LABELS[user.tasteProfile.brothType] || user.tasteProfile.brothType}</span>
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full bg-[#140a07]/80 border border-amber-500/20 text-[#f2d8be] text-[9px] flex items-center gap-1 font-medium">
+                              <span>🍲</span>
+                              <span>Nước đậm béo</span>
+                            </span>
+                          )}
+
+                          {user.tasteProfile?.onionStyle ? (
+                            <span className="px-2 py-0.5 rounded-full bg-[#140a07]/80 border border-amber-500/20 text-[#f2d8be] text-[9px] flex items-center gap-1 font-medium">
+                              <span>🧅</span>
+                              <span>{ONION_LABELS[user.tasteProfile.onionStyle] || user.tasteProfile.onionStyle}</span>
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full bg-[#140a07]/80 border border-amber-500/20 text-[#f2d8be] text-[9px] flex items-center gap-1 font-medium">
+                              <span>🧅</span>
+                              <span>Đầu hành giòn</span>
+                            </span>
+                          )}
+
+                          {user.tasteProfile?.crullerPref ? (
+                            <span className="px-2 py-0.5 rounded-full bg-[#140a07]/80 border border-amber-500/20 text-[#f2d8be] text-[9px] flex items-center gap-1 font-medium">
+                              <span>🥢</span>
+                              <span>{CRULLER_LABELS[user.tasteProfile.crullerPref] || user.tasteProfile.crullerPref}</span>
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full bg-[#140a07]/80 border border-amber-500/20 text-[#f2d8be] text-[9px] flex items-center gap-1 font-medium">
+                              <span>🥢</span>
+                              <span>Kèm quẩy giòn</span>
+                            </span>
+                          )}
+
+                          {user.tasteProfile?.herbStyle && (
+                            <span className="px-2 py-0.5 rounded-full bg-[#140a07]/80 border border-amber-500/20 text-[#f2d8be] text-[9px] flex items-center gap-1 font-medium">
+                              <span>🌿</span>
+                              <span>{HERB_LABELS[user.tasteProfile.herbStyle] || user.tasteProfile.herbStyle}</span>
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Ghi chú gu riêng của thực khách */}
+                        <div className="mt-1.5 text-[10px] text-amber-200/75 italic truncate flex items-center gap-1">
+                          <span className="text-amber-400/80 font-serif">“</span>
+                          <span className="truncate">{user.tasteProfile?.customNote || 'Nước dùng trong ngọt thanh tủy bò, hành trần kỹ'}</span>
+                          <span className="text-amber-400/80 font-serif">”</span>
+                        </div>
+                      </div>
+
+                      {/* 1-Click Quick Reorder Button: Kim Ấn Gọi Món */}
                       <button
                         onClick={handleQuickReorder}
-                        className="w-full py-1.5 rounded-lg bg-gradient-to-r from-[#9b2a1f] to-[#7f1d14] hover:from-[#b53225] hover:to-[#912217] text-amber-100 font-serif font-bold text-[11px] shadow flex items-center justify-center gap-1.5 transition-all group"
+                        className="mt-3 w-full py-2 rounded-xl bg-gradient-to-r from-[#9b2a1f] via-[#b33224] to-[#801c13] hover:from-[#b53225] hover:via-[#c93c2c] hover:to-[#912217] text-[#fff6e8] font-serif font-bold text-xs shadow-lg shadow-red-950/60 flex items-center justify-center gap-2 border border-amber-400/30 hover:border-amber-300 transition-all group active:scale-95"
                       >
-                        <Zap className="w-3 h-3 text-amber-300 group-hover:scale-110 transition-transform" />
-                        <span>1-Click Đặt Lại Bát Này</span>
+                        <span className="w-4 h-4 rounded-full bg-amber-400 text-black flex items-center justify-center text-[10px] font-black group-hover:scale-110 transition-transform">
+                          ⚡
+                        </span>
+                        <span className="tracking-wide">1-Click Đặt Lại Bát Này</span>
                       </button>
                     </div>
 
-                    {/* TẦNG 3: Danh Mục Tiện Ích Trực Quan */}
-                    <div className="py-1 bg-[#241712]">
+                    {/* TẦNG 3: Danh Mục Tiện Ích Trực Quan (Pill Container) */}
+                    <div className="p-2 space-y-0.5 bg-[#150a07] border-b border-white/5">
                       <a
                         href="#order"
                         onClick={() => setUserDropdownOpen(false)}
-                        className="px-4 py-2 hover:bg-[#342017] flex items-center justify-between text-stone-300 hover:text-amber-100 transition-colors"
+                        className="px-3 py-2 rounded-xl hover:bg-white/5 flex items-center justify-between text-stone-300 hover:text-amber-100 transition-all"
                       >
                         <div className="flex items-center gap-2.5">
                           <FileText className="w-3.5 h-3.5 text-amber-400" />
-                          <span className="font-medium">Lịch sử đơn hàng</span>
+                          <span className="font-medium text-[11px]">Lịch sử đơn hàng</span>
                         </div>
-                        <span className="px-1.5 py-0.2 rounded-full bg-[#9b2a1f]/40 text-amber-300 text-[10px] font-bold">
+                        <span className="px-2 py-0.5 rounded-full bg-amber-950/80 border border-amber-600/40 text-amber-300 text-[10px] font-mono font-bold">
                           {user.loyaltyAccount?.totalOrdersCount || 0} đơn
                         </span>
                       </a>
@@ -433,11 +487,11 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
                       <a
                         href="#menu"
                         onClick={() => setUserDropdownOpen(false)}
-                        className="px-4 py-2 hover:bg-[#342017] flex items-center justify-between text-stone-300 hover:text-amber-100 transition-colors"
+                        className="px-3 py-2 rounded-xl hover:bg-white/5 flex items-center justify-between text-stone-300 hover:text-amber-100 transition-all"
                       >
                         <div className="flex items-center gap-2.5">
                           <Gift className="w-3.5 h-3.5 text-amber-400" />
-                          <span className="font-medium">Kho quà & Đổi điểm</span>
+                          <span className="font-medium text-[11px]">Kho quà & Đổi điểm</span>
                         </div>
                         <span className="text-amber-400 text-[10px] font-bold flex items-center gap-0.5">
                           <span>Đổi quà</span>
@@ -448,15 +502,15 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
                       <a
                         href="#order"
                         onClick={() => setUserDropdownOpen(false)}
-                        className="px-4 py-2 hover:bg-[#342017] flex items-center gap-2.5 text-stone-300 hover:text-amber-100 transition-colors"
+                        className="px-3 py-2 rounded-xl hover:bg-white/5 flex items-center gap-2.5 text-stone-300 hover:text-amber-100 transition-all"
                       >
                         <MapPin className="w-3.5 h-3.5 text-amber-400" />
-                        <span className="font-medium">Sổ địa chỉ nhận phở</span>
+                        <span className="font-medium text-[11px]">Sổ địa chỉ nhận phở</span>
                       </a>
                     </div>
 
                     {/* TẦNG 4: Footer Hỗ Trợ & Đăng Xuất */}
-                    <div className="p-2.5 bg-[#1b110d] flex items-center justify-between text-[11px]">
+                    <div className="p-2.5 bg-[#120704] flex items-center justify-between text-[11px]">
                       <a
                         href="tel:19008686"
                         className="text-stone-400 hover:text-amber-200 font-mono flex items-center gap-1 transition-colors"
@@ -470,7 +524,7 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
                           setUserDropdownOpen(false);
                           if (onToast) onToast('Bạn đã đăng xuất tài khoản thành công!');
                         }}
-                        className="px-2.5 py-1 rounded-md text-red-400 hover:text-red-300 hover:bg-red-950/50 font-bold flex items-center gap-1 transition-all"
+                        className="px-2.5 py-1 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-950/40 font-bold flex items-center gap-1 transition-all"
                       >
                         <LogOut className="w-3.5 h-3.5" />
                         <span>Đăng xuất</span>
