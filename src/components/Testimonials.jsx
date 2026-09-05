@@ -246,86 +246,10 @@ const ReviewsBottomSheet = React.memo(function ReviewsBottomSheet({
   );
 });
 
-function Testimonials() {
-  const [sectionRef, isVisible] = useScrollReveal({ threshold: 0.12 });
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
-
-  // PC Pagination State
-  const [pcVisibleCount, setPcVisibleCount] = useState(INITIAL_PC_COUNT);
-
-  // Mobile Bottom Sheet Open State only (isolated from internal sheet state)
-  const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
-
-  // Timer ref for smooth collapse coordination
-  const collapseTimerRef = useRef(null);
-
-  useEffect(() => {
-    return () => {
-      if (collapseTimerRef.current) clearTimeout(collapseTimerRef.current);
-    };
-  }, []);
-
-  // Reset PC pagination count when category changes
-  const handleCategoryChange = useCallback((catId) => {
-    setSelectedCategory(catId);
-    setPcVisibleCount(INITIAL_PC_COUNT);
-  }, []);
-
-  // Main filtered reviews
-  const filteredReviews = useMemo(() => {
-    if (selectedCategory === 'all') return TESTIMONIALS;
-    return TESTIMONIALS.filter((review) => review.category === selectedCategory);
-  }, [selectedCategory]);
-
-  // PC displayed reviews
-  const pcDisplayedReviews = useMemo(() => {
-    return filteredReviews.slice(0, pcVisibleCount);
-  }, [filteredReviews, pcVisibleCount]);
-
-  const hasMorePc = pcVisibleCount < filteredReviews.length;
-  const remainingCount = Math.max(0, filteredReviews.length - pcVisibleCount);
-  const progressPercentage = Math.min(100, Math.round((pcDisplayedReviews.length / filteredReviews.length) * 100));
-
-  const handleLoadMorePc = useCallback(() => {
-    const currentCount = pcVisibleCount;
-    setPcVisibleCount((prev) => Math.min(filteredReviews.length, prev + 3));
-
-    // Smoothly guide user's eye to newly revealed cards
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        const gridEl = document.getElementById('testimonials-grid');
-        if (gridEl && gridEl.children.length > currentCount) {
-          const firstNewCard = gridEl.children[currentCount];
-          if (firstNewCard) {
-            firstNewCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-          }
-        }
-      }, 80);
-    });
-  }, [pcVisibleCount, filteredReviews.length]);
-
-  const handleCollapsePc = useCallback(() => {
-    const headerEl = document.getElementById('testimonials-header') || document.getElementById('reviews');
-
-    // Step 1: Smoothly return viewport to testimonials header BEFORE collapsing DOM height
-    if (headerEl) {
-      const yOffset = window.innerWidth >= 1024 ? -120 : -90;
-      const targetY = headerEl.getBoundingClientRect().top + window.pageYOffset + yOffset;
-      window.scrollTo({ top: targetY, behavior: 'smooth' });
-    }
-
-    // Step 2: Coordinate state update after scroll has initiated to prevent layout drop/jump
-    if (collapseTimerRef.current) clearTimeout(collapseTimerRef.current);
-    collapseTimerRef.current = setTimeout(() => {
-      setPcVisibleCount(INITIAL_PC_COUNT);
-    }, 280);
-  }, []);
-
-  // Render individual review card
-  const renderCard = (review, idx, isCarousel = false) => (
+// Memoized individual review card to isolate render passes and guarantee 60-120fps scrolling
+const TestimonialCard = React.memo(function TestimonialCard({ review, idx, isCarousel = false }) {
+  return (
     <div
-      key={review.id}
       id={isCarousel ? undefined : `testimonial-card-${review.id}`}
       className={`bg-white rounded-3xl p-6 sm:p-7 shadow-md border transition-all duration-300 relative flex flex-col justify-between ${
         isCarousel ? 'min-w-[285px] max-w-[285px] snap-start' : 'hover:shadow-2xl hover:-translate-y-1'
@@ -386,6 +310,110 @@ function Testimonials() {
       <Quote className="w-10 h-10 text-stone-100/90 absolute top-5 right-5 -z-0 pointer-events-none" />
     </div>
   );
+});
+
+function Testimonials() {
+  const [sectionRef, isVisible] = useScrollReveal({ threshold: 0.12 });
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+
+  // PC Pagination State
+  const [pcVisibleCount, setPcVisibleCount] = useState(INITIAL_PC_COUNT);
+
+  // Mobile Bottom Sheet Open State only (isolated from internal sheet state)
+  const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
+
+  // Timer refs for smooth collapse coordination and feedback auto-dismiss
+  const collapseTimerRef = useRef(null);
+  const feedbackTimerRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (collapseTimerRef.current) clearTimeout(collapseTimerRef.current);
+      if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+    };
+  }, []);
+
+  // Auto-dismissing feedback handler
+  const handleToggleFeedback = useCallback(() => {
+    setFeedbackSubmitted((prev) => {
+      const next = !prev;
+      if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+      if (next) {
+        feedbackTimerRef.current = setTimeout(() => {
+          setFeedbackSubmitted(false);
+        }, 4000);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleSubmitFeedbackFromSheet = useCallback(() => {
+    setFeedbackSubmitted(true);
+    if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+    feedbackTimerRef.current = setTimeout(() => {
+      setFeedbackSubmitted(false);
+    }, 4000);
+  }, []);
+
+  // Reset PC pagination count when category changes
+  const handleCategoryChange = useCallback((catId) => {
+    setSelectedCategory(catId);
+    setPcVisibleCount(INITIAL_PC_COUNT);
+  }, []);
+
+  // Main filtered reviews
+  const filteredReviews = useMemo(() => {
+    if (selectedCategory === 'all') return TESTIMONIALS;
+    return TESTIMONIALS.filter((review) => review.category === selectedCategory);
+  }, [selectedCategory]);
+
+  // PC displayed reviews
+  const pcDisplayedReviews = useMemo(() => {
+    return filteredReviews.slice(0, pcVisibleCount);
+  }, [filteredReviews, pcVisibleCount]);
+
+  const hasMorePc = pcVisibleCount < filteredReviews.length;
+  const remainingCount = Math.max(0, filteredReviews.length - pcVisibleCount);
+  const progressPercentage = Math.min(100, Math.round((pcDisplayedReviews.length / filteredReviews.length) * 100));
+
+  const handleLoadMorePc = useCallback(() => {
+    // Cancel any pending collapse timer to eliminate race conditions
+    if (collapseTimerRef.current) clearTimeout(collapseTimerRef.current);
+
+    const currentCount = pcVisibleCount;
+    setPcVisibleCount((prev) => Math.min(filteredReviews.length, prev + 3));
+
+    // Smoothly guide user's eye to newly revealed cards
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const gridEl = document.getElementById('testimonials-grid');
+        if (gridEl && gridEl.children.length > currentCount) {
+          const firstNewCard = gridEl.children[currentCount];
+          if (firstNewCard) {
+            firstNewCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        }
+      }, 80);
+    });
+  }, [pcVisibleCount, filteredReviews.length]);
+
+  const handleCollapsePc = useCallback(() => {
+    const headerEl = document.getElementById('testimonials-header') || document.getElementById('reviews');
+
+    // Step 1: Smoothly return viewport to testimonials header BEFORE collapsing DOM height
+    if (headerEl) {
+      const yOffset = window.innerWidth >= 1024 ? -120 : -90;
+      const targetY = headerEl.getBoundingClientRect().top + window.pageYOffset + yOffset;
+      window.scrollTo({ top: targetY, behavior: 'smooth' });
+    }
+
+    // Step 2: Coordinate state update after scroll has initiated to prevent layout drop/jump
+    if (collapseTimerRef.current) clearTimeout(collapseTimerRef.current);
+    collapseTimerRef.current = setTimeout(() => {
+      setPcVisibleCount(INITIAL_PC_COUNT);
+    }, 280);
+  }, []);
 
   return (
     <section id="reviews" ref={sectionRef} className="py-16 sm:py-20 bg-[#faf6f0] border-t border-stone-200">
@@ -461,7 +489,9 @@ function Testimonials() {
         <div className="sm:hidden">
           <div className="flex gap-3.5 overflow-x-auto pb-4 scrollbar-none snap-x snap-mandatory -mx-4 px-4">
             {/* Display up to first 5 cards */}
-            {filteredReviews.slice(0, 5).map((review, idx) => renderCard(review, idx, true))}
+            {filteredReviews.slice(0, 5).map((review, idx) => (
+              <TestimonialCard key={review.id} review={review} idx={idx} isCarousel={true} />
+            ))}
 
             {/* Action Card: Open Bottom Sheet */}
             <div
@@ -515,7 +545,9 @@ function Testimonials() {
           id="testimonials-grid"
           className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
         >
-          {pcDisplayedReviews.map((review, idx) => renderCard(review, idx, false))}
+          {pcDisplayedReviews.map((review, idx) => (
+            <TestimonialCard key={review.id} review={review} idx={idx} isCarousel={false} />
+          ))}
         </div>
 
         {/* PC Pagination & Progress Bar (>= sm) */}
@@ -559,7 +591,7 @@ function Testimonials() {
 
             <button
               type="button"
-              onClick={() => setFeedbackSubmitted((prev) => !prev)}
+              onClick={handleToggleFeedback}
               className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-white text-stone-700 border border-stone-300 text-xs font-bold hover:bg-stone-50 transition-all duration-200 shadow-xs cursor-pointer"
             >
               <PenLine className="w-3.5 h-3.5 text-brand-red" />
@@ -582,7 +614,7 @@ function Testimonials() {
       <ReviewsBottomSheet
         isOpen={isBottomSheetOpen}
         onClose={() => setIsBottomSheetOpen(false)}
-        onSubmitFeedback={() => setFeedbackSubmitted(true)}
+        onSubmitFeedback={handleSubmitFeedbackFromSheet}
       />
 
     </section>

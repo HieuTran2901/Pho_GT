@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { 
   Home, 
   Utensils, 
@@ -129,14 +129,14 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
     user?.tasteProfile?.crullerPref ? (CRULLER_LABELS[user.tasteProfile.crullerPref] || user.tasteProfile.crullerPref) : 'Thêm quẩy'
   ].join(' • ');
 
-  // Favorite dish reference for 1-Click Quick Reorder
-  const favoriteDish = {
+  // Memoized favorite dish reference for 1-Click Quick Reorder
+  const favoriteDish = useMemo(() => ({
     id: 'fav_pho_' + (user?.tasteProfile?.favoriteDishId || '1986'),
     name: user?.tasteProfile?.favoriteDishName || 'Phở Bò Tái Nạm Gầu Giòn 1986',
     price: 85000,
     image: 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&w=400&q=80',
     customNote: user?.tasteProfile?.customNote || 'Chuẩn vị truyền thống 1986 (Đã lưu)'
-  };
+  }), [user?.tasteProfile?.favoriteDishId, user?.tasteProfile?.favoriteDishName, user?.tasteProfile?.customNote]);
 
   // 1-Click Quick Reorder handler
   const handleQuickReorder = useCallback(() => {
@@ -149,7 +149,7 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
     } else if (onOpenCart) {
       onOpenCart();
     }
-  }, [user, onAddToCart, onOpenCart, onToast]);
+  }, [favoriteDish, onAddToCart, onOpenCart, onToast]);
 
   // Close dropdown on click outside only when open
   useEffect(() => {
