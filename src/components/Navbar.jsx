@@ -167,19 +167,32 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
     <>
       <header className="fixed top-0 left-0 right-0 z-50 font-sans shadow-md">
       {/* 1. Top vintage announcement bar */}
-      <div className="bg-[#1b261d] text-amber-100/90 text-xs py-2 px-4 sm:px-8 border-b border-amber-900/30">
-        <div className="max-w-[1700px] mx-auto flex flex-wrap justify-between items-center gap-2">
-          <div className="flex items-center space-x-6">
+      <div className="bg-[#1b261d] text-amber-100/90 text-xs py-1.5 sm:py-2 px-3 sm:px-8 border-b border-amber-900/30 overflow-hidden w-full max-w-full">
+        <div className="max-w-[1700px] mx-auto flex justify-between items-center gap-2">
+          {/* Mobile view: single clean non-overflow line */}
+          <div className="sm:hidden flex items-center justify-between w-full text-[10px]">
+            <span className="flex items-center gap-1 font-medium truncate">
+              <Clock className="w-3 h-3 text-amber-400 shrink-0" />
+              <span>06:00 – 22:30</span>
+            </span>
+            <span className="text-amber-300 font-medium truncate flex items-center gap-1">
+              <Gift className="w-3 h-3 text-amber-400 shrink-0" />
+              <span>Tặng 1 đĩa quẩy giòn</span>
+            </span>
+          </div>
+
+          {/* Desktop/Tablet view */}
+          <div className="hidden sm:flex items-center space-x-6">
             <span className="flex items-center gap-1.5 font-medium">
               <Clock className="w-3.5 h-3.5 text-amber-400" />
               06:00 – 22:30 mỗi ngày
             </span>
-            <span className="hidden sm:flex items-center gap-1.5 text-stone-300">
+            <span className="flex items-center gap-1.5 text-stone-300">
               <MapPin className="w-3.5 h-3.5 text-amber-400" />
               10 Chi nhánh tại Hà Nội & TP. Hồ Chí Minh
             </span>
           </div>
-          <div className="flex items-center gap-1.5 text-amber-300 text-xs font-medium">
+          <div className="hidden sm:flex items-center gap-1.5 text-amber-300 text-xs font-medium">
             <Gift className="w-3.5 h-3.5 text-amber-400" />
             <span>Ưu đãi hôm nay: Tặng 1 đĩa quẩy giòn khi đặt qua website</span>
           </div>
@@ -187,28 +200,29 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
       </div>
 
       {/* 2. Main Navigation Bar (Creamy vintage parchment background) */}
-      <div className="bg-[#f7f4ed]/95 backdrop-blur-md border-b border-stone-300/80 px-4 sm:px-8 py-3">
-        <div className="max-w-[1700px] mx-auto flex items-center justify-between gap-4">
+      <div className="bg-[#f7f4ed]/95 backdrop-blur-md border-b border-stone-300/80 px-2.5 sm:px-6 lg:px-8 py-2 sm:py-3 w-full max-w-full">
+        <div className="max-w-[1700px] mx-auto flex items-center justify-between gap-1.5 sm:gap-4 w-full">
           
           {/* Logo Section */}
-          <a href="#hero" className="flex items-center gap-2 sm:gap-3 shrink-0 group">
+          <a href="#hero" className="flex items-center gap-1.5 sm:gap-2.5 md:gap-3 min-w-0 group">
             {/* Vintage Round Seal */}
-            <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-full border-2 border-[#9b2a1f] p-0.5 flex items-center justify-center bg-white shadow-sm group-hover:scale-105 transition-transform shrink-0">
+            <div className="w-9 h-9 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full border border-[#9b2a1f] sm:border-2 p-0.5 flex items-center justify-center bg-white shadow-sm group-hover:scale-105 transition-transform shrink-0">
               <div className="w-full h-full rounded-full border border-dashed border-[#9b2a1f] flex flex-col items-center justify-center text-[#9b2a1f] leading-none py-0.5 sm:py-1">
-                <span className="text-[7px] sm:text-[8px] font-bold uppercase tracking-tighter">SINCE</span>
-                <Utensils className="w-3.5 h-3.5 sm:w-4 sm:h-4 my-0.5" />
-                <span className="text-[7px] sm:text-[8px] font-bold">1986</span>
+                <span className="text-[6px] sm:text-[7px] md:text-[8px] font-bold uppercase tracking-tighter">SINCE</span>
+                <Utensils className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 my-0.5" />
+                <span className="text-[6px] sm:text-[7px] md:text-[8px] font-bold">1986</span>
               </div>
             </div>
 
-            <div className="text-left">
-              <div className="font-serif text-xl sm:text-3xl font-bold tracking-tight text-[#223326] leading-none">
+            <div className="text-left min-w-0">
+              <div className="font-serif text-base sm:text-2xl md:text-3xl font-black tracking-tight text-[#223326] leading-none whitespace-nowrap truncate">
                 PHỞ GIA TRUYỀN
               </div>
-              <div className="flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[11px] font-serif text-[#9b2a1f] tracking-wider uppercase font-semibold mt-1">
-                <span className="w-3 sm:w-4 h-px bg-[#9b2a1f]/60"></span>
-                <span>TINH HOA PHỞ VIỆT TỪ NĂM 1986</span>
-                <span className="w-3 sm:w-4 h-px bg-[#9b2a1f]/60"></span>
+              <div className="flex items-center gap-1 sm:gap-1.5 text-[8px] sm:text-[10px] md:text-[11px] font-serif text-[#9b2a1f] tracking-wide uppercase font-semibold mt-0.5 sm:mt-1 whitespace-nowrap">
+                <span className="hidden sm:inline-block w-2.5 md:w-4 h-px bg-[#9b2a1f]/60"></span>
+                <span className="sm:hidden">TINH HOA TỪ 1986</span>
+                <span className="hidden sm:inline">TINH HOA PHỞ VIỆT TỪ NĂM 1986</span>
+                <span className="hidden sm:inline-block w-2.5 md:w-4 h-px bg-[#9b2a1f]/60"></span>
               </div>
             </div>
           </a>
@@ -246,18 +260,18 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
           </nav>
 
           {/* Right Actions: Login + Hotline + Cart */}
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 md:gap-3 shrink-0">
             {/* Login / Member Profile Section */}
             {isAuthenticated && user ? (
               <div className="relative hidden md:block" ref={dropdownRef}>
                 <button
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-full border border-[#d49e58]/50 bg-gradient-to-r from-amber-50/90 via-orange-50/80 to-amber-100/90 hover:border-[#c88d2b] text-[#2b1810] text-xs font-serif font-bold transition-all shadow-xs group"
+                  className="flex items-center gap-1.5 sm:gap-2.5 px-2.5 sm:px-3.5 py-1.5 rounded-full border border-[#d49e58]/50 bg-gradient-to-r from-amber-50/90 via-orange-50/80 to-amber-100/90 hover:border-[#c88d2b] text-[#2b1810] text-xs font-serif font-bold transition-all shadow-xs group"
                 >
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#9b2a1f] to-[#6a150c] text-amber-200 flex items-center justify-center text-xs font-bold font-serif shadow-xs ring-1 ring-[#e4aa65]/60">
+                  <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-[#9b2a1f] to-[#6a150c] text-amber-200 flex items-center justify-center text-[10px] sm:text-xs font-bold font-serif shadow-xs ring-1 ring-[#e4aa65]/60 shrink-0">
                     {user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
                   </div>
-                  <div className="text-left leading-tight">
+                  <div className="text-left leading-tight hidden lg:block">
                     <div className="text-xs font-bold truncate max-w-[110px] text-[#2b1810] flex items-center gap-1">
                       <span>{user.fullName}</span>
                       <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-200/80 text-[#8a1e14] font-sans font-bold">
@@ -268,6 +282,10 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
                       <Sparkles className="w-2.5 h-2.5 text-amber-600" />
                       <span>{availablePoints}đ Tri Kỷ</span>
                     </div>
+                  </div>
+                  {/* Compact name on tablet (md to lg) */}
+                  <div className="text-left leading-tight lg:hidden">
+                    <span className="text-xs font-bold truncate max-w-[80px] inline-block">{user.fullName}</span>
                   </div>
                   <ChevronDown className={`w-3.5 h-3.5 text-stone-500 transition-transform duration-200 ${userDropdownOpen ? 'rotate-180 text-[#8a1e14]' : ''}`} />
                 </button>
@@ -547,18 +565,18 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
               </button>
             )}
 
-            {/* Hotline button - Compact on mobile, full on tablet/desktop */}
+            {/* Hotline button - Compact circular on mobile & tablet, full on desktop */}
             <a
               href="tel:19008686"
               title="Hotline đặt hàng: 1900 8686"
               aria-label="Gọi hotline 1900 8686"
-              className="sm:hidden w-9 h-9 rounded-full bg-[#96281b] hover:bg-[#7e2015] text-white flex items-center justify-center shadow-md transition-all shrink-0 active:scale-95"
+              className="lg:hidden w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#96281b] hover:bg-[#7e2015] text-white flex items-center justify-center shadow-md transition-all shrink-0 active:scale-95"
             >
-              <Phone className="w-4 h-4 text-amber-200 animate-pulse" />
+              <Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-200 animate-pulse" />
             </a>
             <a
               href="tel:19008686"
-              className="hidden sm:flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full bg-[#96281b] hover:bg-[#7e2015] text-white shadow-md transition-all group shrink-0"
+              className="hidden lg:flex items-center gap-2 px-3.5 sm:px-5 py-2 rounded-full bg-[#96281b] hover:bg-[#7e2015] text-white shadow-md transition-all group shrink-0"
             >
               <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center">
                 <Phone className="w-3.5 h-3.5 text-amber-200 animate-pulse" />
@@ -574,15 +592,15 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
               id="navbar-cart-btn"
               onClick={onOpenCart}
               aria-label="Giỏ hàng phở"
-              className={`relative p-2 rounded-full bg-stone-200/80 hover:bg-stone-300 text-stone-800 transition-all duration-200 border border-stone-300 hover:scale-105 active:scale-90 hover:shadow-md group ${
+              className={`relative p-1.5 sm:p-2 rounded-full bg-stone-200/80 hover:bg-stone-300 text-stone-800 transition-all duration-200 border border-stone-300 hover:scale-105 active:scale-90 hover:shadow-md shrink-0 group ${
                 isCartJiggling ? 'animate-cart-jiggle ring-2 ring-amber-400/80' : ''
               }`}
             >
-              <ShoppingBag className={`w-5 h-5 transition-all duration-200 ${
+              <ShoppingBag className={`w-4 h-4 sm:w-5 sm:h-5 transition-all duration-200 ${
                 isCartJiggling ? 'text-[#96281b] scale-110' : 'group-hover:text-[#96281b] group-hover:-rotate-12'
               }`} />
               {cartCount > 0 && (
-                <span className={`absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#96281b] text-white text-xs font-bold flex items-center justify-center shadow-md ${
+                <span className={`absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-[#96281b] text-white text-[9px] sm:text-xs font-bold flex items-center justify-center shadow-md ${
                   isCartJiggling ? 'animate-gold-ripple scale-125' : 'animate-pulse'
                 } transition-transform`}>
                   {cartCount}
@@ -593,9 +611,10 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="xl:hidden p-2 rounded-lg text-stone-800 hover:bg-stone-200"
+              className="xl:hidden p-1.5 sm:p-2 rounded-lg text-stone-800 hover:bg-stone-200 shrink-0"
+              aria-label="Menu"
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileMenuOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6" />}
             </button>
           </div>
 
@@ -801,7 +820,7 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
         />
 
         {/* Bottom Sheet Container */}
-        <div className="relative w-full bg-[#160d0a] text-[#fbf6ee] rounded-t-3xl border-t-2 border-amber-500/40 shadow-2xl max-h-[85vh] flex flex-col overflow-hidden animate-bottom-sheet-up">
+        <div className="relative w-full max-w-lg mx-auto bg-[#160d0a] text-[#fbf6ee] rounded-t-3xl border-t-2 border-amber-500/40 shadow-2xl max-h-[85vh] flex flex-col overflow-hidden animate-bottom-sheet-up">
           {/* Sheet Handle Bar */}
           <div className="pt-3 pb-1 flex justify-center cursor-pointer" onClick={() => setMobileMemberSheetOpen(false)}>
             <div className="w-12 h-1.5 rounded-full bg-stone-600/70" />
