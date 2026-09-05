@@ -255,13 +255,15 @@ const MenuCard = React.memo(function MenuCard({
             aria-label={isLiked ? "Bỏ yêu thích" : "Yêu thích món này"}
             className={`absolute top-1.5 right-1.5 w-7 h-7 rounded-full backdrop-blur-md flex items-center justify-center transition-all duration-200 active:scale-90 shadow-sm ${
               isLiked
-                ? 'bg-rose-950/80 border border-rose-400/80 text-rose-400'
+                ? 'bg-white/95 border border-white/90 shadow-[0_2px_8px_rgba(0,0,0,0.18)]'
                 : 'bg-black/35 hover:bg-black/55 text-white/90'
             }`}
           >
             <Heart
-              className={`w-3.5 h-3.5 ${
-                isLiked ? 'fill-[#96281b] text-[#96281b]' : 'text-white'
+              className={`w-3.5 h-3.5 transition-colors ${
+                isLiked
+                  ? 'fill-[#ff2e63] text-[#ff2e63] drop-shadow-[0_1px_4px_rgba(255,46,99,0.5)]'
+                  : 'text-white'
               }`}
             />
           </button>
@@ -332,7 +334,7 @@ const MenuCard = React.memo(function MenuCard({
               title={isLiked ? "Bỏ yêu thích" : "Lưu vào món yêu thích"}
               className={`relative w-9 h-9 sm:w-10 sm:h-10 rounded-full backdrop-blur-md transition-all duration-300 flex items-center justify-center shadow-md active:scale-90 overflow-visible ${
                 isLiked
-                  ? 'bg-rose-950/75 border border-rose-400/70 text-rose-400 shadow-[0_0_16px_rgba(225,29,72,0.45)]'
+                  ? 'bg-white/95 border border-white/90 shadow-[0_4px_14px_rgba(0,0,0,0.18)]'
                   : 'bg-black/35 hover:bg-black/60 border border-white/30 text-white/90 hover:text-rose-400 hover:border-rose-400/50'
               }`}
             >
@@ -349,11 +351,11 @@ const MenuCard = React.memo(function MenuCard({
               )}
 
               <Heart
-                className={`w-4 h-4 sm:w-4.5 sm:h-4.5 transition-transform duration-200 ${
+                className={`w-4 h-4 sm:w-4.5 sm:h-4.5 transition-all duration-200 ${
                   isPopping
-                    ? 'animate-heart-pop fill-[#96281b]'
+                    ? 'animate-heart-pop fill-[#ff2e63] text-[#ff2e63] drop-shadow-[0_2px_6px_rgba(255,46,99,0.6)]'
                     : isLiked
-                    ? 'fill-[#96281b] scale-110'
+                    ? 'fill-[#ff2e63] text-[#ff2e63] drop-shadow-[0_2px_6px_rgba(255,46,99,0.5)] scale-110'
                     : ''
                 }`}
               />
@@ -920,7 +922,7 @@ function MenuSection({ onAddToCart }) {
                         className={`w-3.5 h-3.5 mr-1 sm:mr-1.5 transition-colors ${
                           isActive
                             ? 'fill-white text-white'
-                            : 'fill-rose-500 text-rose-500'
+                            : 'fill-[#ff2e63] text-[#ff2e63]'
                         }`}
                       />
                     )}
@@ -1301,14 +1303,14 @@ function MenuSection({ onAddToCart }) {
                     onClick={() => toggleFavorite(selectedDetailItem, null, !favoriteIdsSet.has(selectedDetailItem.id))}
                     className={`w-9 h-9 rounded-full backdrop-blur-md flex items-center justify-center shadow-md active:scale-90 transition-all ${
                       favoriteIdsSet.has(selectedDetailItem.id)
-                        ? 'bg-rose-950/80 border border-rose-400/80 text-rose-400'
+                        ? 'bg-white/95 border border-white/90 shadow-[0_3px_10px_rgba(0,0,0,0.18)]'
                         : 'bg-black/40 text-white'
                     }`}
                   >
                     <Heart
-                      className={`w-4 h-4 ${
+                      className={`w-4 h-4 transition-all ${
                         favoriteIdsSet.has(selectedDetailItem.id)
-                          ? 'fill-[#96281b] text-[#96281b]'
+                          ? 'fill-[#ff2e63] text-[#ff2e63] drop-shadow-[0_2px_6px_rgba(255,46,99,0.5)]'
                           : 'text-white'
                       }`}
                     />
