@@ -145,6 +145,7 @@ export default function App() {
           cartCount={cartCount}
           onOpenCart={handleOpenCart}
           onOpenOrder={handleOpenOrder}
+          onAddToCart={handleAddToCart}
           isCartJiggling={isCartJiggling}
           onToast={showToast}
         />

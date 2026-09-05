@@ -555,3 +555,23 @@
 .animate-shake {
   animation: shakeAlert 0.38s ease-in-out both;
 }
+
+/* --- User Dropdown Heritage Unfold Animation --- */
+@keyframes dropdownHeritageUnfold {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+    filter: blur(2px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0px);
+  }
+}
+
+.animate-dropdown-heritage {
+  animation: dropdownHeritageUnfold 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: top right;
+}
+

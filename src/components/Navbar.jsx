@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { 
   Home, 
   Utensils, 
@@ -16,7 +16,10 @@ import {
   Sparkles,
   LogOut,
   ChevronDown,
-  Bookmark
+  Bookmark,
+  Zap,
+  ArrowRight,
+  FileText
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -28,7 +31,39 @@ const NAV_ITEMS = [
   { id: 'order', label: 'ĐẶT BÀN & GIAO TẬN NƠI', icon: Bike, href: '#order' },
 ];
 
-function Navbar({ cartCount, onOpenCart, onOpenOrder, isCartJiggling, onToast }) {
+const TIER_CONFIG = {
+  DONG: { name: 'ĐỒNG', icon: '🥉', target: 500, nextTier: 'BẠC' },
+  BAC: { name: 'BẠC', icon: '🥈', target: 1000, nextTier: 'VÀNG' },
+  VANG: { name: 'VÀNG', icon: '🥇', target: 2000, nextTier: 'KIM CƯƠNG' },
+  KIM_CUONG: { name: 'KIM CƯƠNG', icon: '💎', target: 2000, nextTier: 'KIM CƯƠNG' },
+};
+
+const BROTH_LABELS = {
+  BEO_NGAY: 'Nước béo ngậy',
+  DAM_DA: 'Nước đậm đà',
+  THANH: 'Nước thanh trong'
+};
+
+const ONION_LABELS = {
+  HANH_TRAN: 'Hành trần',
+  NHIEU_HANH: 'Nhiều hành hoa',
+  IT_HANH: 'Ít hành',
+  DAU_HANH: 'Đầu hành giòn'
+};
+
+const HERB_LABELS = {
+  DU_RAU: 'Đủ rau thơm',
+  KHONG_RAU_MUI: 'Không rau mùi',
+  KHONG_HANH_TAY: 'Không hành tây'
+};
+
+const CRULLER_LABELS = {
+  QUAY_GION: 'Quẩy giòn',
+  QUAY_MEM: 'Quẩy mềm',
+  KHONG_QUAY: 'Không quẩy'
+};
+
+function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJiggling, onToast }) {
   const [activeTab, setActiveTab] = useState('hero');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -36,6 +71,33 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, isCartJiggling, onToast })
 
   const { user, isAuthenticated, openAuthModal, logout } = useAuth();
   const navItems = NAV_ITEMS;
+
+  // Membership calculations
+  const tierKey = user?.loyaltyAccount?.membershipTier || 'DONG';
+  const tierInfo = TIER_CONFIG[tierKey] || TIER_CONFIG.DONG;
+  const totalPoints = user?.loyaltyAccount?.totalPoints || 50;
+  const availablePoints = user?.loyaltyAccount?.availablePoints || 50;
+  const pointsToNext = Math.max(0, tierInfo.target - totalPoints);
+  const progressPercent = Math.min(100, Math.round((totalPoints / tierInfo.target) * 100));
+
+  // 1-Click Quick Reorder handler
+  const handleQuickReorder = useCallback(() => {
+    if (onAddToCart) {
+      const favoriteDish = {
+        id: 'fav_pho_' + (user?.tasteProfile?.favoriteDishId || Date.now()),
+        name: user?.tasteProfile?.favoriteDishName || 'Phở Bò Tái Nạm Gầu Giòn 1986',
+        price: 85000,
+        image: 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&w=400&q=80',
+        customNote: user?.tasteProfile?.customNote || 'Chuẩn vị truyền thống 1986 (Đã lưu)'
+      };
+      onAddToCart(favoriteDish);
+      setUserDropdownOpen(false);
+      setMobileMenuOpen(false);
+      if (onToast) onToast(`Đã thêm bát phở ruột vào giỏ hàng thành công!`);
+    } else if (onOpenCart) {
+      onOpenCart();
+    }
+  }, [user, onAddToCart, onOpenCart, onToast]);
 
   // Close dropdown on click outside only when open
   useEffect(() => {
@@ -137,58 +199,201 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, isCartJiggling, onToast })
               <div className="relative hidden md:block" ref={dropdownRef}>
                 <button
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-amber-300 bg-gradient-to-r from-amber-50 to-orange-50 hover:to-amber-100 text-[#2b1810] text-xs font-serif font-bold transition-all shadow-xs"
+                  className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-full border border-[#d49e58]/50 bg-gradient-to-r from-amber-50/90 via-orange-50/80 to-amber-100/90 hover:border-[#c88d2b] text-[#2b1810] text-xs font-serif font-bold transition-all shadow-xs group"
                 >
-                  <div className="w-6 h-6 rounded-full bg-[#8a1e14] text-white flex items-center justify-center text-[10px] font-sans">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#9b2a1f] to-[#6a150c] text-amber-200 flex items-center justify-center text-xs font-bold font-serif shadow-xs ring-1 ring-[#e4aa65]/60">
                     {user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
                   </div>
                   <div className="text-left leading-tight">
-                    <div className="text-xs font-bold truncate max-w-[110px]">{user.fullName}</div>
+                    <div className="text-xs font-bold truncate max-w-[110px] text-[#2b1810] flex items-center gap-1">
+                      <span>{user.fullName}</span>
+                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-200/80 text-[#8a1e14] font-sans font-bold">
+                        {tierInfo.name}
+                      </span>
+                    </div>
                     <div className="text-[10px] text-[#8a1e14] font-sans font-semibold flex items-center gap-1">
                       <Sparkles className="w-2.5 h-2.5 text-amber-600" />
-                      <span>{user.loyaltyAccount?.availablePoints || 50}đ Tri Kỷ</span>
+                      <span>{availablePoints}đ Tri Kỷ</span>
                     </div>
                   </div>
-                  <ChevronDown className={`w-3.5 h-3.5 text-stone-500 transition-transform ${userDropdownOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-3.5 h-3.5 text-stone-500 transition-transform duration-200 ${userDropdownOpen ? 'rotate-180 text-[#8a1e14]' : ''}`} />
                 </button>
 
-                {/* Member Dropdown Popup */}
+                {/* Member Dropdown Popup: Sổ Tay Tri Kỷ 1986 */}
                 {userDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-64 rounded-xl bg-[#fbf9f4] border-2 border-[#8a1e14]/40 shadow-xl py-2 z-50 animate-fadeIn text-xs">
-                    <div className="px-4 py-2 border-b border-[#e2d5be] bg-[#f2e7d5]/60">
-                      <div className="font-serif font-bold text-[#2b1810] text-sm">{user.fullName}</div>
-                      <div className="text-stone-600 text-[11px]">{user.phone}</div>
-                      <div className="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-[#8a1e14] text-[10px] font-bold">
-                        <Sparkles className="w-3 h-3 text-amber-600" />
-                        <span>Hạng {user.loyaltyAccount?.membershipTier || 'ĐỒNG'} • {user.loyaltyAccount?.availablePoints || 50} Điểm</span>
+                  <div className="absolute right-0 mt-2.5 w-80 rounded-2xl bg-[#241712] border-2 border-[#a63a2b]/70 shadow-2xl overflow-hidden z-50 animate-dropdown-heritage text-xs divide-y divide-[#3d2417]">
+                    
+                    {/* TẦNG 1: Thẻ Hội Viên Sơn Mài (Digital Lacquer Card) */}
+                    <div className="p-4 bg-gradient-to-br from-[#4a1812] via-[#2f100c] to-[#1e0a07] text-[#fef3e2] relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-28 h-28 bg-[radial-gradient(#e4aa65_1px,transparent_1px)] [background-size:8px_8px] opacity-20 pointer-events-none"></div>
+
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#9b2a1f] to-[#d68a35] p-0.5 shadow-lg shrink-0">
+                            <div className="w-full h-full rounded-full bg-[#1e0a07] flex items-center justify-center font-serif font-bold text-amber-300 text-sm">
+                              {user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="font-serif font-bold text-sm text-[#fbe5cb] tracking-wide truncate max-w-[150px]">
+                              {user.fullName}
+                            </div>
+                            <div className="text-[11px] text-stone-400 font-mono">{user.phone}</div>
+                          </div>
+                        </div>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#c88d2b]/25 border border-[#c88d2b]/60 text-amber-200 shrink-0">
+                          {tierInfo.icon} Hạng {tierInfo.name}
+                        </span>
+                      </div>
+
+                      {/* Điểm & Thanh Tiến Độ Thăng Hạng */}
+                      <div className="mt-3.5 bg-black/35 rounded-xl p-2.5 border border-white/10">
+                        <div className="flex justify-between items-baseline mb-1">
+                          <span className="text-[11px] text-stone-300">Điểm đổi quà hiện có:</span>
+                          <span className="text-sm font-serif font-extrabold text-[#f3be7a] tracking-tight">
+                            {availablePoints} <span className="text-[10px] font-sans font-medium text-amber-200/80">điểm</span>
+                          </span>
+                        </div>
+                        {/* Progress Bar */}
+                        <div className="w-full h-1.5 bg-stone-800 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-[#9b2a1f] to-[#e4aa65] rounded-full transition-all duration-500"
+                            style={{ width: `${progressPercent}%` }}
+                          ></div>
+                        </div>
+                        <div className="flex justify-between items-center mt-1.5 text-[10px] text-stone-400">
+                          <span>{totalPoints} / {tierInfo.target}đ</span>
+                          <span className="text-amber-300 font-medium">
+                            {pointsToNext > 0 ? `Còn ${pointsToNext}đ ➔ Hạng ${tierInfo.nextTier}` : 'Hạng cao nhất'}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
-                    {user.tasteProfile && (
-                      <div className="px-4 py-2.5 border-b border-[#e2d5be] text-[11px] text-stone-700 space-y-1">
-                        <div className="font-serif font-bold text-[#8a1e14] flex items-center gap-1">
-                          <Bookmark className="w-3 h-3" />
-                          <span>Gu Ăn Phở Đã Lưu:</span>
-                        </div>
-                        <div className="text-stone-600 italic">
-                          {user.tasteProfile.customNote || "Chuẩn vị truyền thống 1986"}
-                        </div>
+                    {/* TẦNG 2: Bát Phở Khẩu Vị Ruột (Pho Taste Capsule) */}
+                    <div className="p-3.5 bg-[#2c1b14]/90">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-serif font-bold text-[#f0caa0] flex items-center gap-1.5">
+                          <span className="text-amber-500">🍜</span> Bát Phở Ruột Đã Lưu
+                        </span>
+                        <a
+                          href="#menu"
+                          onClick={() => setUserDropdownOpen(false)}
+                          className="text-[10px] text-amber-400 hover:text-amber-300 underline font-medium"
+                        >
+                          Sửa gu
+                        </a>
                       </div>
-                    )}
+                      
+                      {user.tasteProfile ? (
+                        <>
+                          <div className="flex flex-wrap gap-1.5 mb-2">
+                            {user.tasteProfile.brothType && (
+                              <span className="px-2 py-0.5 rounded-md bg-[#3d2417] border border-[#633a24] text-[#e0c3a8] text-[10px]">
+                                {BROTH_LABELS[user.tasteProfile.brothType] || user.tasteProfile.brothType}
+                              </span>
+                            )}
+                            {user.tasteProfile.onionStyle && (
+                              <span className="px-2 py-0.5 rounded-md bg-[#3d2417] border border-[#633a24] text-[#e0c3a8] text-[10px]">
+                                {ONION_LABELS[user.tasteProfile.onionStyle] || user.tasteProfile.onionStyle}
+                              </span>
+                            )}
+                            {user.tasteProfile.herbStyle && (
+                              <span className="px-2 py-0.5 rounded-md bg-[#3d2417] border border-[#633a24] text-[#e0c3a8] text-[10px]">
+                                {HERB_LABELS[user.tasteProfile.herbStyle] || user.tasteProfile.herbStyle}
+                              </span>
+                            )}
+                            {user.tasteProfile.crullerPref && (
+                              <span className="px-2 py-0.5 rounded-md bg-[#3d2417] border border-[#633a24] text-[#e0c3a8] text-[10px]">
+                                {CRULLER_LABELS[user.tasteProfile.crullerPref] || user.tasteProfile.crullerPref}
+                              </span>
+                            )}
+                          </div>
+                          {user.tasteProfile.customNote && (
+                            <p className="text-[10px] text-stone-400 italic mb-2.5 line-clamp-1">
+                              "{user.tasteProfile.customNote}"
+                            </p>
+                          )}
+                        </>
+                      ) : (
+                        <p className="text-[10px] text-stone-400 italic mb-2.5">
+                          Chuẩn vị phở gia truyền Hà Nội 1986
+                        </p>
+                      )}
 
-                    <div className="pt-1">
+                      {/* 1-Click Quick Reorder Button */}
+                      <button
+                        onClick={handleQuickReorder}
+                        className="w-full py-1.5 rounded-lg bg-gradient-to-r from-[#9b2a1f] to-[#7f1d14] hover:from-[#b53225] hover:to-[#912217] text-amber-100 font-serif font-bold text-[11px] shadow flex items-center justify-center gap-1.5 transition-all group"
+                      >
+                        <Zap className="w-3 h-3 text-amber-300 group-hover:scale-110 transition-transform" />
+                        <span>1-Click Đặt Lại Bát Này</span>
+                      </button>
+                    </div>
+
+                    {/* TẦNG 3: Danh Mục Tiện Ích Trực Quan */}
+                    <div className="py-1 bg-[#241712]">
+                      <a
+                        href="#order"
+                        onClick={() => setUserDropdownOpen(false)}
+                        className="px-4 py-2 hover:bg-[#342017] flex items-center justify-between text-stone-300 hover:text-amber-100 transition-colors"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <FileText className="w-3.5 h-3.5 text-amber-400" />
+                          <span className="font-medium">Lịch sử đơn hàng</span>
+                        </div>
+                        <span className="px-1.5 py-0.2 rounded-full bg-[#9b2a1f]/40 text-amber-300 text-[10px] font-bold">
+                          {user.loyaltyAccount?.totalOrdersCount || 0} đơn
+                        </span>
+                      </a>
+                      
+                      <a
+                        href="#menu"
+                        onClick={() => setUserDropdownOpen(false)}
+                        className="px-4 py-2 hover:bg-[#342017] flex items-center justify-between text-stone-300 hover:text-amber-100 transition-colors"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <Gift className="w-3.5 h-3.5 text-amber-400" />
+                          <span className="font-medium">Kho quà & Đổi điểm</span>
+                        </div>
+                        <span className="text-amber-400 text-[10px] font-bold flex items-center gap-0.5">
+                          <span>Đổi quà</span>
+                          <ArrowRight className="w-2.5 h-2.5" />
+                        </span>
+                      </a>
+
+                      <a
+                        href="#order"
+                        onClick={() => setUserDropdownOpen(false)}
+                        className="px-4 py-2 hover:bg-[#342017] flex items-center gap-2.5 text-stone-300 hover:text-amber-100 transition-colors"
+                      >
+                        <MapPin className="w-3.5 h-3.5 text-amber-400" />
+                        <span className="font-medium">Sổ địa chỉ nhận phở</span>
+                      </a>
+                    </div>
+
+                    {/* TẦNG 4: Footer Hỗ Trợ & Đăng Xuất */}
+                    <div className="p-2.5 bg-[#1b110d] flex items-center justify-between text-[11px]">
+                      <a
+                        href="tel:19008686"
+                        className="text-stone-400 hover:text-amber-200 font-mono flex items-center gap-1 transition-colors"
+                      >
+                        <Phone className="w-3 h-3 text-amber-500" />
+                        <span>1900 8686</span>
+                      </a>
                       <button
                         onClick={() => {
                           logout();
                           setUserDropdownOpen(false);
                           if (onToast) onToast('Bạn đã đăng xuất tài khoản thành công!');
                         }}
-                        className="w-full text-left px-4 py-2 text-red-700 hover:bg-red-50 flex items-center gap-2 font-serif font-semibold"
+                        className="px-2.5 py-1 rounded-md text-red-400 hover:text-red-300 hover:bg-red-950/50 font-bold flex items-center gap-1 transition-all"
                       >
                         <LogOut className="w-3.5 h-3.5" />
-                        <span>Đăng xuất tài khoản</span>
+                        <span>Đăng xuất</span>
                       </button>
                     </div>
+
                   </div>
                 )}
               </div>
@@ -272,20 +477,53 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, isCartJiggling, onToast })
 
           <div className="pt-2 border-t border-stone-300/80">
             {isAuthenticated && user ? (
-              <div className="p-3 bg-amber-50/80 rounded-xl border border-amber-300">
-                <div className="font-serif font-bold text-[#8a1e14]">{user.fullName}</div>
-                <div className="text-xs text-stone-600">{user.phone} • {user.loyaltyAccount?.availablePoints || 50}đ Tri Kỷ</div>
-                <button
-                  onClick={() => {
-                    logout();
-                    setMobileMenuOpen(false);
-                    if (onToast) onToast('Bạn đã đăng xuất tài khoản thành công!');
-                  }}
-                  className="mt-2 text-xs text-red-700 font-bold flex items-center gap-1"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                  <span>Đăng xuất</span>
-                </button>
+              <div className="rounded-2xl bg-[#241712] border border-[#a63a2b]/70 overflow-hidden shadow-lg text-xs">
+                <div className="p-3.5 bg-gradient-to-br from-[#4a1812] via-[#2f100c] to-[#1e0a07] text-[#fef3e2]">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#9b2a1f] to-[#d68a35] p-0.5 shadow shrink-0">
+                        <div className="w-full h-full rounded-full bg-[#1e0a07] flex items-center justify-center font-serif font-bold text-amber-300 text-xs">
+                          {user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-serif font-bold text-sm text-[#fbe5cb] leading-tight">{user.fullName}</div>
+                        <div className="text-[10px] text-stone-400 font-mono">{user.phone}</div>
+                      </div>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#c88d2b]/30 border border-[#c88d2b]/60 text-amber-200">
+                      {tierInfo.icon} Hạng {tierInfo.name}
+                    </span>
+                  </div>
+
+                  <div className="mt-2.5 pt-2 border-t border-white/10 flex items-center justify-between text-[11px]">
+                    <span className="text-stone-300">Điểm đổi quà:</span>
+                    <span className="font-serif font-bold text-amber-300 text-xs">{availablePoints} điểm</span>
+                  </div>
+                </div>
+
+                {/* Mobile Quick Reorder Button */}
+                <div className="p-2.5 bg-[#2c1b14] space-y-2">
+                  <button
+                    onClick={handleQuickReorder}
+                    className="w-full py-1.5 rounded-lg bg-gradient-to-r from-[#9b2a1f] to-[#7f1d14] text-amber-100 font-serif font-bold text-xs flex items-center justify-center gap-1.5 shadow"
+                  >
+                    <Zap className="w-3.5 h-3.5 text-amber-300" />
+                    <span>1-Click Đặt Lại Bát Ruột</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      logout();
+                      setMobileMenuOpen(false);
+                      if (onToast) onToast('Bạn đã đăng xuất tài khoản thành công!');
+                    }}
+                    className="w-full py-1.5 text-xs text-red-400 hover:text-red-300 font-bold flex items-center justify-center gap-1"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Đăng xuất tài khoản</span>
+                  </button>
+                </div>
               </div>
             ) : (
               <button
