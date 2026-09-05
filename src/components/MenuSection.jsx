@@ -540,11 +540,53 @@ function MenuSection({ onAddToCart }) {
   }, []);
 
   const toggleGroupExpand = useCallback((catId) => {
-    setExpandedGroups((prev) => ({
-      ...prev,
-      [catId]: !prev[catId],
-    }));
-  }, []);
+    const isCurrentlyExpanded = !!expandedGroups[catId];
+    const sectionEl = document.getElementById(`category-section-${catId}`);
+
+    // Lock ScrollSpy to prevent accidental tab hopping during height collapse/expansion
+    isManualScrollingRef.current = true;
+    if (scrollLockTimerRef.current) clearTimeout(scrollLockTimerRef.current);
+
+    if (isCurrentlyExpanded) {
+      // === COLLAPSE FLOW: Smoothly return to category header before height shrinks ===
+      if (sectionEl) {
+        const yOffset = window.innerWidth >= 1024 ? -165 : -135;
+        const targetY = sectionEl.getBoundingClientRect().top + window.pageYOffset + yOffset;
+        window.scrollTo({ top: targetY, behavior: 'smooth' });
+      }
+
+      setExpandedGroups((prev) => ({
+        ...prev,
+        [catId]: false,
+      }));
+
+      scrollLockTimerRef.current = setTimeout(() => {
+        isManualScrollingRef.current = false;
+      }, 650);
+    } else {
+      // === EXPAND FLOW: Expand state then gently nudge down to reveal new items ===
+      setExpandedGroups((prev) => ({
+        ...prev,
+        [catId]: true,
+      }));
+
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          const gridEl = document.getElementById(`food-grid-${catId}`);
+          if (gridEl && gridEl.children.length > INITIAL_GROUP_LIMIT) {
+            const firstNewCard = gridEl.children[INITIAL_GROUP_LIMIT];
+            if (firstNewCard) {
+              firstNewCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+          }
+        }, 80);
+      });
+
+      scrollLockTimerRef.current = setTimeout(() => {
+        isManualScrollingRef.current = false;
+      }, 650);
+    }
+  }, [expandedGroups]);
 
   useEffect(() => {
     return () => {
@@ -1175,7 +1217,10 @@ function MenuSection({ onAddToCart }) {
                   </div>
 
                   {/* Dishes Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-6 lg:gap-8">
+                  <div
+                    id={`food-grid-${grp.id}`}
+                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-6 lg:gap-8"
+                  >
                     {visibleItems.map((item, index) => (
                       <MenuCard
                         key={`${grp.id}-${item.id}`}
