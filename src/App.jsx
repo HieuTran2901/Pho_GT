@@ -10,8 +10,33 @@ import CartDrawer from './components/CartDrawer';
 import Footer from './components/Footer';
 import FlyingPhoBowl from './components/FlyingPhoBowl';
 import AuthModal from './components/AuthModal';
+import { useAuth } from './context/AuthContext';
+import AdminPortal from './components/admin/AdminPortal';
+import AdminLoginView from './components/admin/AdminLoginView';
 
 export default function App() {
+  const { user } = useAuth();
+  const [isAdminRoute, setIsAdminRoute] = useState(() => 
+    typeof window !== 'undefined' && (window.location.pathname.startsWith('/admin') || window.location.hash === '#admin')
+  );
+
+  useEffect(() => {
+    const handleLocationChange = () => {
+      setIsAdminRoute(window.location.pathname.startsWith('/admin') || window.location.hash === '#admin');
+    };
+    window.addEventListener('popstate', handleLocationChange);
+    window.addEventListener('hashchange', handleLocationChange);
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange);
+      window.removeEventListener('hashchange', handleLocationChange);
+    };
+  }, []);
+
+  const navigateToHome = useCallback(() => {
+    window.history.pushState(null, '', '/');
+    setIsAdminRoute(false);
+  }, []);
+
   const [cartItems, setCartItems] = useState([
     {
       id: 1,
@@ -134,7 +159,10 @@ export default function App() {
   const scrollToSection = useCallback((id) => {
     const el = document.getElementById(id);
     if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
+      const navbarOffset = typeof window !== 'undefined' && window.innerWidth < 640 ? 70 : (window.innerWidth < 1024 ? 84 : 110);
+      const rect = el.getBoundingClientRect();
+      const targetY = rect.top + window.scrollY - navbarOffset;
+      window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
     }
   }, []);
 
@@ -146,13 +174,37 @@ export default function App() {
 
   const handleOpenCart = useCallback(() => setCartOpen(true), []);
   const handleCloseCart = useCallback(() => setCartOpen(false), []);
-  const handleOpenOrder = useCallback(() => scrollToSection('order'), [scrollToSection]);
+  const handleOpenOrder = useCallback(() => {
+    const cardEl = document.getElementById('order-form-card');
+    const orderEl = document.getElementById('order');
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
+    let targetY;
+    if (isMobile && cardEl) {
+      const rect = cardEl.getBoundingClientRect();
+      targetY = rect.top + window.scrollY - 68;
+    } else if (orderEl) {
+      const rect = orderEl.getBoundingClientRect();
+      targetY = rect.top + window.scrollY + 2;
+    }
+    if (targetY !== undefined) {
+      window.scrollTo({ top: Math.max(0, Math.round(targetY)), behavior: 'smooth' });
+    } else {
+      scrollToSection('order');
+    }
+  }, [scrollToSection]);
   const handleExploreMenu = useCallback(() => scrollToSection('menu'), [scrollToSection]);
 
   const cartCount = useMemo(
     () => cartItems.reduce((acc, curr) => acc + curr.quantity, 0),
     [cartItems]
   );
+
+  if (isAdminRoute) {
+    if (user?.role === 'ADMIN') {
+      return <AdminPortal onBackToHome={navigateToHome} />;
+    }
+    return <AdminLoginView onBackToHome={navigateToHome} />;
+  }
 
   return (
     <div className="min-h-screen bg-brand-cream flex flex-col font-sans pb-16 md:pb-0 overflow-x-hidden w-full max-w-full">

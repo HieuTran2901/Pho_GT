@@ -322,6 +322,7 @@ function Footer() {
             <a href="#" className="hover:text-amber-300 transition-colors">Chính sách ATTP</a>
             <a href="#" className="hover:text-amber-300 transition-colors">Điều khoản dịch vụ</a>
             <a href="#" className="hover:text-amber-300 transition-colors">Nhượng quyền</a>
+            <a href="/admin" className="hover:text-amber-300 transition-colors text-amber-500/80 font-medium">Quản trị quán</a>
             <button
               type="button"
               onClick={scrollToTop}

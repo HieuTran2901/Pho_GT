@@ -32,6 +32,11 @@ async function handleResponse(response) {
   return json?.data !== undefined ? json.data : json;
 }
 
+// [SECURITY_AGENT] Singleton Promise chống Double Refresh (Mutex / Request Deduplication)
+// Đảm bảo tại một thời điểm chỉ có DUY NHẤT 1 request /refresh được gửi lên server,
+// bảo vệ Refresh Token Rotation khỏi việc thu hồi token oan do React StrictMode hoặc race condition.
+let refreshPromise = null;
+
 export const authApi = {
   /**
    * Đăng ký tài khoản hội viên
@@ -91,21 +96,32 @@ export const authApi = {
 
   /**
    * Làm mới phiên đăng nhập ngầm qua Refresh Token Cookie (Silent Refresh)
+   * Sử dụng Singleton Promise để chống race condition / double invocation
    */
   async refreshToken() {
-    try {
-      const response = await fetch(`${API_BASE_URL}/refresh`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-      });
-      return await handleResponse(response);
-    } catch {
-      return null;
+    if (refreshPromise) {
+      return refreshPromise;
     }
+
+    refreshPromise = (async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/refresh`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+        });
+        return await handleResponse(response);
+      } catch {
+        return null;
+      } finally {
+        refreshPromise = null;
+      }
+    })();
+
+    return refreshPromise;
   },
 
   /**

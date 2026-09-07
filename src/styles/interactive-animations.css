@@ -1,0 +1,340 @@
+/* ========================================================================= */
+/* INTERACTIVE ANIMATIONS: Modals, Steam Unveil, Toasts & Booking Steps      */
+/* ========================================================================= */
+
+/* --- Heritage Auth Modal Entrance (Steam Unveil & Wax Seal Stamp) --- */
+@keyframes modalSteamUnveil {
+  0% {
+    opacity: 0;
+    transform: translateY(24px) scale(0.94);
+  }
+  60% {
+    opacity: 0.95;
+    transform: translateY(-2px) scale(1.008);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes sealStampPress {
+  0% {
+    opacity: 0;
+    transform: scale(1.4) rotate(-5deg);
+    filter: drop-shadow(0 0 0 rgba(138, 30, 20, 0));
+  }
+  50% {
+    opacity: 1;
+    transform: scale(0.92) rotate(1deg);
+    filter: drop-shadow(0 0 22px rgba(138, 30, 20, 0.75));
+  }
+  75% {
+    transform: scale(1.05) rotate(-0.5deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+    filter: drop-shadow(0 4px 10px rgba(138, 30, 20, 0.28));
+  }
+}
+
+@keyframes sealSteamWisp {
+  0% {
+    opacity: 0;
+    transform: translateY(4px) scale(0.7) rotate(0deg);
+  }
+  35% {
+    opacity: 0.6;
+  }
+  75% {
+    opacity: 0.2;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-26px) scale(1.45) rotate(14deg);
+  }
+}
+
+@keyframes goldenShimmerTrace {
+  0% {
+    opacity: 0.4;
+    box-shadow: 0 0 0 rgba(212, 175, 55, 0);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 14px rgba(212, 175, 55, 0.6);
+  }
+  100% {
+    opacity: 0.65;
+    box-shadow: 0 0 4px rgba(212, 175, 55, 0.2);
+  }
+}
+
+.animate-modal-steam-unveil {
+  animation: modalSteamUnveil 0.38s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+}
+
+.animate-seal-stamp {
+  animation: sealStampPress 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) 0.12s both;
+  will-change: transform, opacity, filter;
+}
+
+.animate-seal-steam-1 {
+  animation: sealSteamWisp 3.4s infinite ease-out;
+  will-change: transform, opacity;
+}
+
+.animate-seal-steam-2 {
+  animation: sealSteamWisp 4.2s infinite ease-out 1.2s;
+  will-change: transform, opacity;
+}
+
+.animate-golden-shimmer {
+  animation: goldenShimmerTrace 2.2s ease-in-out infinite alternate;
+}
+
+/* --- Heritage Auth Modal Exit & Backdrop (Steam Dissipate & Soft Blur) --- */
+@keyframes modalSteamDissipate {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.93);
+    filter: blur(4px);
+  }
+}
+
+@keyframes backdropFadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes backdropFadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-modal-steam-dissipate {
+  animation: modalSteamDissipate 0.28s cubic-bezier(0.4, 0, 1, 1) forwards;
+  will-change: transform, opacity, filter;
+}
+
+.animate-backdrop-fade-in {
+  animation: backdropFadeIn 0.32s ease-out both;
+  will-change: opacity;
+}
+
+.animate-backdrop-fade-out {
+  animation: backdropFadeOut 0.28s ease-in forwards;
+  will-change: opacity;
+}
+
+/* --- Form Alert Shake Animation --- */
+@keyframes shakeAlert {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  20%, 60% {
+    transform: translateX(-5px);
+  }
+  40%, 80% {
+    transform: translateX(5px);
+  }
+}
+
+.animate-shake {
+  animation: shakeAlert 0.38s ease-in-out both;
+}
+
+/* --- User Dropdown Heritage Unfold Animation --- */
+@keyframes dropdownHeritageUnfold {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+    filter: blur(2px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0px);
+  }
+}
+
+.animate-dropdown-heritage {
+  animation: dropdownHeritageUnfold 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: top right;
+}
+
+/* --- Mobile Bottom Sheet Slide Up Animation --- */
+@keyframes bottomSheetSlideUp {
+  0% {
+    transform: translateY(100%);
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-bottom-sheet-up {
+  animation: bottomSheetSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+/* --- Dynamic Heritage Island Capsule Toast Animation --- */
+@keyframes toastSlideDownSpring {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -24px) scale(0.92);
+    filter: blur(4px);
+  }
+  70% {
+    opacity: 1;
+    transform: translate(-50%, 3px) scale(1.015);
+    filter: blur(0px);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+    filter: blur(0px);
+  }
+}
+
+@keyframes toastSlideUpExit {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -20px) scale(0.94);
+  }
+}
+
+.animate-toast-island-in {
+  animation: toastSlideDownSpring 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.animate-toast-island-out {
+  animation: toastSlideUpExit 0.28s ease-in forwards;
+  will-change: transform, opacity;
+}
+
+/* --- Multi-Step Booking & Payment Fluid Animations --- */
+@keyframes stepSlideForward {
+  0% {
+    opacity: 0;
+    transform: translateX(32px) scale(0.985);
+    filter: blur(2px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    filter: blur(0px);
+  }
+}
+
+@keyframes stepSlideBackward {
+  0% {
+    opacity: 0;
+    transform: translateX(-32px) scale(0.985);
+    filter: blur(2px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    filter: blur(0px);
+  }
+}
+
+@keyframes popSpringSuccess {
+  0% {
+    transform: scale(0.2) rotate(-15deg);
+    opacity: 0;
+  }
+  65% {
+    transform: scale(1.18) rotate(3deg);
+    opacity: 1;
+  }
+  85% {
+    transform: scale(0.96) rotate(-1deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes goldShimmerSweep {
+  0% {
+    transform: translateX(-120%) skewX(-20deg);
+  }
+  100% {
+    transform: translateX(250%) skewX(-20deg);
+  }
+}
+
+@keyframes passCardFloat {
+  0%, 100% {
+    transform: translateY(0);
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5), 0 0 20px rgba(245, 158, 11, 0.15);
+  }
+  50% {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.6), 0 0 30px rgba(245, 158, 11, 0.28);
+  }
+}
+
+.animate-step-forward {
+  animation: stepSlideForward 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.animate-step-backward {
+  animation: stepSlideBackward 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.animate-pop-spring {
+  animation: popSpringSuccess 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.animate-gold-shimmer {
+  animation: goldShimmerSweep 2.2s infinite ease-in-out;
+}
+
+.animate-pass-card {
+  animation: passCardFloat 4s ease-in-out infinite;
+}
+
+@keyframes accordionDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-accordion {
+  animation: accordionDown 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}

@@ -1,0 +1,133 @@
+/* ========================================================================= */
+/* SMART SEAT MAP 2D MODAL & ARCHITECTURAL FLOOR TRANSITIONS                */
+/* ========================================================================= */
+@keyframes modalBackdropFadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes modalBackdropFadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes modalDialogSpring {
+  0% {
+    opacity: 0;
+    transform: scale(0.94) translateY(14px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes modalDialogExit {
+  0% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+}
+
+@keyframes sheetSlideUp {
+  0% {
+    transform: translateY(100%);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes sheetSlideDown {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes floorElevatorSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(28px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes floorElevatorSlideDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-28px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@layer utilities {
+  .animate-modal-backdrop {
+    animation: modalBackdropFadeIn 0.22s ease-out forwards;
+  }
+
+  .animate-modal-backdrop-exit {
+    animation: modalBackdropFadeOut 0.2s ease-in forwards;
+  }
+
+  .animate-modal-dialog {
+    animation: modalDialogSpring 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    will-change: transform, opacity;
+  }
+
+  .animate-modal-dialog-exit {
+    animation: modalDialogExit 0.2s cubic-bezier(0.4, 0, 1, 1) forwards;
+    will-change: transform, opacity;
+  }
+
+  .animate-sheet-up {
+    animation: sheetSlideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    will-change: transform, opacity;
+  }
+
+  .animate-sheet-down {
+    animation: sheetSlideDown 0.2s cubic-bezier(0.4, 0, 1, 1) forwards;
+    will-change: transform, opacity;
+  }
+
+  .animate-floor-up {
+    animation: floorElevatorSlideUp 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    will-change: transform, opacity;
+  }
+
+  .animate-floor-down {
+    animation: floorElevatorSlideDown 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    will-change: transform, opacity;
+  }
+}
+
+@media (min-width: 640px) {
+  .animate-sheet-up,
+  .animate-sheet-down {
+    animation: none !important;
+  }
+}
