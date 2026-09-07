@@ -27,7 +27,7 @@ public class Dish {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(length = 255)
+    @Column(length = 1000)
     private String imageUrl;
 
     @Column(nullable = false)
@@ -35,6 +35,18 @@ public class Dish {
 
     @Column(nullable = false)
     private Boolean isSignature = false;
+
+    @Column(length = 50)
+    private String portion;
+
+    @Column(length = 50)
+    private String tag;
+
+    @Column(length = 50)
+    private String tagIcon;
+
+    @Column(columnDefinition = "TEXT")
+    private String ingredients;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -50,6 +62,21 @@ public class Dish {
         this.imageUrl = imageUrl;
         this.isAvailable = isAvailable;
         this.isSignature = isSignature;
+    }
+
+    public Dish(Category category, String name, String slug, Double price, String description, String imageUrl, Boolean isAvailable, Boolean isSignature, String portion, String tag, String tagIcon, String ingredients) {
+        this.category = category;
+        this.name = name;
+        this.slug = slug;
+        this.price = price;
+        this.description = description;
+        this.imageUrl = imageUrl;
+        this.isAvailable = isAvailable;
+        this.isSignature = isSignature;
+        this.portion = portion;
+        this.tag = tag;
+        this.tagIcon = tagIcon;
+        this.ingredients = ingredients;
     }
 
     // Getters and Setters
@@ -71,5 +98,13 @@ public class Dish {
     public void setIsAvailable(Boolean isAvailable) { this.isAvailable = isAvailable; }
     public Boolean getIsSignature() { return isSignature; }
     public void setIsSignature(Boolean isSignature) { this.isSignature = isSignature; }
+    public String getPortion() { return portion; }
+    public void setPortion(String portion) { this.portion = portion; }
+    public String getTag() { return tag; }
+    public void setTag(String tag) { this.tag = tag; }
+    public String getTagIcon() { return tagIcon; }
+    public void setTagIcon(String tagIcon) { this.tagIcon = tagIcon; }
+    public String getIngredients() { return ingredients; }
+    public void setIngredients(String ingredients) { this.ingredients = ingredients; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 }

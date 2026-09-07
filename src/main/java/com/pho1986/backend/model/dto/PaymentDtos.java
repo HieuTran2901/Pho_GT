@@ -13,6 +13,10 @@ public class PaymentDtos {
         private String paymentMethod; // COD | VIETQR | MOMO | VNPAY | POST_PAID_AT_STORE
 
         private String note;
+        private String customerName;
+        private String phone;
+        private String address;
+        private Double amount;
 
         public String getOrderCode() { return orderCode; }
         public void setOrderCode(String orderCode) { this.orderCode = orderCode; }
@@ -20,6 +24,14 @@ public class PaymentDtos {
         public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
         public String getNote() { return note; }
         public void setNote(String note) { this.note = note; }
+        public String getCustomerName() { return customerName; }
+        public void setCustomerName(String customerName) { this.customerName = customerName; }
+        public String getPhone() { return phone; }
+        public void setPhone(String phone) { this.phone = phone; }
+        public String getAddress() { return address; }
+        public void setAddress(String address) { this.address = address; }
+        public Double getAmount() { return amount; }
+        public void setAmount(Double amount) { this.amount = amount; }
     }
 
     public static class PaymentResponse {
@@ -40,6 +52,16 @@ public class PaymentDtos {
         private String instructions;
         private boolean completed;
 
+        private String payUrl;
+        private String checkoutUrl;
+        private java.util.Map<String, Object> checkoutFields;
+
+        public String getPayUrl() { return payUrl; }
+        public void setPayUrl(String payUrl) { this.payUrl = payUrl; }
+        public String getCheckoutUrl() { return checkoutUrl; }
+        public void setCheckoutUrl(String checkoutUrl) { this.checkoutUrl = checkoutUrl; }
+        public java.util.Map<String, Object> getCheckoutFields() { return checkoutFields; }
+        public void setCheckoutFields(java.util.Map<String, Object> checkoutFields) { this.checkoutFields = checkoutFields; }
         public String getPaymentCode() { return paymentCode; }
         public void setPaymentCode(String paymentCode) { this.paymentCode = paymentCode; }
         public String getOrderCode() { return orderCode; }
@@ -110,5 +132,97 @@ public class PaymentDtos {
         public String getPaymentMethod() { return paymentMethod; }
         public Double getAmount() { return amount; }
         public LocalDateTime getPaidAt() { return paidAt; }
+    }
+
+    /**
+     * DTO đại diện cho Webhook IPN gửi từ cổng thanh toán SePay
+     */
+    public static class SepayIpnPayload {
+        private Long id;
+        private String gateway;
+        private String transactionDate;
+        private String accountNumber;
+        private String subAccount;
+        private Double transferAmount;
+        private Double amountIn;
+        private Double amountOut;
+        private Double accumulated;
+        private String code;
+        private String content;
+        private String referenceCode;
+        private String description;
+
+        public Long getId() { return id; }
+        public void setId(Long id) { this.id = id; }
+        public String getGateway() { return gateway; }
+        public void setGateway(String gateway) { this.gateway = gateway; }
+        public String getTransactionDate() { return transactionDate; }
+        public void setTransactionDate(String transactionDate) { this.transactionDate = transactionDate; }
+        public String getAccountNumber() { return accountNumber; }
+        public void setAccountNumber(String accountNumber) { this.accountNumber = accountNumber; }
+        public String getSubAccount() { return subAccount; }
+        public void setSubAccount(String subAccount) { this.subAccount = subAccount; }
+        public Double getTransferAmount() { return transferAmount != null ? transferAmount : amountIn; }
+        public void setTransferAmount(Double transferAmount) { this.transferAmount = transferAmount; }
+        public Double getAmountIn() { return amountIn; }
+        public void setAmountIn(Double amountIn) { this.amountIn = amountIn; }
+        public Double getAmountOut() { return amountOut; }
+        public void setAmountOut(Double amountOut) { this.amountOut = amountOut; }
+        public Double getAccumulated() { return accumulated; }
+        public void setAccumulated(Double accumulated) { this.accumulated = accumulated; }
+        public String getCode() { return code; }
+        public void setCode(String code) { this.code = code; }
+        public String getContent() { return content; }
+        public void setContent(String content) { this.content = content; }
+        public String getReferenceCode() { return referenceCode; }
+        public void setReferenceCode(String referenceCode) { this.referenceCode = referenceCode; }
+        public String getDescription() { return description; }
+        public void setDescription(String description) { this.description = description; }
+    }
+
+    /**
+     * DTO đại diện cho Webhook IPN gửi từ ví điện tử MoMo
+     */
+    public static class MomoIpnRequest {
+        private String partnerCode;
+        private String orderId;
+        private String requestId;
+        private Long amount;
+        private String orderInfo;
+        private String orderType;
+        private Long transId;
+        private Integer resultCode;
+        private String message;
+        private String payType;
+        private Long responseTime;
+        private String extraData;
+        private String signature;
+
+        public String getPartnerCode() { return partnerCode; }
+        public void setPartnerCode(String partnerCode) { this.partnerCode = partnerCode; }
+        public String getOrderId() { return orderId; }
+        public void setOrderId(String orderId) { this.orderId = orderId; }
+        public String getRequestId() { return requestId; }
+        public void setRequestId(String requestId) { this.requestId = requestId; }
+        public Long getAmount() { return amount; }
+        public void setAmount(Long amount) { this.amount = amount; }
+        public String getOrderInfo() { return orderInfo; }
+        public void setOrderInfo(String orderInfo) { this.orderInfo = orderInfo; }
+        public String getOrderType() { return orderType; }
+        public void setOrderType(String orderType) { this.orderType = orderType; }
+        public Long getTransId() { return transId; }
+        public void setTransId(Long transId) { this.transId = transId; }
+        public Integer getResultCode() { return resultCode; }
+        public void setResultCode(Integer resultCode) { this.resultCode = resultCode; }
+        public String getMessage() { return message; }
+        public void setMessage(String message) { this.message = message; }
+        public String getPayType() { return payType; }
+        public void setPayType(String payType) { this.payType = payType; }
+        public Long getResponseTime() { return responseTime; }
+        public void setResponseTime(Long responseTime) { this.responseTime = responseTime; }
+        public String getExtraData() { return extraData; }
+        public void setExtraData(String extraData) { this.extraData = extraData; }
+        public String getSignature() { return signature; }
+        public void setSignature(String signature) { this.signature = signature; }
     }
 }

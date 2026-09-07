@@ -17,11 +17,13 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import java.util.Arrays;
 import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -49,6 +51,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/orders/history").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/orders/*").permitAll() // Tra cứu theo mã đơn
                         .requestMatchers("/api/v1/payments/**").permitAll() // Hỗ trợ khởi tạo & kiểm tra thanh toán VietQR / COD
+                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN") // [SENTINEL] Bảo vệ tuyệt đối phân khu Admin
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -62,7 +65,7 @@ public class SecurityConfig {
         List<String> origins = Arrays.asList(allowedOrigins.split(","));
         configuration.setAllowedOrigins(origins);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "X-Secret-Key"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 

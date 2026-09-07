@@ -103,4 +103,31 @@ public class LoyaltyService {
 
         return account;
     }
+
+    @Transactional
+    public void awardLoyaltyPointsForOrder(Order order) {
+        if (order == null) return;
+        User user = order.getUser();
+        if (user != null) {
+            int earnedPoints = Math.max(10, (int) Math.floor(order.getFinalAmount() / 1000.0));
+            LoyaltyAccount loyalty = loyaltyAccountRepository.findByUserId(user.getId()).orElse(null);
+
+            if (loyalty != null) {
+                int newTotal = loyalty.getTotalPoints() + earnedPoints;
+                int newAvail = loyalty.getAvailablePoints() + earnedPoints;
+                loyalty.setTotalPoints(newTotal);
+                loyalty.setAvailablePoints(newAvail);
+                loyalty.setTotalSpent(loyalty.getTotalSpent() + order.getFinalAmount());
+                loyalty.setTotalOrdersCount(loyalty.getTotalOrdersCount() + 1);
+
+                String tier = (newTotal >= 2000) ? "KIM_CUONG" : (newTotal >= 1000) ? "VANG" : (newTotal >= 500) ? "BAC" : "DONG";
+                loyalty.setMembershipTier(tier);
+                loyaltyAccountRepository.save(loyalty);
+
+                loyaltyTransactionRepository.save(new LoyaltyTransaction(
+                        loyalty, order.getId(), earnedPoints, "EARN_PAYMENT", newAvail, "Tích điểm thanh toán đơn hàng #" + order.getOrderCode()
+                ));
+            }
+        }
+    }
 }

@@ -12,4 +12,7 @@ public interface OrderRepository extends JpaRepository<Order, String> {
     Optional<Order> findByOrderCode(String orderCode);
     List<Order> findByUserIdOrderByCreatedAtDesc(String userId);
     Optional<Order> findFirstByUserIdOrderByCreatedAtDesc(String userId);
+    List<Order> findAllByOrderByCreatedAtDesc();
+    long countByStatus(String status);
+    List<Order> findByStatusOrderByCreatedAtDesc(String status);
 }

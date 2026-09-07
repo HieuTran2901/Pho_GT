@@ -3,11 +3,14 @@ package com.pho1986.backend.controller;
 import com.pho1986.backend.common.ApiResponse;
 import com.pho1986.backend.model.dto.PaymentDtos.*;
 import com.pho1986.backend.service.PaymentService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/v1/payments")
@@ -45,6 +48,40 @@ public class PaymentController {
             @RequestBody(required = false) ConfirmPaymentRequest request) {
         PaymentStatusResponse response = paymentService.confirmPayment(paymentCode, request);
         return ResponseEntity.ok(ApiResponse.ok(response, "Xác nhận thanh toán thành công! Bếp đã bắt đầu nấu phở."));
+    }
+
+    /**
+     * Webhook IPN xử lý biến động số dư / thanh toán từ cổng SePay
+     */
+    @PostMapping("/sepay/ipn")
+    public ResponseEntity<ApiResponse<PaymentStatusResponse>> handleSepayIpn(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestHeader(value = "X-Secret-Key", required = false) String secretHeader,
+            @RequestBody SepayIpnPayload payload) {
+        PaymentStatusResponse response = paymentService.processSepayIpn(authHeader, secretHeader, payload);
+        return ResponseEntity.ok(ApiResponse.ok(response, "Đã xử lý SePay IPN thành công!"));
+    }
+
+    /**
+     * Endpoint đón chuyển hướng người dùng trở về từ SePay hosted checkout
+     */
+    @GetMapping("/sepay/return/{status}")
+    public void handleSepayReturn(
+            @PathVariable String status,
+            @RequestParam(value = "order_id", required = false) String orderId,
+            HttpServletResponse httpServletResponse) throws IOException {
+        String redirectUrl = paymentService.resolveSepayReturnUrl(status, orderId);
+        httpServletResponse.sendRedirect(redirectUrl);
+    }
+
+    /**
+     * Webhook IPN xử lý kết quả thanh toán từ ví điện tử MoMo API v2
+     */
+    @PostMapping("/momo/ipn")
+    public ResponseEntity<ApiResponse<PaymentStatusResponse>> handleMomoIpn(
+            @RequestBody MomoIpnRequest request) {
+        PaymentStatusResponse response = paymentService.processMomoIpn(request);
+        return ResponseEntity.ok(ApiResponse.ok(response, "Đã xử lý MoMo IPN thành công!"));
     }
 
     @PostMapping("/webhook")

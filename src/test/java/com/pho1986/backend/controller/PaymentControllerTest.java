@@ -5,6 +5,9 @@ import com.pho1986.backend.model.dto.OrderDtos.CreateOrderItemRequest;
 import com.pho1986.backend.model.dto.OrderDtos.CreateOrderRequest;
 import com.pho1986.backend.model.dto.PaymentDtos.ConfirmPaymentRequest;
 import com.pho1986.backend.model.dto.PaymentDtos.CreatePaymentRequest;
+import com.pho1986.backend.model.dto.PaymentDtos.SepayIpnPayload;
+import com.pho1986.backend.model.dto.PaymentDtos.MomoIpnRequest;
+import com.pho1986.backend.security.MomoSigner;
 import com.pho1986.backend.model.entity.Order;
 import com.pho1986.backend.service.OrderService;
 import org.junit.jupiter.api.BeforeEach;
@@ -240,5 +243,138 @@ public class PaymentControllerTest {
                         .content(objectMapper.writeValueAsString(confirmReq)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status", is("SUCCESS")));
+    }
+
+    @Test
+    @DisplayName("8. [SePay] Nhận Webhook IPN với Secret Token hợp lệ -> Cập nhật SUCCESS và đơn hàng PAID")
+    void testSepayIpnSuccess() throws Exception {
+        // Tạo giao dịch VietQR trước
+        CreatePaymentRequest createReq = new CreatePaymentRequest();
+        createReq.setOrderCode(testOrder.getOrderCode());
+        createReq.setPaymentMethod("VIETQR");
+
+        mockMvc.perform(post("/api/v1/payments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createReq)))
+                .andExpect(status().isCreated());
+
+        SepayIpnPayload sepayPayload = new SepayIpnPayload();
+        sepayPayload.setId(889911L);
+        sepayPayload.setGateway("MBBank");
+        sepayPayload.setCode(testOrder.getOrderCode());
+        sepayPayload.setContent("PHO1986 " + testOrder.getOrderCode());
+        sepayPayload.setTransferAmount(150000.0);
+        sepayPayload.setReferenceCode("FT260906-8899");
+
+        mockMvc.perform(post("/api/v1/payments/sepay/ipn")
+                        .header("X-Secret-Key", "test_sepay_ipn_secret_token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(sepayPayload)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success", is(true)))
+                .andExpect(jsonPath("$.data.status", is("SUCCESS")))
+                .andExpect(jsonPath("$.data.orderCode", is(testOrder.getOrderCode())));
+    }
+
+    @Test
+    @DisplayName("9. [SePay] Nhận Webhook IPN với Secret Token giả mạo -> Bị từ chối 403 Forbidden")
+    void testSepayIpnInvalidSecret() throws Exception {
+        SepayIpnPayload sepayPayload = new SepayIpnPayload();
+        sepayPayload.setId(999999L);
+        sepayPayload.setCode(testOrder.getOrderCode());
+        sepayPayload.setTransferAmount(150000.0);
+
+        mockMvc.perform(post("/api/v1/payments/sepay/ipn")
+                        .header("X-Secret-Key", "invalid_fake_sepay_secret")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(sepayPayload)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.success", is(false)))
+                .andExpect(jsonPath("$.message", containsString("Secret Token không hợp lệ")));
+    }
+
+    @Test
+    @DisplayName("10. [MoMo] Nhận Webhook IPN với chữ ký HMAC-SHA256 hợp lệ -> Cập nhật SUCCESS và đơn hàng PAID")
+    void testMomoIpnSuccess() throws Exception {
+        CreatePaymentRequest createReq = new CreatePaymentRequest();
+        createReq.setOrderCode(testOrder.getOrderCode());
+        createReq.setPaymentMethod("MOMO");
+
+        mockMvc.perform(post("/api/v1/payments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createReq)))
+                .andExpect(status().isCreated());
+
+        String partnerCode = "MOMO";
+        String orderId = testOrder.getOrderCode();
+        String requestId = "REQ_" + System.currentTimeMillis();
+        Long amount = 150000L;
+        String orderInfo = "Thanh toan don hang Pho 1986";
+        String orderType = "momo_wallet";
+        Long transId = 2345678901L;
+        Integer resultCode = 0;
+        String message = "Giao dich thanh cong";
+        String payType = "qr";
+        Long responseTime = System.currentTimeMillis();
+        String extraData = "";
+        String secretKey = "test_momo_secret_key";
+
+        MomoSigner signer = new MomoSigner();
+        String rawData = "accessKey=test_momo_access_key" +
+                "&amount=" + amount +
+                "&extraData=" + extraData +
+                "&message=" + message +
+                "&orderId=" + orderId +
+                "&orderInfo=" + orderInfo +
+                "&orderType=" + orderType +
+                "&partnerCode=" + partnerCode +
+                "&payType=" + payType +
+                "&requestId=" + requestId +
+                "&responseTime=" + responseTime +
+                "&resultCode=" + resultCode +
+                "&transId=" + transId;
+        String signature = signer.hmacSha256(rawData, secretKey);
+
+        MomoIpnRequest momoReq = new MomoIpnRequest();
+        momoReq.setPartnerCode(partnerCode);
+        momoReq.setOrderId(orderId);
+        momoReq.setRequestId(requestId);
+        momoReq.setAmount(amount);
+        momoReq.setOrderInfo(orderInfo);
+        momoReq.setOrderType(orderType);
+        momoReq.setTransId(transId);
+        momoReq.setResultCode(resultCode);
+        momoReq.setMessage(message);
+        momoReq.setPayType(payType);
+        momoReq.setResponseTime(responseTime);
+        momoReq.setExtraData(extraData);
+        momoReq.setSignature(signature);
+
+        mockMvc.perform(post("/api/v1/payments/momo/ipn")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(momoReq)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success", is(true)))
+                .andExpect(jsonPath("$.data.status", is("SUCCESS")))
+                .andExpect(jsonPath("$.data.orderCode", is(orderId)));
+    }
+
+    @Test
+    @DisplayName("11. [MoMo] Nhận Webhook IPN với chữ ký HMAC sai -> Bị từ chối 403 Forbidden")
+    void testMomoIpnInvalidSignature() throws Exception {
+        MomoIpnRequest momoReq = new MomoIpnRequest();
+        momoReq.setPartnerCode("MOMO");
+        momoReq.setOrderId(testOrder.getOrderCode());
+        momoReq.setRequestId("REQ_FAKE_001");
+        momoReq.setAmount(150000L);
+        momoReq.setResultCode(0);
+        momoReq.setSignature("invalid_forged_hmac_signature_xyz");
+
+        mockMvc.perform(post("/api/v1/payments/momo/ipn")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(momoReq)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.success", is(false)))
+                .andExpect(jsonPath("$.message", containsString("Chữ ký HMAC không hợp lệ")));
     }
 }

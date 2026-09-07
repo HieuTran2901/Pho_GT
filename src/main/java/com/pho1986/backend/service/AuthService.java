@@ -151,7 +151,7 @@ public class AuthService {
         refreshToken.setRevoked(true);
         refreshTokenRepository.save(refreshToken);
 
-        User user = refreshToken.getUser();
+        User user = userRepository.findById(refreshToken.getUser().getId()).orElse(refreshToken.getUser());
         String newAccessToken = tokenProvider.generateAccessToken(user.getId(), user.getRole());
         String newRefreshToken = createAndSaveRefreshToken(user);
 

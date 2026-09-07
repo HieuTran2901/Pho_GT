@@ -20,3 +20,30 @@ app:
   payment:
     webhook-secret: pho1986_webhook_secret_key_prod_auth_2026
 
+payment:
+  sepay:
+    enabled: false
+    environment: sandbox
+    merchant-id: TEST_MERCHANT
+    secret-key: test_sepay_secret_key
+    ipn-secret: test_sepay_ipn_secret_token
+    ipn-url: http://localhost:8080/api/v1/payments/sepay/ipn
+    success-url: http://localhost:8080/api/v1/payments/sepay/return/success
+    error-url: http://localhost:8080/api/v1/payments/sepay/return/error
+    cancel-url: http://localhost:8080/api/v1/payments/sepay/return/cancel
+    booking-frontend-redirect-url: http://localhost:5173#order
+    frontend-redirect-url: http://localhost:5173#order
+  momo:
+    enabled: false
+    partner-code: MOMO
+    access-key: test_momo_access_key
+    secret-key: test_momo_secret_key
+    endpoint: https://test-payment.momo.vn/v2/gateway/api/create
+    redirect-url: http://localhost:5173#order
+    ai-coin-redirect-url: http://localhost:5173#order
+    ipn-url: http://localhost:8080/api/v1/payments/momo/ipn
+    request-type: captureWallet
+    language: vi
+    timeout: 30s
+
+

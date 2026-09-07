@@ -41,6 +41,19 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
+        // Gieo tài khoản Quản trị viên ADMIN (0999999999 / admin123) nếu chưa có
+        if (userRepository.findByPhone("0999999999").isEmpty()) {
+            User adminUser = new User(
+                    "0999999999",
+                    "Quản Trị Viên 1986",
+                    passwordEncoder.encode("admin123"),
+                    "admin@pho1986.vn"
+            );
+            adminUser.setRole("ADMIN");
+            userRepository.save(adminUser);
+            System.out.println("🛡️ [Spring Boot] Gieo tài khoản quản trị viên ADMIN 0999999999 (admin123) thành công!");
+        }
+
         if (categoryRepository.count() > 0) {
             return;
         }
@@ -89,7 +102,7 @@ public class DataInitializer implements CommandLineRunner {
         loyaltyRewardRepository.saveAll(rewards);
 
         // 4. Khởi tạo tài khoản thực khách thân thiết mẫu (0988888888 / 123456)
-        if (userRepository.count() == 0) {
+        if (userRepository.findByPhone("0988888888").isEmpty()) {
             User demoUser = new User(
                     "0988888888",
                     "Nguyễn Văn Hiếu",

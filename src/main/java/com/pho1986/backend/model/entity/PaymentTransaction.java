@@ -61,6 +61,9 @@ public class PaymentTransaction {
 
     private LocalDateTime expiredAt;
 
+    @Version
+    private Long version;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -130,4 +133,7 @@ public class PaymentTransaction {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
+
+    public Long getVersion() { return version; }
+    public void setVersion(Long version) { this.version = version; }
 }
