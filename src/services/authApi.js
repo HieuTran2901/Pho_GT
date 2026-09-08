@@ -3,8 +3,9 @@
  * Connects frontend to Spring Boot backend (/api/v1/auth) with resilient fallback.
  */
 
-const API_BASE_URL = (typeof import.meta !== 'undefined' && import.meta?.env?.VITE_API_BASE_URL) 
-  || 'http://localhost:8080/api/v1/auth';
+import { getApiBaseUrl } from './apiConfig';
+
+const API_BASE_URL = getApiBaseUrl('auth');
 
 const FRIENDLY_NETWORK_ERROR = 'Dạ, quán đang tạm thời gián đoạn kết nối. Quý khách vui lòng kiểm tra lại đường truyền mạng hoặc thử lại sau ít phút nhé!';
 

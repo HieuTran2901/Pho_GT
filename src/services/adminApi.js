@@ -6,10 +6,9 @@
  */
 
 import { authApi } from './authApi';
+import { getApiBaseUrl } from './apiConfig';
 
-const API_BASE_URL = (typeof import.meta !== 'undefined' && import.meta?.env?.VITE_API_BASE_URL)
-  ? import.meta.env.VITE_API_BASE_URL.replace(/\/auth\/?$/, '/admin')
-  : 'http://localhost:8080/api/v1/admin';
+const API_BASE_URL = getApiBaseUrl('admin');
 
 async function handleAdminResponse(response) {
   const json = await response.json().catch(() => null);

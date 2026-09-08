@@ -3,9 +3,9 @@
  * Connects frontend customer views to Spring Boot Public REST endpoints (/api/v1/dishes)
  */
 
-const API_BASE_URL = (typeof import.meta !== 'undefined' && import.meta?.env?.VITE_API_BASE_URL)
-  ? import.meta.env.VITE_API_BASE_URL.replace(/\/(auth|admin)\/?$/, '/dishes')
-  : 'http://localhost:8080/api/v1/dishes';
+import { getApiBaseUrl } from './apiConfig';
+
+const API_BASE_URL = getApiBaseUrl('dishes');
 
 async function handleResponse(response) {
   const json = await response.json().catch(() => null);

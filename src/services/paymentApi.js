@@ -3,9 +3,9 @@
  * Connects frontend to Spring Boot backend (/api/v1/payments) with resilient offline fallback.
  */
 
-const API_BASE_URL = (typeof import.meta !== 'undefined' && import.meta?.env?.VITE_API_BASE_URL)
-  ? import.meta.env.VITE_API_BASE_URL.replace(/\/auth\/?$/, '/payments')
-  : 'http://localhost:8080/api/v1/payments';
+import { getApiBaseUrl } from './apiConfig';
+
+const API_BASE_URL = getApiBaseUrl('payments');
 
 export const paymentApi = {
   /**

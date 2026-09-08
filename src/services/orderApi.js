@@ -3,9 +3,9 @@
  * Tích hợp kết nối tới /api/v1/orders đồng thời hỗ trợ lưu trữ & đồng bộ cục bộ (Local Sync).
  */
 
-const API_BASE_URL = (typeof import.meta !== 'undefined' && import.meta?.env?.VITE_API_BASE_URL)
-  ? import.meta.env.VITE_API_BASE_URL.replace(/\/auth\/?$/, '/orders')
-  : 'http://localhost:8080/api/v1/orders';
+import { getApiBaseUrl } from './apiConfig';
+
+const API_BASE_URL = getApiBaseUrl('orders');
 
 const LOCAL_ORDERS_KEY = 'pho1986_customer_order_history';
 
