@@ -9,7 +9,7 @@ import OrderStep3QrPayment from './order/OrderStep3QrPayment';
 import OrderStep3Success from './order/OrderStep3Success';
 import { useOrderSectionState } from './order/useOrderSectionState';
 
-function OrderSection() {
+function OrderSection({ cartItems = [], onClearCart } = {}) {
   const [sectionRef, isVisible] = useScrollReveal({ threshold: 0.12 });
   const {
     formData,
@@ -46,7 +46,7 @@ function OrderSection() {
     handleBackToStep2,
     handleCopyCode,
     handleReset
-  } = useOrderSectionState(sectionRef);
+  } = useOrderSectionState(sectionRef, { cartItems, onClearCart });
 
   const isQrScreen = (selectedPaymentMethod === 'MOMO' || selectedPaymentMethod === 'VIETQR' || selectedPaymentMethod === 'SEPAY') && !isVietQrConfirmed;
   const shouldShowCard = isVisible || step > 1;

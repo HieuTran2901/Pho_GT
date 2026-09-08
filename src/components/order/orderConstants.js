@@ -1,3 +1,5 @@
+import { orderApi } from '../../services/orderApi';
+
 export const BRANCH_LABELS = {
   'hanoi-hangbac': '45 Hàng Bạc, Hoàn Kiếm, Hà Nội',
   'hanoi-lyquocsu': '10 Lý Quốc Sư, Hoàn Kiếm, Hà Nội',
@@ -115,4 +117,59 @@ export const getOrderSession = (code) => {
   }
   return null;
 };
+
+export const saveCustomerHistoryOrder = ({
+  bookingCode,
+  formData,
+  selectedPaymentMethod,
+  orderAmount,
+  selectedTable,
+  targetAddress,
+  cartItems = []
+}) => {
+  try {
+    const items = (cartItems && cartItems.length > 0)
+      ? cartItems.map((it, idx) => ({
+          id: it.id || idx + 1,
+          name: it.name || 'Bát phở gia truyền',
+          quantity: Number(it.quantity) || 1,
+          unitPrice: Number(it.price) || 0,
+          image: it.image || null,
+          broth: it.broth || null,
+          onion: it.onion || null,
+          herb: it.herb || null,
+          cruller: it.cruller || null
+        }))
+      : [
+          {
+            id: 1,
+            name: 'Bát phở gia truyền theo bàn',
+            quantity: Number(formData?.guestCount) || 2,
+            unitPrice: Math.round(orderAmount / (Number(formData?.guestCount) || 2))
+          }
+        ];
+
+    orderApi.saveLocalOrder({
+      id: bookingCode,
+      orderCode: bookingCode,
+      tableNumber: selectedTable?.number || null,
+      floor: selectedTable?.floor || 1,
+      orderType: selectedTable ? 'DINE_IN' : 'DELIVERY',
+      deliveryAddressText: targetAddress || formData?.address,
+      createdAt: new Date().toISOString(),
+      status: 'PENDING',
+      paymentMethod: selectedPaymentMethod,
+      paymentStatus: selectedPaymentMethod === 'COD' ? 'UNPAID' : 'PAID',
+      totalAmount: orderAmount,
+      finalAmount: orderAmount,
+      guestName: formData?.customerName,
+      guestPhone: formData?.phone,
+      note: formData?.note,
+      items
+    });
+  } catch (e) {
+    console.warn('[orderConstants] saveCustomerHistoryOrder error:', e);
+  }
+};
+
 

@@ -6,11 +6,12 @@ import {
   BRANCH_LABELS,
   INITIAL_FORM_DATA,
   saveOrderSession,
+  saveCustomerHistoryOrder,
   getOrderSession,
   SESSION_LATEST_KEY
 } from './orderConstants';
 
-export function useOrderSectionState(sectionRef) {
+export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart } = {}) {
   const { user } = useAuth();
 
   // Lazy initialize form data with authenticated user info
@@ -45,9 +46,12 @@ export function useOrderSectionState(sectionRef) {
   const todayDateStr = useMemo(() => new Date().toISOString().split('T')[0], []);
 
   const calculatedAmount = useMemo(() => {
+    if (cartItems && cartItems.length > 0) {
+      return cartItems.reduce((acc, it) => acc + (Number(it.price) || 0) * (Number(it.quantity) || 1), 0);
+    }
     const guestNum = parseInt(formData.guestCount, 10) || 2;
     return formData.orderType === 'dine-in' ? guestNum * 75000 : 150000;
-  }, [formData.orderType, formData.guestCount]);
+  }, [cartItems, formData.orderType, formData.guestCount]);
 
   const selectedTasteSet = useMemo(() => {
     if (!formData.note) return new Set();
@@ -193,6 +197,8 @@ export function useOrderSectionState(sectionRef) {
         (momoResultCode && momoResultCode !== '0');
 
       if (!isSuccess && !isCancelled) return;
+      if (lastProcessedUrlRef.current === window.location.href) return;
+      lastProcessedUrlRef.current = window.location.href;
 
       const saved = getOrderSession(orderCode);
       if (saved) {
@@ -214,6 +220,7 @@ export function useOrderSectionState(sectionRef) {
         setIsVietQrConfirmed(true);
         setStep(3);
         setDirection('forward');
+        if (onClearCart) onClearCart();
         setPaymentNotice({
           type: 'success',
           message: 'Thanh toán trực tuyến thành công! Thẻ bàn di sản của quý khách đã được xác nhận.'
@@ -254,7 +261,7 @@ export function useOrderSectionState(sectionRef) {
       window.removeEventListener('hashchange', processReturnUrl);
       window.removeEventListener('popstate', processReturnUrl);
     };
-  }, [scrollToOrderSection]);
+  }, [scrollToOrderSection, onClearCart]);
 
   // Realtime Polling for Webhook confirmation
   useEffect(() => {
@@ -270,6 +277,7 @@ export function useOrderSectionState(sectionRef) {
         if (res && res.status === 'SUCCESS') {
           setPaymentData((prev) => ({ ...prev, ...res }));
           setIsVietQrConfirmed(true);
+          if (onClearCart) onClearCart();
           return true;
         }
       } catch (e) {
@@ -307,7 +315,7 @@ export function useOrderSectionState(sectionRef) {
         document.removeEventListener('visibilitychange', handleVisibilityChange);
       }
     };
-  }, [step, paymentData?.paymentCode, paymentData?.status, isVietQrConfirmed]);
+  }, [step, paymentData?.paymentCode, paymentData?.status, isVietQrConfirmed, onClearCart]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -333,8 +341,7 @@ export function useOrderSectionState(sectionRef) {
     setIsProcessingPayment(true);
     setPaymentError(null);
     try {
-      const guestNum = parseInt(formData.guestCount, 10) || 2;
-      const orderAmount = formData.orderType === 'dine-in' ? guestNum * 75000 : 150000;
+      const orderAmount = calculatedAmount;
       const targetAddress = formData.orderType === 'dine-in'
         ? (BRANCH_LABELS[formData.branch] || 'Cơ sở Phở Gia Truyền 1986')
         : (formData.address || 'Địa chỉ nhận hàng');
@@ -359,6 +366,18 @@ export function useOrderSectionState(sectionRef) {
         selectedTable,
         createdAt: Date.now()
       });
+
+      saveCustomerHistoryOrder({
+        bookingCode,
+        formData,
+        selectedPaymentMethod,
+        orderAmount,
+        selectedTable,
+        targetAddress,
+        cartItems
+      });
+
+      if (onClearCart) onClearCart();
 
       if (selectedPaymentMethod === 'SEPAY' && paymentRes?.checkoutUrl && paymentRes?.checkoutFields) {
         setDirection('forward');
@@ -392,17 +411,8 @@ export function useOrderSectionState(sectionRef) {
     }
   };
 
-  const handleBackToStep1 = () => {
-    setDirection('backward');
-    setStep(1);
-    scrollToOrderSection();
-  };
-
-  const handleBackToStep2 = () => {
-    setDirection('backward');
-    setStep(2);
-    scrollToOrderSection();
-  };
+  const handleBackToStep1 = () => { setDirection('backward'); setStep(1); scrollToOrderSection(); };
+  const handleBackToStep2 = () => { setDirection('backward'); setStep(2); scrollToOrderSection(); };
 
   const handleCopyCode = (text) => {
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
@@ -423,11 +433,7 @@ export function useOrderSectionState(sectionRef) {
     setPaymentError(null);
     setSelectedTable(null);
     setIsSeatMapOpen(false);
-    try {
-      sessionStorage.removeItem(SESSION_LATEST_KEY);
-    } catch (e) {
-      // ignore
-    }
+    try { sessionStorage.removeItem(SESSION_LATEST_KEY); } catch (e) {}
     setFormData({
       ...INITIAL_FORM_DATA,
       customerName: user?.fullName || '',

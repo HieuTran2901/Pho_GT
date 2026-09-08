@@ -1,18 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
-  X, 
-  User, 
-  Phone, 
-  Lock, 
-  Eye, 
-  EyeOff, 
-  Sparkles, 
-  Gift, 
-  CheckCircle2, 
-  Utensils, 
-  ShieldCheck, 
-  ArrowRight,
-  Heart
+  X, User, Phone, Lock, Eye, EyeOff, Sparkles, Gift, 
+  CheckCircle2, Utensils, ShieldCheck, ArrowRight, Heart, Clock, ShieldAlert 
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -27,7 +16,8 @@ function AuthModal({ onToast }) {
   const [saveTasteProfile, setSaveTasteProfile] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-
+  const [lockoutSeconds, setLockoutSeconds] = useState(0);
+  const maxLockoutRef = useRef(60);
   const [mounted, setMounted] = useState(authModalOpen);
   const [isClosing, setIsClosing] = useState(false);
   const closeTimerRef = useRef(null);
@@ -45,30 +35,16 @@ function AuthModal({ onToast }) {
       isFirstRender.current = false;
       if (!authModalOpen) return;
     }
-
     if (authModalOpen) {
-      if (closeTimerRef.current) {
-        clearTimeout(closeTimerRef.current);
-        closeTimerRef.current = null;
-      }
-      setMounted(true);
-      setIsClosing(false);
-      setErrorMessage('');
+      if (closeTimerRef.current) { clearTimeout(closeTimerRef.current); closeTimerRef.current = null; }
+      setMounted(true); setIsClosing(false); setErrorMessage('');
     } else {
       setIsClosing(true);
       closeTimerRef.current = setTimeout(() => {
-        setMounted(false);
-        setIsClosing(false);
-        closeTimerRef.current = null;
-        setPassword('');
+        setMounted(false); setIsClosing(false); closeTimerRef.current = null; setPassword('');
       }, 280);
     }
-
-    return () => {
-      if (closeTimerRef.current) {
-        clearTimeout(closeTimerRef.current);
-      }
-    };
+    return () => { if (closeTimerRef.current) clearTimeout(closeTimerRef.current); };
   }, [authModalOpen]);
 
   const handleClose = useCallback(() => {
@@ -79,25 +55,31 @@ function AuthModal({ onToast }) {
   // Handle ESC key listener & body scroll lock
   useEffect(() => {
     if (!mounted) return;
-
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && !isClosing) {
-        handleClose();
-      }
-    };
-
+    const handleKeyDown = (e) => { if (e.key === 'Escape' && !isClosing) handleClose(); };
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     window.addEventListener('keydown', handleKeyDown);
-
     return () => {
       document.body.style.overflow = originalOverflow;
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [mounted, isClosing, handleClose]);
 
+  // [RAVEN & BLADE] Countdown timer khi bị tạm khóa đăng nhập (Rate Limit / Brute-force lockout)
+  useEffect(() => {
+    if (lockoutSeconds <= 0) return;
+    const interval = setInterval(() => {
+      setLockoutSeconds((prev) => {
+        if (prev <= 1) { clearInterval(interval); setErrorMessage(''); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [lockoutSeconds]);
+
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
+    if (lockoutSeconds > 0) return;
     setErrorMessage('');
 
     // Sanitize phone number (strip whitespace, dashes, dots)
@@ -114,51 +96,47 @@ function AuthModal({ onToast }) {
       setErrorMessage('Số điện thoại không hợp lệ (cần 10 chữ số, bắt đầu bằng 03, 05, 07, 08, 09)');
       return;
     }
-
-    if (!password.trim()) {
-      setErrorMessage('Vui lòng nhập mật khẩu');
-      return;
-    }
-
-    if (password.trim().length < 6) {
-      setErrorMessage('Mật khẩu phải có tối thiểu 6 ký tự');
-      return;
-    }
-
-    if (authTab === 'register' && !fullName.trim()) {
-      setErrorMessage('Vui lòng nhập họ và tên của bạn');
-      return;
-    }
+    if (!password.trim()) { setErrorMessage('Vui lòng nhập mật khẩu'); return; }
+    if (password.trim().length < 6) { setErrorMessage('Mật khẩu phải có tối thiểu 6 ký tự'); return; }
+    if (authTab === 'register' && !fullName.trim()) { setErrorMessage('Vui lòng nhập họ và tên của bạn'); return; }
 
     setIsLoading(true);
     try {
       if (authTab === 'login') {
         const user = await login(cleanPhone, password);
-        if (onToast) onToast(`Chào mừng ${user.fullName} trở lại Phở Gia Truyền 1986!`);
+        if (onToast) onToast({ type: 'member_welcome', user, points: user?.loyaltyAccount?.availablePoints ?? 50 });
       } else {
         const user = await register(cleanPhone, fullName.trim(), password, null, saveTasteProfile);
-        if (onToast) onToast(`Đăng ký thành công! Bạn nhận được 50 điểm Bát Phở Tri Kỷ.`);
+        if (onToast) onToast({ type: 'member_welcome', user, isNew: true, points: 50 });
       }
       // Reset sensitive password after successful login/registration
       setPassword('');
+      setLockoutSeconds(0);
     } catch (err) {
+      const waitSec = err.retryAfterSeconds || err.data?.data?.retryAfterSeconds;
+      if (waitSec && Number(waitSec) > 0) {
+        maxLockoutRef.current = Math.max(Number(waitSec), 60);
+        setLockoutSeconds(Number(waitSec));
+      } else if (err.message && err.message.includes('thử lại sau')) {
+        const match = err.message.match(/(\d+)\s*giây/);
+        if (match && match[1]) {
+          const sec = parseInt(match[1], 10);
+          maxLockoutRef.current = Math.max(sec, 60);
+          setLockoutSeconds(sec);
+        }
+      }
       setErrorMessage(err.message || 'Đã xảy ra lỗi, vui lòng thử lại');
     } finally {
       setIsLoading(false);
     }
-  }, [phone, password, fullName, authTab, saveTasteProfile, login, register, onToast]);
+  }, [phone, password, fullName, authTab, saveTasteProfile, login, register, onToast, lockoutSeconds]);
 
   // Demo fill quick login
   const handleQuickDemo = useCallback((type) => {
     if (type === 'member') {
-      setPhone('0988888888');
-      setPassword('123456');
-      setAuthTab('login');
+      setPhone('0988888888'); setPassword('123456'); setAuthTab('login');
     } else {
-      setPhone('0912345678');
-      setFullName('Bác Hai Phố Cổ');
-      setPassword('123456');
-      setAuthTab('register');
+      setPhone('0912345678'); setFullName('Bác Hai Phố Cổ'); setPassword('123456'); setAuthTab('register');
     }
   }, [setAuthTab]);
 
@@ -263,13 +241,63 @@ function AuthModal({ onToast }) {
         {/* Form Body */}
         <div className="p-6 pt-2 overflow-y-auto flex-1">
           
-          {/* Thông báo lỗi nếu có */}
-          {errorMessage && (
+          {/* Retro Heritage Lockout Banner khi bị tạm khóa nhập sai quá 5 lần */}
+          {lockoutSeconds > 0 ? (
+            <div className="mb-4 p-3.5 rounded-xl bg-[#fff8ed] border-2 border-[#ea580c] shadow-sm relative overflow-hidden animate-shake">
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-full bg-[#8a1e14]/10 border border-[#8a1e14]/20 flex items-center justify-center shrink-0 mt-0.5 text-[#8a1e14]">
+                  <ShieldAlert className="w-5 h-5 animate-pulse text-[#ea580c]" />
+                </div>
+                <div className="flex-1 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-serif font-bold text-[#8a1e14] text-sm uppercase tracking-wide">
+                      Tạm Khóa Thử Lại
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#8a1e14] text-amber-100 font-mono font-bold text-xs shadow-xs">
+                      <Clock className="w-3 h-3 animate-spin" />
+                      00:{String(lockoutSeconds).padStart(2, '0')}
+                    </span>
+                  </div>
+                  <p className="text-[#6b4a38] font-sans mt-1 leading-relaxed">
+                    Quý khách đã nhập sai mật khẩu quá 5 lần. Để bảo vệ an toàn cho tài khoản, hệ thống tạm dừng nhận thử lại trong <strong>{lockoutSeconds} giây</strong>.
+                  </p>
+
+                  {/* Cải tiến 2: Dải Progress Bar đếm lùi thời gian thực */}
+                  <div className="mt-2 h-1.5 w-full bg-[#ea580c]/15 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-gradient-to-r from-amber-500 to-[#ea580c] transition-all duration-1000 ease-linear rounded-full"
+                      style={{ width: `${Math.min(100, Math.max(0, (lockoutSeconds / (maxLockoutRef.current || 60)) * 100))}%` }}
+                    />
+                  </div>
+
+                  {/* Cải tiến 1: 1-Click Action Button Đặt bàn ngay không cần đăng nhập */}
+                  <div className="mt-2.5 pt-2 border-t border-[#ea580c]/20 flex items-center justify-between gap-2">
+                    <span className="text-[11px] text-[#8a1e14] font-medium flex items-center gap-1">
+                      <Utensils className="w-3.5 h-3.5 shrink-0" />
+                      <span>Đặt bàn vãng lai ngay:</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleClose();
+                        const el = document.getElementById('order-form-card') || document.getElementById('order');
+                        if (el) el.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#8a1e14] hover:bg-[#731910] text-amber-100 text-[10.5px] font-serif font-bold uppercase tracking-wider transition-all shadow-xs hover:shadow active:scale-95 group cursor-pointer"
+                    >
+                      <span>Đặt bàn ngay</span>
+                      <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : errorMessage ? (
             <div className="mb-4 p-2.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2 animate-shake">
               <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0"></span>
               <span>{errorMessage}</span>
             </div>
-          )}
+          ) : null}
 
           {/* Form Fields */}
           <form onSubmit={handleSubmit} className="space-y-3.5">
@@ -309,10 +337,11 @@ function AuthModal({ onToast }) {
                 <input
                   id="auth-phone"
                   type="tel"
+                  disabled={lockoutSeconds > 0}
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="0988 888 888"
-                  className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-white border border-[#d6c7ac] text-[#2b1810] text-sm placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-[#8a1e14] focus:border-[#8a1e14] transition-all shadow-xs"
+                  className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-white border border-[#d6c7ac] text-[#2b1810] text-sm placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-[#8a1e14] focus:border-[#8a1e14] transition-all shadow-xs disabled:opacity-60 disabled:bg-stone-100 disabled:cursor-not-allowed"
                   required
                 />
               </div>
@@ -343,10 +372,11 @@ function AuthModal({ onToast }) {
                 <input
                   id="auth-password"
                   type={showPassword ? 'text' : 'password'}
+                  disabled={lockoutSeconds > 0}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder={authTab === 'register' ? 'Tối thiểu 6 ký tự' : 'Nhập mật khẩu của bạn'}
-                  className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-white border border-[#d6c7ac] text-[#2b1810] text-sm placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-[#8a1e14] focus:border-[#8a1e14] transition-all shadow-xs"
+                  className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-white border border-[#d6c7ac] text-[#2b1810] text-sm placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-[#8a1e14] focus:border-[#8a1e14] transition-all shadow-xs disabled:opacity-60 disabled:bg-stone-100 disabled:cursor-not-allowed"
                   required
                 />
                 <button
@@ -400,10 +430,15 @@ function AuthModal({ onToast }) {
             {/* Nút Submit Chính */}
             <button
               type="submit"
-              disabled={isLoading}
-              className="w-full py-3 px-4 rounded-xl bg-[#8a1e14] hover:bg-[#731910] active:scale-[0.99] text-amber-100 font-serif font-bold text-sm tracking-wider uppercase transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 border border-amber-400/30 disabled:opacity-75 cursor-pointer mt-3"
+              disabled={isLoading || lockoutSeconds > 0}
+              className="w-full py-3 px-4 rounded-xl bg-[#8a1e14] hover:bg-[#731910] active:scale-[0.99] text-amber-100 font-serif font-bold text-sm tracking-wider uppercase transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 border border-amber-400/30 disabled:opacity-75 disabled:cursor-not-allowed cursor-pointer mt-3"
             >
-              {isLoading ? (
+              {lockoutSeconds > 0 ? (
+                <>
+                  <Clock className="w-4 h-4 animate-pulse text-amber-300" />
+                  <span>TẠM KHÓA THỬ LẠI ({lockoutSeconds}S)</span>
+                </>
+              ) : isLoading ? (
                 <>
                   <div className="w-4 h-4 border-2 border-amber-200 border-t-transparent rounded-full animate-spin"></div>
                   <span>Đang xử lý...</span>
@@ -431,7 +466,6 @@ function AuthModal({ onToast }) {
                 <Sparkles className="w-3 h-3 text-amber-600" />
                 <span>Khách Quen Demo</span>
               </button>
-
               <button
                 type="button"
                 onClick={() => handleQuickDemo('new')}

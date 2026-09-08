@@ -18,6 +18,8 @@ async function handleResponse(response) {
     const errorMsg = (json && (json.message || json.error)) 
       || (response.status === 401 
           ? 'Số điện thoại hoặc mật khẩu chưa chính xác. Quý khách vui lòng kiểm tra lại nhé!'
+          : response.status === 429
+          ? 'Hệ thống tạm khóa đăng nhập để bảo vệ an toàn. Quý khách vui lòng chờ một lát nhé!'
           : response.status === 404
           ? 'Không tìm thấy thông tin tài khoản. Quý khách vui lòng đăng ký mới nhé!'
           : response.status >= 500
@@ -26,6 +28,14 @@ async function handleResponse(response) {
     const error = new Error(errorMsg);
     error.status = response.status;
     error.data = json;
+    if (json?.data?.retryAfterSeconds) {
+      error.retryAfterSeconds = Number(json.data.retryAfterSeconds);
+    } else {
+      const retryHeader = response.headers?.get?.('Retry-After');
+      if (retryHeader) {
+        error.retryAfterSeconds = parseInt(retryHeader, 10);
+      }
+    }
     throw error;
   }
 

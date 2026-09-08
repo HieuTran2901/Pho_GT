@@ -28,10 +28,15 @@ function CartDrawer({ isOpen, onClose, cartItems, onUpdateQuantity, onRemoveItem
     };
   }, [isOpen]);
 
-  const totalAmount = useMemo(
-    () => cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0),
-    [cartItems]
-  );
+  const { totalAmount, itemCount } = useMemo(() => {
+    let total = 0;
+    let count = 0;
+    for (let i = 0; i < cartItems.length; i++) {
+      total += (cartItems[i].price || 0) * (cartItems[i].quantity || 1);
+      count += (cartItems[i].quantity || 1);
+    }
+    return { totalAmount: total, itemCount: count };
+  }, [cartItems]);
 
   return (
     <div
@@ -51,32 +56,32 @@ function CartDrawer({ isOpen, onClose, cartItems, onUpdateQuantity, onRemoveItem
       />
 
       {/* Slide-over panel container */}
-      <div className="fixed inset-y-0 right-0 max-w-full flex pl-10 pointer-events-none">
+      <div className="fixed inset-y-0 right-0 w-full sm:w-auto max-w-full flex pl-0 sm:pl-10 pointer-events-none">
         <div
-          className={`w-screen max-w-md bg-white shadow-2xl flex flex-col pointer-events-auto transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] transform ${
+          className={`w-full sm:w-screen sm:max-w-md bg-white shadow-2xl flex flex-col pointer-events-auto transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] transform ${
             isOpen ? 'translate-x-0' : 'translate-x-full'
           }`}
         >
           
           {/* Header */}
-          <div className="p-6 bg-[#21150f] text-white flex items-center justify-between border-b border-amber-900/40">
-            <div className="flex items-center gap-3">
-              <ShoppingBag className="w-5 h-5 text-amber-400" />
-              <h2 className="font-serif text-lg font-bold text-amber-100">
-                Món Phở Đã Chọn ({cartItems.reduce((acc, curr) => acc + curr.quantity, 0)})
+          <div className="px-4 py-3.5 sm:p-6 bg-[#21150f] text-white flex items-center justify-between border-b border-amber-900/40 shrink-0">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+              <ShoppingBag className="w-5 h-5 text-amber-400 shrink-0" />
+              <h2 className="font-serif text-base sm:text-lg font-bold text-amber-100 truncate">
+                Món Phở Đã Chọn ({itemCount})
               </h2>
             </div>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-full hover:bg-white/10 text-stone-300 hover:text-white transition-all duration-200 hover:rotate-90"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/20 text-stone-300 hover:text-white flex items-center justify-center transition-all duration-200 hover:rotate-90 cursor-pointer shrink-0 ml-2"
               aria-label="Đóng giỏ hàng"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
 
           {/* Cart Items List */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3 sm:space-y-4">
             {cartItems.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-stone-500 py-12">
                 <div className="w-16 h-16 rounded-full bg-stone-100 flex items-center justify-center mb-4 text-stone-400">
@@ -148,10 +153,10 @@ function CartDrawer({ isOpen, onClose, cartItems, onUpdateQuantity, onRemoveItem
 
           {/* Footer calculation & checkout */}
           {cartItems.length > 0 && (
-            <div className="p-6 bg-stone-50 border-t border-stone-200 space-y-4">
+            <div className="p-4 sm:p-6 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-6 bg-stone-50 border-t border-stone-200 space-y-3 sm:space-y-4">
               <div className="space-y-1.5 text-sm">
                 <div className="flex justify-between text-stone-600">
-                  <span>Tạm tính ({cartItems.reduce((a, b) => a + b.quantity, 0)} phần):</span>
+                  <span>Tạm tính ({itemCount} phần):</span>
                   <span className="font-semibold text-stone-900">{formatPrice(totalAmount)}</span>
                 </div>
                 <div className="flex justify-between text-stone-600">

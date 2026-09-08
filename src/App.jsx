@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Sparkles, ArrowRight } from 'lucide-react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import MenuSection from './components/MenuSection';
@@ -10,9 +10,33 @@ import CartDrawer from './components/CartDrawer';
 import Footer from './components/Footer';
 import FlyingPhoBowl from './components/FlyingPhoBowl';
 import AuthModal from './components/AuthModal';
+import CustomerOrderHistoryModal from './components/order/CustomerOrderHistoryModal';
 import { useAuth } from './context/AuthContext';
 import AdminPortal from './components/admin/AdminPortal';
 import AdminLoginView from './components/admin/AdminLoginView';
+import MemberWelcome3DCard from './components/auth/MemberWelcome3DCard';
+import { TIER_CONFIG } from './components/navbar/navbarConstants';
+
+const getCartStorageKey = (currentUser) => {
+  if (currentUser?.id) return `pho1986_cart_usr_${currentUser.id}`;
+  if (currentUser?.phone) return `pho1986_cart_phone_${String(currentUser.phone).replace(/\s+/g, '')}`;
+  return 'pho1986_cart_guest';
+};
+
+const loadCartFromStorage = (key) => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const saved = localStorage.getItem(key);
+    if (saved) return JSON.parse(saved);
+    if (key === 'pho1986_cart_guest') {
+      const legacy = localStorage.getItem('pho1986_cart_items');
+      if (legacy) return JSON.parse(legacy);
+    }
+  } catch {
+    return [];
+  }
+  return [];
+};
 
 export default function App() {
   const { user } = useAuth();
@@ -37,16 +61,55 @@ export default function App() {
     setIsAdminRoute(false);
   }, []);
 
-  const [cartItems, setCartItems] = useState([
-    {
-      id: 1,
-      name: 'Phở Bò Tái Lăn Hà Nội',
-      price: 65000,
-      quantity: 1,
-      image: 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&w=400&q=80'
+  // [RAVEN & BLADE] Phương án 1: User-Scoped Cart Partitioning
+  // Mỗi tài khoản (hoặc khách vãng lai) sở hữu một giỏ hàng riêng biệt
+  const currentCartKey = useMemo(() => getCartStorageKey(user), [user]);
+  const activeCartKeyRef = useRef(currentCartKey);
+  const isSwitchingUserRef = useRef(false);
+
+  const [cartItems, setCartItems] = useState(() => {
+    return loadCartFromStorage(currentCartKey);
+  });
+
+  // Tự động chuyển đổi và nạp giỏ hàng tương ứng khi chuyển tài khoản hoặc đăng xuất/đăng nhập
+  useEffect(() => {
+    if (activeCartKeyRef.current !== currentCartKey) {
+      const oldKey = activeCartKeyRef.current;
+      const newKey = currentCartKey;
+
+      // 1. Cất giỏ hàng hiện tại vào đúng partition của user cũ
+      if (oldKey && typeof window !== 'undefined') {
+        try {
+          localStorage.setItem(oldKey, JSON.stringify(cartItems));
+        } catch {}
+      }
+
+      // 2. Kích hoạt cờ đang chuyển tài khoản để chặn ghi đè cartItems cũ vào user mới
+      isSwitchingUserRef.current = true;
+      activeCartKeyRef.current = newKey;
+
+      // 3. Nạp giỏ hàng độc lập của user mới (hoặc giỏ trống nếu chưa có)
+      const newCart = loadCartFromStorage(newKey);
+      setCartItems(newCart);
     }
-  ]);
+  }, [currentCartKey, cartItems]);
+
+  // Đồng bộ giỏ hàng vào partition của user đang hoạt động khi thêm/xóa/sửa món
+  useEffect(() => {
+    if (isSwitchingUserRef.current) {
+      isSwitchingUserRef.current = false;
+      return;
+    }
+    if (typeof window !== 'undefined' && activeCartKeyRef.current) {
+      try {
+        localStorage.setItem(activeCartKeyRef.current, JSON.stringify(cartItems));
+      } catch {
+        // quiet fail
+      }
+    }
+  }, [cartItems]);
   const [cartOpen, setCartOpen] = useState(false);
+  const [orderHistoryOpen, setOrderHistoryOpen] = useState(false);
   const [toastData, setToastData] = useState(null);
   const [toastClosing, setToastClosing] = useState(false);
   const [flyingBowls, setFlyingBowls] = useState([]);
@@ -69,11 +132,17 @@ export default function App() {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     if (toastExitTimerRef.current) clearTimeout(toastExitTimerRef.current);
     setToastClosing(false);
-    setToastData(typeof payload === 'string' ? { message: payload } : payload);
+    let data = typeof payload === 'string' ? { message: payload } : payload;
+    if (data?.type === 'member_welcome') {
+      const tierKey = data.user?.loyaltyAccount?.membershipTier || 'DONG';
+      data.tierInfo = TIER_CONFIG[tierKey] || TIER_CONFIG.DONG;
+    }
+    setToastData(data);
 
+    const duration = data?.type === 'member_welcome' ? 4500 : 3200;
     toastTimerRef.current = setTimeout(() => {
       closeToast();
-    }, 3200);
+    }, duration);
   }, [closeToast]);
 
   useEffect(() => {
@@ -156,6 +225,34 @@ export default function App() {
     setCartItems((prev) => prev.filter((i) => i.id !== id));
   }, []);
 
+  const handleClearCart = useCallback(() => {
+    setCartItems([]);
+    const key = activeCartKeyRef.current || getCartStorageKey(user);
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(key);
+        if (key === 'pho1986_cart_guest') {
+          localStorage.removeItem('pho1986_cart_items');
+        }
+      }
+    } catch {
+      // quiet fail
+    }
+  }, [user]);
+
+  const handleQuickReorderFromToast = useCallback((userObj) => {
+    const dish = {
+      id: 'fav_pho_' + (userObj?.tasteProfile?.favoriteDishId || '1986'),
+      name: userObj?.tasteProfile?.favoriteDishName || 'Phở Bò Tái Nạm Gầu Giòn 1986',
+      price: 85000,
+      image: 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&w=400&q=80',
+      customNote: userObj?.tasteProfile?.customNote || 'Chuẩn vị truyền thống 1986 (Đã lưu)'
+    };
+    handleAddToCart(dish);
+    setCartOpen(true);
+    closeToast();
+  }, [handleAddToCart, closeToast]);
+
   const scrollToSection = useCallback((id) => {
     const el = document.getElementById(id);
     if (el) {
@@ -208,8 +305,18 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-brand-cream flex flex-col font-sans pb-16 md:pb-0 overflow-x-hidden w-full max-w-full">
-        {/* Dynamic Heritage Island Capsule Toast (Option 1) */}
-        {toastData && (
+        {/* 3D Imperial Heritage Pass & Steam Aura Welcome Card */}
+        {toastData && toastData.type === 'member_welcome' && (
+          <MemberWelcome3DCard
+            data={toastData}
+            isClosing={toastClosing}
+            onClose={closeToast}
+            onQuickReorder={handleQuickReorderFromToast}
+          />
+        )}
+
+        {/* Dynamic Heritage Island Capsule Toast (Dishes & System Messages) */}
+        {toastData && toastData.type !== 'member_welcome' && (
           <div
             className={`fixed top-[82px] sm:top-[104px] lg:top-[112px] left-1/2 z-[60] -translate-x-1/2 max-w-[92vw] sm:max-w-md w-auto pointer-events-auto transition-all ${
               toastClosing ? 'animate-toast-island-out' : 'animate-toast-island-in'
@@ -292,12 +399,22 @@ export default function App() {
           onOpenCart={handleOpenCart}
           onOpenOrder={handleOpenOrder}
           onAddToCart={handleAddToCart}
+          onOpenOrderHistory={() => setOrderHistoryOpen(true)}
           isCartJiggling={isCartJiggling}
           onToast={showToast}
         />
 
         {/* Auth Modal (Heritage Vintage Register/Login) */}
         <AuthModal onToast={showToast} />
+
+        {/* Customer Order History Modal (Sổ Lịch Sử Đơn Hàng) */}
+        <CustomerOrderHistoryModal
+          isOpen={orderHistoryOpen}
+          onClose={() => setOrderHistoryOpen(false)}
+          onAddToCart={handleAddToCart}
+          onToast={showToast}
+          onNavigateToMenu={handleExploreMenu}
+        />
 
         {/* Flying Parabolic Pho Bowls */}
         {flyingBowls.map((fly) => (
@@ -317,7 +434,7 @@ export default function App() {
           <MenuSection onAddToCart={handleAddToCart} />
           <StorySection />
           <Testimonials />
-          <OrderSection />
+          <OrderSection cartItems={cartItems} onClearCart={handleClearCart} />
         </main>
 
         {/* Slide-out Cart Drawer */}

@@ -10,7 +10,8 @@ import {
   Phone, 
   ShoppingBag, 
   Menu, 
-  X 
+  X,
+  FileText
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -26,7 +27,7 @@ import NavbarMobileDrawer from './navbar/NavbarMobileDrawer';
 import NavbarMobileBottomNav from './navbar/NavbarMobileBottomNav';
 import NavbarMobileMemberSheet from './navbar/NavbarMobileMemberSheet';
 
-function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJiggling, onToast }) {
+function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHistory, isCartJiggling, onToast }) {
   const [activeTab, setActiveTab] = useState('hero');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -36,22 +37,32 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
   const { user, isAuthenticated, isInitialized, openAuthModal, logout } = useAuth();
   const navItems = NAV_ITEMS;
 
-  // Membership calculations
-  const tierKey = user?.loyaltyAccount?.membershipTier || 'DONG';
-  const tierInfo = TIER_CONFIG[tierKey] || TIER_CONFIG.DONG;
-  const totalPoints = user?.loyaltyAccount?.totalPoints || 50;
-  const availablePoints = user?.loyaltyAccount?.availablePoints || 50;
-  const pointsToNext = Math.max(0, tierInfo.target - totalPoints);
-  const progressPercent = Math.min(100, Math.round((totalPoints / tierInfo.target) * 100));
-  const cardNumber = user?.phone ? `#VIP-1986-${user.phone.replace(/\D/g, '').slice(-4) || '8888'}` : '#VIP-1986-8888';
+  // Memoized membership calculations
+  const { tierInfo, totalPoints, availablePoints, pointsToNext, progressPercent, cardNumber } = useMemo(() => {
+    const tierKey = user?.loyaltyAccount?.membershipTier || 'DONG';
+    const info = TIER_CONFIG[tierKey] || TIER_CONFIG.DONG;
+    const total = user?.loyaltyAccount?.totalPoints || 50;
+    const available = user?.loyaltyAccount?.availablePoints || 50;
+    const toNext = Math.max(0, info.target - total);
+    const progress = Math.min(100, Math.round((total / info.target) * 100));
+    const cardNum = user?.phone ? `#VIP-1986-${user.phone.replace(/\D/g, '').slice(-4) || '8888'}` : '#VIP-1986-8888';
+    return {
+      tierInfo: info,
+      totalPoints: total,
+      availablePoints: available,
+      pointsToNext: toNext,
+      progressPercent: progress,
+      cardNumber: cardNum
+    };
+  }, [user]);
 
   // Dynamic taste summary for "GU PHỞ CỦA TÔI"
-  const tasteSummary = [
+  const tasteSummary = useMemo(() => [
     user?.tasteProfile?.brothType ? (BROTH_LABELS[user.tasteProfile.brothType] || user.tasteProfile.brothType) : 'Nước đậm',
     user?.tasteProfile?.onionStyle ? (ONION_LABELS[user.tasteProfile.onionStyle] || user.tasteProfile.onionStyle) : 'Nhiều hành',
     user?.tasteProfile?.herbStyle ? (HERB_LABELS[user.tasteProfile.herbStyle] || user.tasteProfile.herbStyle) : 'Không rau mùi',
     user?.tasteProfile?.crullerPref ? (CRULLER_LABELS[user.tasteProfile.crullerPref] || user.tasteProfile.crullerPref) : 'Thêm quẩy'
-  ].join(' • ');
+  ].join(' • '), [user?.tasteProfile]);
 
   // Memoized favorite dish reference for 1-Click Quick Reorder
   const favoriteDish = useMemo(() => ({
@@ -225,6 +236,7 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
                       tasteSummary={tasteSummary}
                       handleQuickReorder={handleQuickReorder}
                       setUserDropdownOpen={setUserDropdownOpen}
+                      onOpenOrderHistory={onOpenOrderHistory}
                       logout={logout}
                       onToast={onToast}
                     />
@@ -236,13 +248,24 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
                   <div className="w-16 h-3 rounded bg-stone-300/60" />
                 </div>
               ) : (
-                <button
-                  onClick={() => openAuthModal('login')}
-                  className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full border border-[#8a1e14]/40 bg-white hover:bg-amber-50/60 text-[#8a1e14] text-xs font-serif font-bold tracking-wider uppercase transition-all shadow-xs group cursor-pointer"
-                >
-                  <User className="w-3.5 h-3.5 text-[#8a1e14]" />
-                  <span>ĐĂNG NHẬP</span>
-                </button>
+                <div className="hidden md:flex items-center gap-1.5 sm:gap-2">
+                  <button
+                    onClick={onOpenOrderHistory}
+                    id="navbar-order-history-btn"
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-stone-300 hover:border-[#8a1e14]/50 bg-white/90 hover:bg-amber-50/50 text-stone-700 hover:text-[#8a1e14] text-xs font-serif font-bold tracking-wider transition-all shadow-xs cursor-pointer group"
+                    title="Tra cứu lịch sử đơn hàng"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-[#8a1e14] group-hover:scale-110 transition-transform" />
+                    <span>LỊCH SỬ ĐƠN</span>
+                  </button>
+                  <button
+                    onClick={() => openAuthModal('login')}
+                    className="flex items-center gap-2 px-4 py-2 rounded-full border border-[#8a1e14]/40 bg-white hover:bg-amber-50/60 text-[#8a1e14] text-xs font-serif font-bold tracking-wider uppercase transition-all shadow-xs group cursor-pointer"
+                  >
+                    <User className="w-3.5 h-3.5 text-[#8a1e14]" />
+                    <span>ĐĂNG NHẬP</span>
+                  </button>
+                </div>
               )}
 
               {/* Hotline button */}
@@ -314,6 +337,7 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
             availablePoints={availablePoints}
             setMobileMemberSheetOpen={setMobileMemberSheetOpen}
             handleQuickReorder={handleQuickReorder}
+            onOpenOrderHistory={onOpenOrderHistory}
             logout={logout}
             openAuthModal={openAuthModal}
             onToast={onToast}
@@ -352,6 +376,7 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, isCartJigglin
         favoriteDish={favoriteDish}
         tasteSummary={tasteSummary}
         handleQuickReorder={handleQuickReorder}
+        onOpenOrderHistory={onOpenOrderHistory}
         setActiveTab={setActiveTab}
         logout={logout}
         onToast={onToast}

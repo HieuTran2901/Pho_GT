@@ -19,6 +19,7 @@ export default function NavbarDesktopDropdown({
   tasteSummary,
   handleQuickReorder,
   setUserDropdownOpen,
+  onOpenOrderHistory,
   logout,
   onToast
 }) {
@@ -220,15 +221,18 @@ export default function NavbarDesktopDropdown({
 
       {/* ROW 4: Footer tiện ích */}
       <div className="grid grid-cols-4 border-t border-amber-900/40 bg-[#0c0503] text-stone-300 text-[11px] py-2.5 divide-x divide-white/5 text-center">
-        <a
-          href="#order-form-card"
-          onClick={() => setUserDropdownOpen(false)}
-          className="px-1 hover:text-amber-200 transition-colors flex flex-col items-center justify-center group"
+        <button
+          type="button"
+          onClick={() => {
+            setUserDropdownOpen(false);
+            if (onOpenOrderHistory) onOpenOrderHistory();
+          }}
+          className="px-1 hover:text-amber-200 transition-colors flex flex-col items-center justify-center group cursor-pointer"
         >
           <FileText className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform mb-0.5" />
           <span className="font-bold text-xs text-white">Đơn hàng</span>
           <span className="text-[9px] text-stone-400">Xem lịch sử đơn</span>
-        </a>
+        </button>
 
         <a
           href="#menu"

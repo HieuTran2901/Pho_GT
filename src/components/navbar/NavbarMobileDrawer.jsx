@@ -3,7 +3,8 @@ import {
   User,
   Zap,
   LogOut,
-  ArrowRight
+  ArrowRight,
+  ScrollText
 } from 'lucide-react';
 
 export default function NavbarMobileDrawer({
@@ -17,6 +18,7 @@ export default function NavbarMobileDrawer({
   availablePoints,
   setMobileMemberSheetOpen,
   handleQuickReorder,
+  onOpenOrderHistory,
   logout,
   openAuthModal,
   onToast
@@ -78,14 +80,26 @@ export default function NavbarMobileDrawer({
               </div>
             </div>
 
-            {/* Mobile Quick Reorder Button */}
+            {/* Mobile Quick Reorder & Order History Buttons */}
             <div className="p-2.5 bg-[#2c1b14] space-y-2">
               <button
                 onClick={handleQuickReorder}
-                className="w-full py-1.5 rounded-lg bg-gradient-to-r from-[#9b2a1f] to-[#7f1d14] text-amber-100 font-serif font-bold text-xs flex items-center justify-center gap-1.5 shadow cursor-pointer"
+                className="w-full py-1.5 rounded-lg bg-gradient-to-r from-[#9b2a1f] to-[#7f1d14] text-amber-100 font-serif font-bold text-xs flex items-center justify-center gap-1.5 shadow cursor-pointer active:scale-98 transition-all"
               >
                 <Zap className="w-3.5 h-3.5 text-amber-300" />
                 <span>1-Click Đặt Lại Bát Ruột</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  if (onOpenOrderHistory) onOpenOrderHistory();
+                }}
+                className="w-full py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-stone-200 font-serif font-medium text-xs flex items-center justify-center gap-1.5 cursor-pointer border border-white/10 active:scale-98 transition-all"
+              >
+                <ScrollText className="w-3.5 h-3.5 text-amber-300" />
+                <span>Xem Sổ Lịch Sử Đơn Hàng</span>
               </button>
 
               <button
@@ -102,13 +116,27 @@ export default function NavbarMobileDrawer({
             </div>
           </div>
         ) : (
-          <button
-            onClick={() => { openAuthModal('login'); setMobileMenuOpen(false); }}
-            className="w-full py-2.5 px-4 rounded-xl bg-[#8a1e14] text-white font-serif font-bold text-sm flex items-center justify-center gap-2 cursor-pointer"
-          >
-            <User className="w-4 h-4" />
-            <span>ĐĂNG NHẬP / ĐĂNG KÝ THÀNH VIÊN</span>
-          </button>
+          <div className="space-y-2">
+            <button
+              onClick={() => { openAuthModal('login'); setMobileMenuOpen(false); }}
+              className="w-full py-2.5 px-4 rounded-xl bg-[#8a1e14] text-white font-serif font-bold text-sm flex items-center justify-center gap-2 cursor-pointer shadow active:scale-98 transition-all"
+            >
+              <User className="w-4 h-4" />
+              <span>ĐĂNG NHẬP / ĐĂNG KÝ THÀNH VIÊN</span>
+            </button>
+            <button
+              type="button"
+              id="drawer-order-history-btn"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                if (onOpenOrderHistory) onOpenOrderHistory();
+              }}
+              className="w-full py-1 text-xs text-[#8a1e14] font-serif font-bold flex items-center justify-center gap-1.5 cursor-pointer hover:underline"
+            >
+              <ScrollText className="w-3.5 h-3.5" />
+              <span>Tra cứu lịch sử đơn hàng gần đây</span>
+            </button>
+          </div>
         )}
       </div>
     </div>
