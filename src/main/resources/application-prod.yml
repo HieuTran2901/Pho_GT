@@ -27,3 +27,18 @@ app:
       password: ${ADMIN_INIT_PASSWORD:}
       full-name: ${ADMIN_INIT_NAME:Quản Trị Viên 1986}
       email: ${ADMIN_INIT_EMAIL:admin@pho1986.vn}
+
+payment:
+  sepay:
+    enabled: ${SEPAY_ENABLED:false}
+    environment: ${SEPAY_ENV:sandbox}
+    merchant-id: ${MERCHANTID:}
+    secret-key: ${SEPAY_SECRETKEY:}
+    ipn-secret: ${SEPAY_IPN_SECRET:}
+    ipn-url: ${SEPAY_IPN_URL:https://pho-gt.vercel.app/api/v1/payments/sepay/ipn}
+    success-url: ${SEPAY_SUCCESS_URL:https://pho-gt.vercel.app/api/v1/payments/sepay/return/success}
+    error-url: ${SEPAY_ERROR_URL:https://pho-gt.vercel.app/api/v1/payments/sepay/return/error}
+    cancel-url: ${SEPAY_CANCEL_URL:https://pho-gt.vercel.app/api/v1/payments/sepay/return/cancel}
+    booking-frontend-redirect-url: ${SEPAY_BOOKING_FRONTEND_REDIRECT_URL:https://pho-gt.vercel.app/#order}
+    frontend-redirect-url: ${SEPAY_FRONTEND_REDIRECT_URL:https://pho-gt.vercel.app/#order}
+
