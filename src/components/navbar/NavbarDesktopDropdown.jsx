@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  Sparkles,
   ArrowRight,
   FileText,
   Gift,
@@ -20,6 +19,7 @@ export default function NavbarDesktopDropdown({
   handleQuickReorder,
   setUserDropdownOpen,
   onOpenOrderHistory,
+  onOpenGiftVault,
   logout,
   onToast
 }) {
@@ -234,15 +234,21 @@ export default function NavbarDesktopDropdown({
           <span className="text-[9px] text-stone-400">Xem lịch sử đơn</span>
         </button>
 
-        <a
-          href="#menu"
-          onClick={() => setUserDropdownOpen(false)}
-          className="px-1 hover:text-amber-200 transition-colors flex flex-col items-center justify-center group"
+        <button
+          type="button"
+          onClick={() => {
+            setUserDropdownOpen(false);
+            if (onOpenGiftVault) onOpenGiftVault();
+          }}
+          className="px-1 hover:text-amber-200 transition-colors flex flex-col items-center justify-center group cursor-pointer"
         >
-          <Gift className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform mb-0.5" />
+          <div className="relative">
+            <Gift className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform mb-0.5" />
+            <span className="absolute -top-1 -right-1.5 w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+          </div>
           <span className="font-bold text-xs text-white">Kho quà</span>
           <span className="text-[9px] text-stone-400">Ưu đãi của bạn</span>
-        </a>
+        </button>
 
         <a
           href="#order-form-card"

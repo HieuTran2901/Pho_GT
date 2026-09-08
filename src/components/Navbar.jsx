@@ -27,7 +27,7 @@ import NavbarMobileDrawer from './navbar/NavbarMobileDrawer';
 import NavbarMobileBottomNav from './navbar/NavbarMobileBottomNav';
 import NavbarMobileMemberSheet from './navbar/NavbarMobileMemberSheet';
 
-function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHistory, isCartJiggling, onToast }) {
+function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHistory, onOpenGiftVault, isCartJiggling, onToast }) {
   const [activeTab, setActiveTab] = useState('hero');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -237,6 +237,7 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
                       handleQuickReorder={handleQuickReorder}
                       setUserDropdownOpen={setUserDropdownOpen}
                       onOpenOrderHistory={onOpenOrderHistory}
+                      onOpenGiftVault={onOpenGiftVault}
                       logout={logout}
                       onToast={onToast}
                     />
@@ -249,6 +250,18 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
                 </div>
               ) : (
                 <div className="hidden md:flex items-center gap-1.5 sm:gap-2">
+                  <button
+                    onClick={onOpenGiftVault}
+                    id="navbar-gift-vault-btn"
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-amber-500/50 hover:border-[#8a1e14] bg-gradient-to-r from-amber-50 to-orange-50/80 hover:bg-amber-100 text-[#8a1e14] text-xs font-serif font-bold tracking-wider transition-all shadow-xs cursor-pointer group"
+                    title="Khám phá kho quà tri ân"
+                  >
+                    <div className="relative">
+                      <Gift className="w-3.5 h-3.5 text-[#8a1e14] group-hover:scale-110 transition-transform" />
+                      <span className="absolute -top-1 -right-1 w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                    </div>
+                    <span>KHO QUÀ</span>
+                  </button>
                   <button
                     onClick={onOpenOrderHistory}
                     id="navbar-order-history-btn"
@@ -338,6 +351,7 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
             setMobileMemberSheetOpen={setMobileMemberSheetOpen}
             handleQuickReorder={handleQuickReorder}
             onOpenOrderHistory={onOpenOrderHistory}
+            onOpenGiftVault={onOpenGiftVault}
             logout={logout}
             openAuthModal={openAuthModal}
             onToast={onToast}
@@ -377,6 +391,7 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
         tasteSummary={tasteSummary}
         handleQuickReorder={handleQuickReorder}
         onOpenOrderHistory={onOpenOrderHistory}
+        onOpenGiftVault={onOpenGiftVault}
         setActiveTab={setActiveTab}
         logout={logout}
         onToast={onToast}

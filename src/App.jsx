@@ -1,5 +1,4 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { X, Sparkles, ArrowRight } from 'lucide-react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import MenuSection from './components/MenuSection';
@@ -9,8 +8,11 @@ import OrderSection from './components/OrderSection';
 import CartDrawer from './components/CartDrawer';
 import Footer from './components/Footer';
 import FlyingPhoBowl from './components/FlyingPhoBowl';
+import FlyingGiftRibbon from './components/loyalty/FlyingGiftRibbon';
+import HeritageIslandToast from './components/toast/HeritageIslandToast';
 import AuthModal from './components/AuthModal';
 import CustomerOrderHistoryModal from './components/order/CustomerOrderHistoryModal';
+import GiftVaultModal from './components/loyalty/GiftVaultModal';
 import { useAuth } from './context/AuthContext';
 import AdminPortal from './components/admin/AdminPortal';
 import AdminLoginView from './components/admin/AdminLoginView';
@@ -39,7 +41,7 @@ const loadCartFromStorage = (key) => {
 };
 
 export default function App() {
-  const { user } = useAuth();
+  const { user, openAuthModal } = useAuth();
   const [isAdminRoute, setIsAdminRoute] = useState(() => 
     typeof window !== 'undefined' && (window.location.pathname.startsWith('/admin') || window.location.hash === '#admin')
   );
@@ -110,9 +112,11 @@ export default function App() {
   }, [cartItems]);
   const [cartOpen, setCartOpen] = useState(false);
   const [orderHistoryOpen, setOrderHistoryOpen] = useState(false);
+  const [giftVaultOpen, setGiftVaultOpen] = useState(false);
   const [toastData, setToastData] = useState(null);
   const [toastClosing, setToastClosing] = useState(false);
   const [flyingBowls, setFlyingBowls] = useState([]);
+  const [flyingGifts, setFlyingGifts] = useState([]);
   const [isCartJiggling, setIsCartJiggling] = useState(false);
 
   const toastTimerRef = useRef(null);
@@ -199,6 +203,76 @@ export default function App() {
       price: item.price,
     });
   }, [showToast]);
+
+  // [RAVEN & URBAN] Thêm quà tặng Tri Kỷ (0đ) vào giỏ hàng với quỹ đạo Parabol bay vào giỏ
+  const handleApplyGiftToCart = useCallback((gift, coords) => {
+    const giftItem = {
+      id: `gift_${gift.dishId || gift.id}`,
+      giftId: gift.id,
+      name: gift.dishName || gift.title,
+      price: 0,
+      originalPrice: gift.discountValue || 15000,
+      image: gift.image,
+      quantity: 1,
+      isFreeGift: true,
+      voucherCode: gift.code
+    };
+
+    setCartItems((prev) => {
+      // Mỗi đơn chỉ áp dụng 1 món quà tặng 0đ duy nhất, thay thế quà cũ nếu có
+      const filtered = prev.filter((i) => !i.isFreeGift);
+      return [...filtered, giftItem];
+    });
+
+    // 1. Phóng dải vé Parabol lượn vào giỏ hàng nếu có tọa độ nút bấm
+    if (coords && typeof window !== 'undefined') {
+      const cartBtn = document.getElementById('navbar-cart-btn');
+      const targetRect = cartBtn ? cartBtn.getBoundingClientRect() : {
+        left: window.innerWidth - 65,
+        top: 38,
+        width: 40,
+        height: 40
+      };
+
+      const endX = targetRect.left + targetRect.width / 2;
+      const endY = targetRect.top + targetRect.height / 2;
+
+      const newFlyGift = {
+        id: Date.now() + Math.random(),
+        image: gift.image,
+        name: giftItem.name,
+        startX: coords.startX,
+        startY: coords.startY,
+        endX,
+        endY
+      };
+
+      setFlyingGifts((prev) => [...prev, newFlyGift]);
+    } else {
+      setCartOpen(true);
+    }
+
+    // 2. Kích hoạt Toast Viên Nang Sơn Mài Thượng Khách
+    showToast({
+      type: 'gift_applied',
+      name: giftItem.name,
+      image: giftItem.image,
+      savings: giftItem.originalPrice
+    });
+  }, [showToast]);
+
+  const handleGiftFlightComplete = useCallback((flyId) => {
+    setFlyingGifts((prev) => prev.filter((f) => f.id !== flyId));
+
+    // Hiệu ứng tiếp đất: Rung lắc giỏ hàng và mở drawer đón quà
+    setIsCartJiggling(true);
+    if (cartJiggleTimerRef.current) clearTimeout(cartJiggleTimerRef.current);
+    cartJiggleTimerRef.current = setTimeout(() => {
+      setIsCartJiggling(false);
+    }, 700);
+
+    setCartOpen(true);
+  }, []);
 
   const handleFlightComplete = useCallback((flyId) => {
     setFlyingBowls((prev) => prev.filter((f) => f.id !== flyId));
@@ -315,83 +389,13 @@ export default function App() {
           />
         )}
 
-        {/* Dynamic Heritage Island Capsule Toast (Dishes & System Messages) */}
-        {toastData && toastData.type !== 'member_welcome' && (
-          <div
-            className={`fixed top-[82px] sm:top-[104px] lg:top-[112px] left-1/2 z-[60] -translate-x-1/2 max-w-[92vw] sm:max-w-md w-auto pointer-events-auto transition-all ${
-              toastClosing ? 'animate-toast-island-out' : 'animate-toast-island-in'
-            }`}
-          >
-            <div className="bg-[#181311]/95 text-stone-100 rounded-full pl-2 pr-2.5 py-1.5 border border-amber-400/40 shadow-[0_12px_36px_rgba(0,0,0,0.55)] backdrop-blur-md flex items-center justify-between gap-2.5 sm:gap-3.5 ring-1 ring-white/10">
-              {toastData.type === 'dish' ? (
-                <>
-                  {/* Dish Thumbnail with Gold Rim */}
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden border border-amber-400/70 shadow-xs shrink-0 bg-stone-800">
-                      <img
-                        src={toastData.image}
-                        alt={toastData.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="min-w-0 pr-1">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-                        <span className="text-[10px] text-amber-300 font-bold uppercase tracking-wider truncate">
-                          Đã thêm vào bàn
-                        </span>
-                      </div>
-                      <div className="text-xs sm:text-sm font-bold text-white truncate max-w-[140px] sm:max-w-[200px]">
-                        {toastData.name}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Quick Action Pill Button: Open Cart Drawer */}
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        handleOpenCart();
-                        closeToast();
-                      }}
-                      className="bg-[#96281b] hover:bg-[#7e1f14] text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md transition-all active:scale-95 flex items-center gap-1 border border-red-400/30 group"
-                    >
-                      <span>Xem giỏ</span>
-                      <span className="text-amber-300 font-black group-hover:translate-x-0.5 transition-transform">→</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={closeToast}
-                      aria-label="Đóng thông báo"
-                      className="w-6 h-6 rounded-full text-stone-400 hover:text-white flex items-center justify-center transition-colors"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </>
-              ) : (
-                /* Generic system notification */
-                <>
-                  <div className="flex items-center gap-2 pl-2 pr-1 py-1 min-w-0">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
-                    <span className="text-xs sm:text-sm font-medium text-stone-100 truncate max-w-[260px] sm:max-w-[320px]">
-                      {toastData.message}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={closeToast}
-                    aria-label="Đóng thông báo"
-                    className="w-6 h-6 rounded-full text-stone-400 hover:text-white flex items-center justify-center transition-colors shrink-0"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        )}
+        {/* Dynamic Heritage Island Capsule Toast */}
+        <HeritageIslandToast
+          toastData={toastData}
+          toastClosing={toastClosing}
+          onClose={closeToast}
+          onOpenCart={handleOpenCart}
+        />
 
         {/* Navigation */}
         <Navbar
@@ -400,6 +404,7 @@ export default function App() {
           onOpenOrder={handleOpenOrder}
           onAddToCart={handleAddToCart}
           onOpenOrderHistory={() => setOrderHistoryOpen(true)}
+          onOpenGiftVault={() => setGiftVaultOpen(true)}
           isCartJiggling={isCartJiggling}
           onToast={showToast}
         />
@@ -416,12 +421,32 @@ export default function App() {
           onNavigateToMenu={handleExploreMenu}
         />
 
+        {/* Customer Gift Vault Modal (Hòm Gấm Tri Kỷ 1986) */}
+        <GiftVaultModal
+          isOpen={giftVaultOpen}
+          onClose={() => setGiftVaultOpen(false)}
+          user={user}
+          cartItems={cartItems}
+          onApplyGiftToCart={handleApplyGiftToCart}
+          onToast={showToast}
+          openAuthModal={openAuthModal}
+        />
+
         {/* Flying Parabolic Pho Bowls */}
         {flyingBowls.map((fly) => (
           <FlyingPhoBowl
             key={fly.id}
             fly={fly}
             onComplete={handleFlightComplete}
+          />
+        ))}
+
+        {/* Flying Parabolic Gift Ribbons */}
+        {flyingGifts.map((fly) => (
+          <FlyingGiftRibbon
+            key={fly.id}
+            fly={fly}
+            onComplete={handleGiftFlightComplete}
           />
         ))}
 

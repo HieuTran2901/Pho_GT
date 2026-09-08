@@ -5,6 +5,7 @@ import {
   Zap,
   Utensils,
   ScrollText,
+  Gift,
   LogOut
 } from 'lucide-react';
 
@@ -23,6 +24,7 @@ export default function NavbarMobileMemberSheet({
   tasteSummary,
   handleQuickReorder,
   onOpenOrderHistory,
+  onOpenGiftVault,
   setActiveTab,
   logout,
   onToast
@@ -147,18 +149,29 @@ export default function NavbarMobileMemberSheet({
             </button>
           </div>
 
-          {/* Action Buttons: Lịch sử đơn, Khám phá món, Đăng xuất */}
-          <div className="grid grid-cols-3 gap-1.5 pt-1">
+          {/* Action Buttons: Lịch sử đơn, Kho quà, Khám phá món, Đăng xuất */}
+          <div className="grid grid-cols-4 gap-1 pt-1">
             <button
               type="button"
               onClick={() => {
                 setMobileMemberSheetOpen(false);
                 if (onOpenOrderHistory) onOpenOrderHistory();
               }}
-              className="py-2.5 px-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-medium text-center border border-amber-500/30 flex items-center justify-center gap-1 cursor-pointer active:scale-95 transition-all"
+              className="py-2.5 px-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-[11px] font-medium text-center border border-amber-500/30 flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95 transition-all"
             >
               <ScrollText className="w-3.5 h-3.5 text-amber-400" />
-              <span>Lịch sử đơn</span>
+              <span className="truncate">Lịch sử</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMobileMemberSheetOpen(false);
+                if (onOpenGiftVault) onOpenGiftVault();
+              }}
+              className="py-2.5 px-1.5 rounded-xl bg-gradient-to-b from-[#6a150c] to-[#450d08] hover:from-[#851b10] hover:to-[#57100a] text-amber-200 text-[11px] font-bold text-center border border-amber-500/40 flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95 transition-all"
+            >
+              <Gift className="w-3.5 h-3.5 text-amber-300" />
+              <span className="truncate">Kho quà</span>
             </button>
             <a
               href="#menu"
@@ -166,10 +179,10 @@ export default function NavbarMobileMemberSheet({
                 setActiveTab('menu');
                 setMobileMemberSheetOpen(false);
               }}
-              className="py-2.5 px-2 rounded-xl bg-white/5 hover:bg-white/10 text-stone-300 text-xs font-medium text-center border border-white/10 flex items-center justify-center gap-1 active:scale-95 transition-all"
+              className="py-2.5 px-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-stone-300 text-[11px] font-medium text-center border border-white/10 flex flex-col items-center justify-center gap-1 active:scale-95 transition-all"
             >
               <Utensils className="w-3.5 h-3.5 text-amber-400" />
-              <span>Khám phá</span>
+              <span className="truncate">Khám phá</span>
             </a>
             <button
               type="button"
@@ -178,10 +191,10 @@ export default function NavbarMobileMemberSheet({
                 setMobileMemberSheetOpen(false);
                 if (onToast) onToast('Bạn đã đăng xuất tài khoản thành công!');
               }}
-              className="py-2.5 px-2 rounded-xl bg-red-950/30 hover:bg-red-900/40 text-red-300 text-xs font-medium border border-red-900/50 flex items-center justify-center gap-1 cursor-pointer active:scale-95 transition-all"
+              className="py-2.5 px-1.5 rounded-xl bg-red-950/30 hover:bg-red-900/40 text-red-300 text-[11px] font-medium border border-red-900/50 flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95 transition-all"
             >
               <LogOut className="w-3.5 h-3.5" />
-              <span>Đăng xuất</span>
+              <span className="truncate">Đăng xuất</span>
             </button>
           </div>
         </div>

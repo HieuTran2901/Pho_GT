@@ -281,12 +281,8 @@
 }
 
 @keyframes goldShimmerSweep {
-  0% {
-    transform: translateX(-120%) skewX(-20deg);
-  }
-  100% {
-    transform: translateX(250%) skewX(-20deg);
-  }
+  0% { transform: translateX(-120%) skewX(-20deg); }
+  100% { transform: translateX(250%) skewX(-20deg); }
 }
 
 @keyframes passCardFloat {
@@ -300,34 +296,14 @@
   }
 }
 
-.animate-step-forward {
-  animation: stepSlideForward 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  will-change: transform, opacity;
-}
-
-.animate-step-backward {
-  animation: stepSlideBackward 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  will-change: transform, opacity;
-}
-
-.animate-pop-spring {
-  animation: popSpringSuccess 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  will-change: transform, opacity;
-}
-
-.animate-gold-shimmer {
-  animation: goldShimmerSweep 2.2s infinite ease-in-out;
-}
-
-.animate-pass-card {
-  animation: passCardFloat 4s ease-in-out infinite;
-}
+.animate-step-forward { animation: stepSlideForward 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards; will-change: transform, opacity; }
+.animate-step-backward { animation: stepSlideBackward 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards; will-change: transform, opacity; }
+.animate-pop-spring { animation: popSpringSuccess 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards; will-change: transform, opacity; }
+.animate-gold-shimmer { animation: goldShimmerSweep 2.2s infinite ease-in-out; }
+.animate-pass-card { animation: passCardFloat 4s ease-in-out infinite; }
 
 @keyframes accordionDown {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
+  from { opacity: 0; transform: translateY(-8px); }
   to {
     opacity: 1;
     transform: translateY(0);
@@ -399,13 +375,8 @@
   will-change: transform, opacity;
 }
 
-.animate-steam-3d-1 {
-  animation: steamFloat3d 2.8s infinite ease-out;
-}
-
-.animate-steam-3d-2 {
-  animation: steamFloat3d 3.2s infinite 0.7s ease-out;
-}
+.animate-steam-3d-1 { animation: steamFloat3d 2.8s infinite ease-out; }
+.animate-steam-3d-2 { animation: steamFloat3d 3.2s infinite 0.7s ease-out; }
 
 /* --- Flowing Silk Ribbon & Atmospheric Vapor Animations --- */
 @keyframes silkWaveFloat {
@@ -455,6 +426,64 @@
 
 .animate-atmospheric-mist {
   animation: atmosphericMist 3s ease-out forwards;
+}
+
+/* --- Ribbon Snap & Bond to Target Dish --- */
+@keyframes ribbonSnap {
+  0% {
+    opacity: 0;
+    transform: scale(1.6) translate(-10px, -10px) rotate(-15deg);
+    filter: drop-shadow(0 0 15px rgba(245, 158, 11, 0.9));
+  }
+  60% {
+    opacity: 1;
+    transform: scale(0.92) translate(1px, 1px) rotate(2deg);
+    filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.6));
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translate(0, 0) rotate(0deg);
+    filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.25));
+  }
+}
+
+/* --- Calligraphy Brush Strike-Through --- */
+@keyframes strikeBrush {
+  0% { transform: scaleX(0); opacity: 0; }
+  30% { opacity: 1; }
+  100% { transform: scaleX(1); opacity: 1; }
+}
+
+/* --- 0đ Pop Elastic Bounce with Golden Glow --- */
+@keyframes popZero {
+  0% { opacity: 0; transform: scale(0.3); }
+  60% { opacity: 1; transform: scale(1.28); filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.7)); }
+  80% { transform: scale(0.95); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* --- Golden Sparkle Docking Burst --- */
+@keyframes dockingBurst {
+  0% { opacity: 0.9; transform: scale(0.7); filter: drop-shadow(0 0 15px rgba(245, 158, 11, 0.9)); }
+  50% { opacity: 1; transform: scale(1.08); filter: drop-shadow(0 0 30px rgba(245, 158, 11, 1)); }
+  100% { opacity: 0; transform: scale(1.25); filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0)); }
+}
+
+.animate-ribbon-snap {
+  animation: ribbonSnap 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-strike-brush {
+  transform-origin: left center;
+  animation: strikeBrush 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.25s forwards;
+}
+
+.animate-pop-zero {
+  animation: popZero 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.55s both;
+}
+
+.animate-docking-burst {
+  animation: dockingBurst 0.6s ease-out forwards;
 }
 
 

@@ -4,7 +4,8 @@ import {
   Zap,
   LogOut,
   ArrowRight,
-  ScrollText
+  ScrollText,
+  Gift
 } from 'lucide-react';
 
 export default function NavbarMobileDrawer({
@@ -19,6 +20,7 @@ export default function NavbarMobileDrawer({
   setMobileMemberSheetOpen,
   handleQuickReorder,
   onOpenOrderHistory,
+  onOpenGiftVault,
   logout,
   openAuthModal,
   onToast
@@ -103,6 +105,18 @@ export default function NavbarMobileDrawer({
               </button>
 
               <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  if (onOpenGiftVault) onOpenGiftVault();
+                }}
+                className="w-full py-1.5 rounded-lg bg-gradient-to-r from-[#6a150c] to-[#450d08] hover:from-[#851b10] hover:to-[#57100a] text-amber-200 font-serif font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer border border-amber-500/40 active:scale-98 transition-all"
+              >
+                <Gift className="w-3.5 h-3.5 text-amber-300" />
+                <span>Kho Quà Tri Kỷ 1986</span>
+              </button>
+
+              <button
                 onClick={() => {
                   logout();
                   setMobileMenuOpen(false);
@@ -123,6 +137,18 @@ export default function NavbarMobileDrawer({
             >
               <User className="w-4 h-4" />
               <span>ĐĂNG NHẬP / ĐĂNG KÝ THÀNH VIÊN</span>
+            </button>
+            <button
+              type="button"
+              id="drawer-gift-vault-btn"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                if (onOpenGiftVault) onOpenGiftVault();
+              }}
+              className="w-full py-1.5 px-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-xs text-[#8a1e14] font-serif font-bold flex items-center justify-center gap-1.5 cursor-pointer hover:bg-amber-500/20 active:scale-98 transition-all"
+            >
+              <Gift className="w-3.5 h-3.5 text-[#8a1e14]" />
+              <span>Khám phá Kho Quà Tri Kỷ 1986</span>
             </button>
             <button
               type="button"
