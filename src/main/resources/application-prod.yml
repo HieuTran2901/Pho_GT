@@ -20,3 +20,10 @@ spring:
 app:
   cors:
     allowed-origins: ${CLIENT_ORIGIN:http://localhost:5173,http://localhost:3000,http://3.25.130.70}
+  security:
+    admin-seed:
+      enabled: ${ADMIN_SEED_ENABLED:false}
+      phone: ${ADMIN_INIT_PHONE:}
+      password: ${ADMIN_INIT_PASSWORD:}
+      full-name: ${ADMIN_INIT_NAME:Quản Trị Viên 1986}
+      email: ${ADMIN_INIT_EMAIL:admin@pho1986.vn}

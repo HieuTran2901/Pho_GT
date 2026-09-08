@@ -27,6 +27,13 @@ app:
     refresh-expiration-ms: 604800000 # 7 days
   cors:
     allowed-origins: ${CLIENT_ORIGIN:http://localhost:5173,http://localhost:3000}
+  security:
+    admin-seed:
+      enabled: ${ADMIN_SEED_ENABLED:true}
+      phone: ${ADMIN_INIT_PHONE:0999999999}
+      password: ${ADMIN_INIT_PASSWORD:admin123}
+      full-name: ${ADMIN_INIT_NAME:Quản Trị Viên 1986}
+      email: ${ADMIN_INIT_EMAIL:admin@pho1986.vn}
   payment:
     webhook-secret: ${PAYMENT_WEBHOOK_SECRET:pho1986_webhook_secret_key_prod_auth_2026}
 

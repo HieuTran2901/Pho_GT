@@ -2,10 +2,13 @@ package com.pho1986.backend.bootstrap;
 
 import com.pho1986.backend.model.entity.*;
 import com.pho1986.backend.repository.*;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Component
@@ -19,6 +22,22 @@ public class DataInitializer implements CommandLineRunner {
     private final LoyaltyAccountRepository loyaltyAccountRepository;
     private final LoyaltyTransactionRepository loyaltyTransactionRepository;
     private final PasswordEncoder passwordEncoder;
+    private final Environment environment;
+
+    @Value("${app.security.admin-seed.enabled:#{null}}")
+    private Boolean adminSeedEnabled;
+
+    @Value("${app.security.admin-seed.phone:${ADMIN_INIT_PHONE:}}")
+    private String adminInitPhone;
+
+    @Value("${app.security.admin-seed.password:${ADMIN_INIT_PASSWORD:}}")
+    private String adminInitPassword;
+
+    @Value("${app.security.admin-seed.full-name:${ADMIN_INIT_NAME:Quản Trị Viên 1986}}")
+    private String adminInitFullName;
+
+    @Value("${app.security.admin-seed.email:${ADMIN_INIT_EMAIL:admin@pho1986.vn}}")
+    private String adminInitEmail;
 
     public DataInitializer(
             CategoryRepository categoryRepository,
@@ -28,7 +47,8 @@ public class DataInitializer implements CommandLineRunner {
             TasteProfileRepository tasteProfileRepository,
             LoyaltyAccountRepository loyaltyAccountRepository,
             LoyaltyTransactionRepository loyaltyTransactionRepository,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder,
+            Environment environment) {
         this.categoryRepository = categoryRepository;
         this.dishRepository = dishRepository;
         this.loyaltyRewardRepository = loyaltyRewardRepository;
@@ -37,22 +57,13 @@ public class DataInitializer implements CommandLineRunner {
         this.loyaltyAccountRepository = loyaltyAccountRepository;
         this.loyaltyTransactionRepository = loyaltyTransactionRepository;
         this.passwordEncoder = passwordEncoder;
+        this.environment = environment;
     }
 
     @Override
     public void run(String... args) {
-        // Gieo tài khoản Quản trị viên ADMIN (0999999999 / admin123) nếu chưa có
-        if (userRepository.findByPhone("0999999999").isEmpty()) {
-            User adminUser = new User(
-                    "0999999999",
-                    "Quản Trị Viên 1986",
-                    passwordEncoder.encode("admin123"),
-                    "admin@pho1986.vn"
-            );
-            adminUser.setRole("ADMIN");
-            userRepository.save(adminUser);
-            System.out.println("🛡️ [Spring Boot] Gieo tài khoản quản trị viên ADMIN 0999999999 (admin123) thành công!");
-        }
+        // Gieo tài khoản Quản trị viên ADMIN theo chuẩn an ninh SENTINEL
+        seedAdminUser();
 
         if (categoryRepository.count() > 0) {
             return;
@@ -101,8 +112,8 @@ public class DataInitializer implements CommandLineRunner {
         );
         loyaltyRewardRepository.saveAll(rewards);
 
-        // 4. Khởi tạo tài khoản thực khách thân thiết mẫu (0988888888 / 123456)
-        if (userRepository.findByPhone("0988888888").isEmpty()) {
+        // 4. Khởi tạo tài khoản thực khách thân thiết mẫu (Chỉ gieo trên môi trường dev/non-prod)
+        if (!isProdProfile() && userRepository.findByPhone("0988888888").isEmpty()) {
             User demoUser = new User(
                     "0988888888",
                     "Nguyễn Văn Hiếu",
@@ -143,5 +154,65 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         System.out.println("✅ [Spring Boot] Gieo dữ liệu thành công vào MySQL!");
+    }
+
+    private boolean isProdProfile() {
+        if (environment == null || environment.getActiveProfiles() == null) {
+            return false;
+        }
+        return Arrays.stream(environment.getActiveProfiles())
+                .anyMatch(p -> p.equalsIgnoreCase("prod") || p.equalsIgnoreCase("production"));
+    }
+
+    private void seedAdminUser() {
+        boolean isProd = isProdProfile();
+
+        // Quyết định bật/tắt seed admin:
+        // - Trên PROD: Mặc định TẮT (false) trừ khi ADMIN_SEED_ENABLED được cấu hình rõ ràng là true
+        // - Trên NON-PROD (dev): Bật mặc định nếu không cấu hình
+        boolean shouldSeed = Boolean.TRUE.equals(adminSeedEnabled) || (adminSeedEnabled == null && !isProd);
+
+        if (!shouldSeed) {
+            if (isProd) {
+                System.out.println("🛡️ [SENTINEL] Profile PROD phát hiện: ĐÃ CHẶN tự động gieo tài khoản Admin mặc định.");
+            }
+            return;
+        }
+
+        String phone = (adminInitPhone != null && !adminInitPhone.isBlank())
+                ? adminInitPhone.trim()
+                : (isProd ? null : "0999999999");
+        String password = (adminInitPassword != null && !adminInitPassword.isBlank())
+                ? adminInitPassword.trim()
+                : (isProd ? null : "admin123");
+
+        if (phone == null || password == null) {
+            System.out.println("🛡️ [SENTINEL] Bỏ qua gieo tài khoản Admin vì chưa thiết lập ADMIN_INIT_PHONE hoặc ADMIN_INIT_PASSWORD.");
+            return;
+        }
+
+        // SENTINEL SECURITY RULE: Trên PROD, cấm tiệt mật khẩu yếu hoặc trùng mật khẩu mặc định "admin123"
+        if (isProd) {
+            if ("admin123".equalsIgnoreCase(password)
+                    || "123456".equals(password)
+                    || "admin".equalsIgnoreCase(password)
+                    || password.length() < 8) {
+                System.err.println("🚨 [SENTINEL - SECURITY BLOCK] TỪ CHỐI gieo tài khoản Admin trên PROD: Mật khẩu không an toàn (quá ngắn < 8 ký tự hoặc trùng mật khẩu mặc định).");
+                return;
+            }
+        }
+
+        if (userRepository.findByPhone(phone).isEmpty()) {
+            User adminUser = new User(
+                    phone,
+                    (adminInitFullName != null && !adminInitFullName.isBlank()) ? adminInitFullName : "Quản Trị Viên 1986",
+                    passwordEncoder.encode(password),
+                    (adminInitEmail != null && !adminInitEmail.isBlank()) ? adminInitEmail : "admin@pho1986.vn"
+            );
+            adminUser.setRole("ADMIN");
+            userRepository.save(adminUser);
+            // Tuân thủ CWE-532: Tuyệt đối không log password ra console/log
+            System.out.println("🛡️ [SENTINEL] Khởi tạo tài khoản quản trị viên ADMIN [" + phone + "] thành công!");
+        }
     }
 }
