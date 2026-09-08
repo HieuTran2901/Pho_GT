@@ -19,7 +19,7 @@ spring:
 
 app:
   cors:
-    allowed-origins: ${CLIENT_ORIGIN:http://localhost:5173,http://localhost:3000,http://3.25.130.70}
+    allowed-origins: ${CLIENT_ORIGIN:http://localhost:5173,http://localhost:3000,http://3.25.130.70,https://pho-gt.vercel.app,https://pho-gt-git-main-hieutran2901s-projects.vercel.app}
   security:
     admin-seed:
       enabled: ${ADMIN_SEED_ENABLED:false}
