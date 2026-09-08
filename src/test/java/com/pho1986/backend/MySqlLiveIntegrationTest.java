@@ -15,10 +15,13 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.util.Optional;
 
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
+
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
+@DisabledIfEnvironmentVariable(named = "CI", matches = "true", disabledReason = "Bỏ qua live MySQL test trên môi trường CI không có database local")
 public class MySqlLiveIntegrationTest {
 
     @Autowired
