@@ -32,6 +32,17 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(firstError, errors));
     }
 
+    @ExceptionHandler(LoginRateLimitExceededException.class)
+    public ResponseEntity<ApiResponse<Map<String, Object>>> handleLoginRateLimitExceeded(LoginRateLimitExceededException ex) {
+        Map<String, Object> lockData = new HashMap<>();
+        lockData.put("locked", true);
+        lockData.put("retryAfterSeconds", ex.getRetryAfterSeconds());
+
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Retry-After", String.valueOf(ex.getRetryAfterSeconds()))
+                .body(new ApiResponse<>(false, ex.getMessage(), lockData, null));
+    }
+
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ApiResponse<Void>> handleBadCredentials(BadCredentialsException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)

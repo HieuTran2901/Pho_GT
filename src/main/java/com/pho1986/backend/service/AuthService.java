@@ -3,6 +3,7 @@ package com.pho1986.backend.service;
 import com.pho1986.backend.model.dto.AuthDtos.*;
 import com.pho1986.backend.model.entity.*;
 import com.pho1986.backend.repository.*;
+import com.pho1986.backend.common.LoginRateLimitExceededException;
 import com.pho1986.backend.security.JwtTokenProvider;
 import com.pho1986.backend.security.LoginRateLimiter;
 import com.pho1986.backend.security.TokenRevocationService;
@@ -116,19 +117,28 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
-        if (loginRateLimiter.isBlocked(request.getPhone())) {
-            long remainingSeconds = loginRateLimiter.getRemainingBlockSeconds(request.getPhone());
-            throw new BadCredentialsException("Quý khách đã thử đăng nhập sai quá nhiều lần. Vui lòng nghỉ tay ít phút và thử lại sau " 
-                    + remainingSeconds + " giây nữa nhé!");
+        return login(request, "unknown");
+    }
+
+    public AuthResponse login(LoginRequest request, String clientIp) {
+        if (loginRateLimiter.isLoginBlocked(request.getPhone(), clientIp)) {
+            long remainingSeconds = loginRateLimiter.getRemainingLoginBlockSeconds(request.getPhone(), clientIp);
+            throw new LoginRateLimitExceededException("Quý khách đã thử đăng nhập sai quá nhiều lần. Vui lòng nghỉ tay ít phút và thử lại sau " 
+                    + remainingSeconds + " giây nữa nhé!", remainingSeconds);
         }
 
         User user = userRepository.findByPhone(request.getPhone()).orElse(null);
         if (user == null || !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            loginRateLimiter.recordFailure(request.getPhone());
+            loginRateLimiter.recordLoginFailure(request.getPhone(), clientIp);
+            if (loginRateLimiter.isLoginBlocked(request.getPhone(), clientIp)) {
+                long remainingSeconds = loginRateLimiter.getRemainingLoginBlockSeconds(request.getPhone(), clientIp);
+                throw new LoginRateLimitExceededException("Quý khách đã thử sai quá 5 lần. Hệ thống tạm khóa đăng nhập để bảo vệ an toàn. Vui lòng thử lại sau " 
+                        + remainingSeconds + " giây nữa nhé!", remainingSeconds);
+            }
             throw new BadCredentialsException("Số điện thoại hoặc mật khẩu không chính xác");
         }
 
-        loginRateLimiter.reset(request.getPhone());
+        loginRateLimiter.resetLogin(request.getPhone(), clientIp);
         String accessToken = tokenProvider.generateAccessToken(user.getId(), user.getRole());
         String refreshToken = createAndSaveRefreshToken(user);
         return new AuthResponse(user, accessToken, refreshToken);
@@ -192,6 +202,13 @@ public class AuthService {
 
         if (order.getUser() != null) {
             throw new IllegalArgumentException("Đơn hàng này đã được gắn vào tài khoản");
+        }
+
+        // [SECURITY_AGENT] Chống chiếm đoạt đơn hàng: Bắt buộc số điện thoại claim phải khớp với số điện thoại người đặt
+        String cleanClaimPhone = (request.getPhone() != null) ? request.getPhone().replaceAll("[\\s.-]+", "") : "";
+        String cleanGuestPhone = (order.getGuestPhone() != null) ? order.getGuestPhone().replaceAll("[\\s.-]+", "") : "";
+        if (!cleanClaimPhone.equals(cleanGuestPhone)) {
+            throw new IllegalArgumentException("Số điện thoại yêu cầu tích điểm không khớp với số điện thoại đặt đơn hàng này!");
         }
 
         int earnedPoints = Math.max(10, (int) Math.floor(order.getFinalAmount() / 1000.0));

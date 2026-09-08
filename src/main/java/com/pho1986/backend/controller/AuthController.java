@@ -3,6 +3,7 @@ package com.pho1986.backend.controller;
 import com.pho1986.backend.common.ApiResponse;
 import com.pho1986.backend.model.dto.AuthDtos.*;
 import com.pho1986.backend.model.entity.User;
+import com.pho1986.backend.security.LoginRateLimiter;
 import com.pho1986.backend.service.AuthService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,16 +21,26 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final LoginRateLimiter loginRateLimiter;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, LoginRateLimiter loginRateLimiter) {
         this.authService = authService;
+        this.loginRateLimiter = loginRateLimiter;
     }
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<AuthResponse>> register(
             @Valid @RequestBody RegisterRequest request,
             HttpServletRequest httpRequest) {
+        String clientIp = loginRateLimiter.extractClientIp(httpRequest);
+        if (loginRateLimiter.isRegistrationBlocked(clientIp)) {
+            long waitSec = loginRateLimiter.getRemainingRegistrationBlockSeconds(clientIp);
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body(ApiResponse.error("Quý khách đã đăng ký quá nhiều lần từ thiết bị này. Vui lòng thử lại sau " + waitSec + " giây."));
+        }
+
         AuthResponse response = authService.register(request);
+        loginRateLimiter.recordRegistration(clientIp);
         boolean isSecure = httpRequest.isSecure();
 
         ResponseCookie accessCookie = createAccessCookie(response.getAccessToken(), isSecure);
@@ -45,7 +56,8 @@ public class AuthController {
     public ResponseEntity<ApiResponse<AuthResponse>> login(
             @Valid @RequestBody LoginRequest request,
             HttpServletRequest httpRequest) {
-        AuthResponse response = authService.login(request);
+        String clientIp = loginRateLimiter.extractClientIp(httpRequest);
+        AuthResponse response = authService.login(request, clientIp);
         boolean isSecure = httpRequest.isSecure();
 
         ResponseCookie accessCookie = createAccessCookie(response.getAccessToken(), isSecure);

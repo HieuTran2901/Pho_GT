@@ -6,11 +6,15 @@ import com.pho1986.backend.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.util.List;
-import java.util.Random;
+import java.util.UUID;
 
 @Service
 public class OrderService {
+
+    private static final String CODE_CHARS = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
@@ -31,10 +35,21 @@ public class OrderService {
         this.loyaltyTransactionRepository = loyaltyTransactionRepository;
     }
 
+    /**
+     * [SECURITY_AGENT & BLADE] Sinh mã đơn an toàn mật mã học chống đoán mò / quét vét (enumeration)
+     */
     private String generateOrderCode() {
-        long timeSuffix = System.currentTimeMillis() % 10000;
-        int rand = 100 + new Random().nextInt(900);
-        return "PHO-" + timeSuffix + rand;
+        for (int attempt = 0; attempt < 10; attempt++) {
+            StringBuilder sb = new StringBuilder("PHO-");
+            for (int i = 0; i < 6; i++) {
+                sb.append(CODE_CHARS.charAt(SECURE_RANDOM.nextInt(CODE_CHARS.length())));
+            }
+            String candidate = sb.toString();
+            if (!orderRepository.existsByOrderCode(candidate)) {
+                return candidate;
+            }
+        }
+        return "PHO-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 
     @Transactional

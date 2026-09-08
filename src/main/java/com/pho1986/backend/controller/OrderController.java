@@ -50,8 +50,22 @@ public class OrderController {
     }
 
     @GetMapping("/{orderCode}")
-    public ResponseEntity<ApiResponse<Order>> getOrderByCode(@PathVariable String orderCode) {
+    public ResponseEntity<ApiResponse<PublicOrderResponse>> getOrderByCode(
+            @PathVariable String orderCode,
+            Authentication authentication) {
         Order order = orderService.getOrderByCode(orderCode);
-        return ResponseEntity.ok(ApiResponse.ok(order));
+        boolean isOwner = false;
+        if (authentication != null && !"anonymousUser".equals(authentication.getPrincipal())) {
+            String currentUserId = (String) authentication.getPrincipal();
+            if (order.getUser() != null && currentUserId.equals(order.getUser().getId())) {
+                isOwner = true;
+            }
+            if (authentication.getAuthorities() != null &&
+                    authentication.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()))) {
+                isOwner = true;
+            }
+        }
+        PublicOrderResponse response = PublicOrderResponse.fromOrder(order, isOwner);
+        return ResponseEntity.ok(ApiResponse.ok(response));
     }
 }
