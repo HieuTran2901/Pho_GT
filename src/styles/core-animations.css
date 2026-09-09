@@ -391,3 +391,63 @@
 .animate-heart-tab-jiggle {
   animation: heartTabJiggle 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+
+/* ========================================================================= */
+/* IMPERIAL GOLD STEPPER FLOW & 3D FLIP STAMP (Proposal #1)                  */
+/* ========================================================================= */
+@keyframes goldBeamFlow {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(200%);
+    opacity: 0;
+  }
+}
+
+@keyframes radialGoldPulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+  }
+  50% {
+    transform: scale(1.08);
+    box-shadow: 0 0 0 6px rgba(245, 158, 11, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+  }
+}
+
+@keyframes orbFlip3D {
+  0% {
+    transform: perspective(400px) rotateY(0deg) scale(0.9);
+  }
+  50% {
+    transform: perspective(400px) rotateY(90deg) scale(1.15);
+  }
+  100% {
+    transform: perspective(400px) rotateY(0deg) scale(1);
+  }
+}
+
+.animate-gold-beam {
+  animation: goldBeamFlow 2.2s ease-in-out infinite;
+}
+
+.animate-radial-gold-pulse {
+  animation: radialGoldPulse 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-orb-flip {
+  animation: orbFlip3D 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+

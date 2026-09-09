@@ -7,6 +7,7 @@ import OrderStep1Booking from './order/OrderStep1Booking';
 import OrderStep2Payment from './order/OrderStep2Payment';
 import OrderStep3QrPayment from './order/OrderStep3QrPayment';
 import OrderStep3Success from './order/OrderStep3Success';
+import OrderProgressStepper from './order/OrderProgressStepper';
 import { useOrderSectionState } from './order/useOrderSectionState';
 
 function OrderSection({ cartItems = [], onClearCart } = {}) {
@@ -71,46 +72,11 @@ function OrderSection({ cartItems = [], onClearCart } = {}) {
           >
             <div className="bg-[#241710] border border-amber-900/40 rounded-3xl p-4 sm:p-8 lg:p-10 shadow-2xl relative">
               
-              {/* Progress Breadcrumbs (Visible on Step 2 & Step 3) */}
-              {step > 1 && (
-                <div className="flex items-center justify-between mb-5 pb-3 border-b border-white/10 text-xs px-1 animate-fadeIn">
-                  <button
-                    type="button"
-                    onClick={handleBackToStep1}
-                    className="flex items-center gap-1.5 cursor-pointer group"
-                    title="Quay lại bước 1"
-                  >
-                    <span className="w-5 h-5 rounded-full bg-emerald-600 group-hover:bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center shadow-xs transition-colors">✓</span>
-                    <span className="text-emerald-400 group-hover:text-emerald-300 font-medium transition-colors">1. Thông tin</span>
-                  </button>
-
-                  <div className="h-0.5 flex-1 mx-2.5 bg-stone-700/60 rounded-full overflow-hidden">
-                    <div className={`h-full bg-gradient-to-r from-emerald-500 to-amber-500 transition-all duration-500 ease-out ${step >= 2 ? 'w-full' : 'w-0'}`} />
-                  </div>
-
-                  <div className="flex items-center gap-1.5">
-                    <span className={`w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center shadow-xs transition-all duration-300 ${step === 2 ? 'bg-brand-red text-white scale-110 ring-2 ring-amber-400/40' : 'bg-emerald-600 text-white'}`}>
-                      {step > 2 ? '✓' : '2'}
-                    </span>
-                    <span className={`transition-colors duration-300 ${step === 2 ? 'text-amber-200 font-bold' : 'text-emerald-400 font-medium'}`}>
-                      2. Thanh toán
-                    </span>
-                  </div>
-
-                  <div className="h-0.5 flex-1 mx-2.5 bg-stone-700/60 rounded-full overflow-hidden">
-                    <div className={`h-full bg-gradient-to-r from-amber-500 to-emerald-400 transition-all duration-500 ease-out ${step >= 3 ? 'w-full' : 'w-0'}`} />
-                  </div>
-
-                  <div className="flex items-center gap-1.5">
-                    <span className={`w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center shadow-xs transition-all duration-300 ${step === 3 ? 'bg-brand-red text-white scale-110 ring-2 ring-amber-400/40' : 'bg-stone-800 text-stone-500'}`}>
-                      3
-                    </span>
-                    <span className={`transition-colors duration-300 ${step === 3 ? 'text-amber-200 font-bold' : 'text-stone-500 font-medium'}`}>
-                      3. Hoàn tất
-                    </span>
-                  </div>
-                </div>
-              )}
+              {/* Imperial Gold Pulse Stepper (Proposal #1 - Always visible across steps 1, 2, 3) */}
+              <OrderProgressStepper
+                step={step}
+                handleBackToStep1={handleBackToStep1}
+              />
 
               {/* STEP 1: Interactive Form State */}
               {step === 1 && (
