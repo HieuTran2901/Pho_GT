@@ -42,3 +42,9 @@ payment:
     booking-frontend-redirect-url: ${SEPAY_BOOKING_FRONTEND_REDIRECT_URL:https://pho-gt.vercel.app/#order}
     frontend-redirect-url: ${SEPAY_FRONTEND_REDIRECT_URL:https://pho-gt.vercel.app/#order}
 
+aws:
+  s3:
+    bucket-name: ${AWS_S3_BUCKET:pho-medial-assets}
+    region: ${AWS_REGION:ap-southeast-1}
+    access-key: ${AWS_ACCESS_KEY_ID:}
+    secret-key: ${AWS_SECRET_ACCESS_KEY:}
