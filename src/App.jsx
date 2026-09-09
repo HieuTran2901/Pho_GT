@@ -351,6 +351,10 @@ export default function App() {
 
   const handleOpenCart = useCallback(() => setCartOpen(true), []);
   const handleCloseCart = useCallback(() => setCartOpen(false), []);
+  const handleOpenOrderHistory = useCallback(() => setOrderHistoryOpen(true), []);
+  const handleCloseOrderHistory = useCallback(() => setOrderHistoryOpen(false), []);
+  const handleOpenGiftVault = useCallback(() => setGiftVaultOpen(true), []);
+  const handleCloseGiftVault = useCallback(() => setGiftVaultOpen(false), []);
   const handleOpenOrder = useCallback(() => {
     const cardEl = document.getElementById('order-form-card');
     const orderEl = document.getElementById('order');
@@ -409,8 +413,8 @@ export default function App() {
           onOpenCart={handleOpenCart}
           onOpenOrder={handleOpenOrder}
           onAddToCart={handleAddToCart}
-          onOpenOrderHistory={() => setOrderHistoryOpen(true)}
-          onOpenGiftVault={() => setGiftVaultOpen(true)}
+          onOpenOrderHistory={handleOpenOrderHistory}
+          onOpenGiftVault={handleOpenGiftVault}
           isCartJiggling={isCartJiggling}
           onToast={showToast}
         />
@@ -421,7 +425,7 @@ export default function App() {
         {/* Customer Order History Modal (Sổ Lịch Sử Đơn Hàng) */}
         <CustomerOrderHistoryModal
           isOpen={orderHistoryOpen}
-          onClose={() => setOrderHistoryOpen(false)}
+          onClose={handleCloseOrderHistory}
           onAddToCart={handleAddToCart}
           onToast={showToast}
           onNavigateToMenu={handleExploreMenu}
@@ -430,7 +434,7 @@ export default function App() {
         {/* Customer Gift Vault Modal (Hòm Gấm Tri Kỷ 1986) */}
         <GiftVaultModal
           isOpen={giftVaultOpen}
-          onClose={() => setGiftVaultOpen(false)}
+          onClose={handleCloseGiftVault}
           user={user}
           cartItems={cartItems}
           onApplyGiftToCart={handleApplyGiftToCart}

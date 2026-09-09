@@ -159,6 +159,12 @@
     - Bước 3 (Xác nhận thành công & Thẻ Heritage Pass): Thẻ thông hành phong cách cổ kính, đầy đủ mã đơn, sơ đồ chỉ đường, hotline hỗ trợ, 100% fit viewport (`audit_step3_success.png`).
   - **Thẩm định chất lượng bởi TITAN**: `npm run build` PASS 100% (0 errors, 0 warnings), toàn bộ tệp tuân thủ nghiêm ngặt `FILE-SIZE-R001` (< 500 dòng): `App.jsx` (486 dòng), `OrderStep1Booking.jsx` (364 dòng), `OrderPrivilegesPanel.jsx` (117 dòng), `NavbarMobileBottomNav.jsx` (121 dòng), `orderConstants.js` (182 dòng).
 
+- [x] **Tối Ưu Hóa State Hoàn Hảo & Khôi Phục Hiệu Lực `React.memo` (M4.8 - RAVEN Audit & Fix)**:
+  - **Khôi phục hiệu lực `React.memo(Navbar)`**: Thay thế các inline arrow function truyền vào `<Navbar>` (`onOpenOrderHistory`, `onOpenGiftVault`) và các Modal bằng các callback ổn định `useCallback`, ngăn chặn 100% việc Navbar bị re-render vô ích khi giỏ hàng hoặc hiệu ứng bay thay đổi trong `App.jsx`.
+  - **Dọn dẹp Dead State trong `GiftVaultModal.jsx`**: Loại bỏ biến state tàn dư `touchStartY` tại dòng 73 không được sử dụng, giải phóng bộ nhớ và giữ sạch sẽ React Fiber hook tree (`REACT-R005`).
+  - **Bọc `React.memo` cho các phân bước form đặt bàn**: Bọc `React.memo` cho `OrderStep1Booking.jsx` và `OrderStep2Payment.jsx`, cô lập hoàn toàn phạm vi render khi component cha `OrderSection` re-render do hiệu ứng cuộn trang.
+  - **Thẩm định chất lượng bởi TITAN**: `npm run build` PASS 100% (0 errors, 0 warnings), toàn bộ tệp tuân thủ nghiêm ngặt `FILE-SIZE-R001` (< 500 dòng): `App.jsx` (490 dòng), `GiftVaultModal.jsx` (484 dòng), `OrderStep1Booking.jsx` (367 dòng), `OrderStep2Payment.jsx` (383 dòng).
+
 ## 📌 Critical Invariants & Lessons Learned (Ghi Nhớ Sống Còn Cho Các Agent Kế Tiếp)
 
 0. **Nguồn Luật Gốc Tối Cao Của Toàn Bộ Agent (RULE-SOURCE-001):**
@@ -210,6 +216,9 @@
 13. **Quy Tắc Typography Ô Nhập Liệu Ngày Tháng Native Tránh Che Khuất Chữ Số:**
    - **Bài học:** Input kiểu `date` trên trình duyệt mobile WebKit/Blink có biểu tượng lịch (`calendar-picker-indicator`) chiếm một diện tích cố định ở mép phải. Nếu dùng font chữ quá lớn (`text-base`) và padding hẹp, số năm (ví dụ `2026`) sẽ bị biểu tượng lịch đè che khuất một góc.
    - **Chuẩn thực thi:** Dùng `text-xs sm:text-sm`, padding hợp lý `px-2.5 sm:px-3.5`, font tracking vừa phải (`tracking-tight`) để toàn bộ chuỗi ngày tháng năm hiển thị trọn vẹn và rõ ràng.
+14. **Quy Tắc Bảo Toàn Hiệu Lực `React.memo` (Memoization Boundary & Stable Handlers):**
+   - **Bài học:** Bọc component con trong `React.memo` là vô nghĩa nếu component cha truyền props là các hàm inline arrow `() => setX(true)`. Mỗi lần component cha render, một instance hàm mới được sinh ra, khiến shallow comparison của `React.memo` luôn trả về `false` và kích hoạt re-render toàn bộ cây con.
+   - **Chuẩn thực thi:** Mọi event handler truyền xuống component được bọc `React.memo` BẮT BUỘC phải được ổn định bằng `useCallback(..., [])`.
 
 ## Active Work & Next Objectives
 - [ ] **M2.6**: Tích hợp Modal tùy biến "Gu Ăn Phở" khi thực khách chọn món trên MenuCard.

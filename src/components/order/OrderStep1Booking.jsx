@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { Send, Clock, ChevronDown } from 'lucide-react';
 import { TASTE_PREFERENCES, QUICK_TIME_SLOTS } from './orderConstants';
 
-export default function OrderStep1Booking({
+function OrderStep1Booking({
   formData,
   handleInputChange,
   handleSetOrderType,
@@ -362,3 +362,5 @@ export default function OrderStep1Booking({
     </form>
   );
 }
+
+export default React.memo(OrderStep1Booking);

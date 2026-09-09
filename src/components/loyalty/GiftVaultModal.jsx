@@ -70,7 +70,6 @@ export default function GiftVaultModal({
 
   const [rendered, setRendered] = useState(isOpen);
   const [isClosing, setIsClosing] = useState(false);
-  const [touchStartY, setTouchStartY] = useState(null);
   const closeTimerRef = useRef(null);
 
   // Sync rendered state with isOpen prop for smooth entrance/exit

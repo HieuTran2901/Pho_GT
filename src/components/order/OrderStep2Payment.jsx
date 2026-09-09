@@ -17,7 +17,7 @@ import {
   PAYMENT_CTA_LABELS
 } from './orderConstants';
 
-export default function OrderStep2Payment({
+function OrderStep2Payment({
   formData,
   selectedTable,
   handleBackToStep1,
@@ -377,3 +377,6 @@ export default function OrderStep2Payment({
     </div>
   );
 }
+
+export default React.memo(OrderStep2Payment);
+
