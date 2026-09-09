@@ -272,6 +272,20 @@ export function useAdminPortalState() {
     const numPrice = parseFloat(dishForm.price);
     if (!dishForm.price || isNaN(numPrice) || numPrice <= 0) {
       notify('Vui lòng nhập giá bán hợp lệ (> 0 VNĐ)!', 'error');
+      const priceEl = document.getElementById('dish-price-input') || document.getElementById('modal-dish-price-input');
+      if (priceEl) {
+        priceEl.focus();
+        priceEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+    if (numPrice < 1000) {
+      notify('Số tiền tối thiểu phải từ 1.000đ trở lên!', 'error');
+      const priceEl = document.getElementById('dish-price-input') || document.getElementById('modal-dish-price-input');
+      if (priceEl) {
+        priceEl.focus();
+        priceEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       return;
     }
 

@@ -99,7 +99,7 @@ function AdminAddDishTab({
 
         {/* CỘT TRÁI: FORM NHẬP LIỆU */}
         <div className="lg:col-span-7 bg-white rounded-2xl sm:rounded-3xl border border-stone-200 p-4 sm:p-6 shadow-sm">
-          <form onSubmit={handleSaveDish} className="space-y-4 sm:space-y-5">
+          <form onSubmit={handleSaveDish} noValidate className="space-y-4 sm:space-y-5">
 
             {/* 1. Tên Món Ăn */}
             <div>
@@ -178,21 +178,35 @@ function AdminAddDishTab({
                   Giá Bán (VNĐ) <span className="text-rose-600">*</span>
                 </label>
                 {dishForm.price && !isNaN(parseFloat(dishForm.price)) && (
-                  <span className="text-xs sm:text-sm font-bold text-[#8a1e14] font-serif bg-amber-50 px-2.5 py-0.5 rounded-lg border border-amber-200/80 shadow-2xs">
+                  <span className={`text-xs sm:text-sm font-bold font-serif px-2.5 py-0.5 rounded-lg border shadow-2xs transition-colors ${
+                    parseFloat(dishForm.price) < 1000
+                      ? 'text-rose-700 bg-rose-50 border-rose-300'
+                      : 'text-[#8a1e14] bg-amber-50 border-amber-200/80'
+                  }`}>
                     {parseFloat(dishForm.price).toLocaleString('vi-VN')} VNĐ
                   </span>
                 )}
               </div>
               <input
+                id="dish-price-input"
                 type="number"
                 value={dishForm.price}
                 onChange={(e) => setDishForm({ ...dishForm, price: e.target.value })}
                 placeholder="85000"
                 min="1000"
                 step="1000"
-                className="w-full px-3.5 py-2.5 bg-white border border-stone-300 rounded-xl text-stone-900 font-mono text-sm focus:outline-none focus:border-[#8a1e14] focus:ring-2 focus:ring-[#8a1e14]/15 shadow-2xs"
+                className={`w-full px-3.5 py-2.5 bg-white border rounded-xl text-stone-900 font-mono text-sm focus:outline-none shadow-2xs transition-all ${
+                  dishForm.price && !isNaN(parseFloat(dishForm.price)) && parseFloat(dishForm.price) < 1000
+                    ? 'border-rose-500 focus:border-rose-600 focus:ring-2 focus:ring-rose-500/20'
+                    : 'border-stone-300 focus:border-[#8a1e14] focus:ring-2 focus:ring-[#8a1e14]/15'
+                }`}
                 required
               />
+              {dishForm.price && !isNaN(parseFloat(dishForm.price)) && parseFloat(dishForm.price) < 1000 && (
+                <p className="mt-1.5 text-xs text-rose-600 font-serif font-bold flex items-center gap-1">
+                  <span>⚠️</span> Số tiền tối thiểu phải từ 1.000đ trở lên!
+                </p>
+              )}
               {/* Gợi ý giá nhanh */}
               <div className="flex items-center gap-1.5 flex-wrap mt-2">
                 <span className="text-[11px] sm:text-[10px] text-stone-400 font-serif">Gợi ý:</span>

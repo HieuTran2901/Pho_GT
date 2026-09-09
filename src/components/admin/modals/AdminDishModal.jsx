@@ -44,7 +44,7 @@ function AdminDishModal({
               </h3>
             </div>
 
-            <form onSubmit={handleSaveDish} className="space-y-4 text-xs font-sans">
+            <form onSubmit={handleSaveDish} noValidate className="space-y-4 text-xs font-sans">
               <div>
                 <label className="block text-[#8a1e14] font-bold font-serif mb-1 uppercase tracking-wider text-[11px]">
                   Danh Mục Món
@@ -76,17 +76,40 @@ function AdminDishModal({
               </div>
 
               <div>
-                <label className="block text-[#8a1e14] font-bold font-serif mb-1 uppercase tracking-wider text-[11px]">
-                  Giá Bán (VNĐ)
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-[#8a1e14] font-bold font-serif uppercase tracking-wider text-[11px]">
+                    Giá Bán (VNĐ) <span className="text-rose-600">*</span>
+                  </label>
+                  {dishForm.price && !isNaN(parseFloat(dishForm.price)) && (
+                    <span className={`text-xs font-bold font-serif px-2 py-0.5 rounded-md border shadow-2xs transition-colors ${
+                      parseFloat(dishForm.price) < 1000
+                        ? 'text-rose-700 bg-rose-50 border-rose-300'
+                        : 'text-[#8a1e14] bg-amber-50 border-amber-200/80'
+                    }`}>
+                      {parseFloat(dishForm.price).toLocaleString('vi-VN')} VNĐ
+                    </span>
+                  )}
+                </div>
                 <input
+                  id="modal-dish-price-input"
                   type="number"
                   value={dishForm.price}
                   onChange={(e) => setDishForm({ ...dishForm, price: e.target.value })}
                   placeholder="85000"
-                  className="w-full px-3.5 py-2.5 bg-white border border-stone-300 rounded-xl text-stone-900 focus:outline-none focus:border-[#8a1e14] shadow-2xs"
+                  min="1000"
+                  step="1000"
+                  className={`w-full px-3.5 py-2.5 bg-white border rounded-xl text-stone-900 font-mono text-sm focus:outline-none shadow-2xs transition-all ${
+                    dishForm.price && !isNaN(parseFloat(dishForm.price)) && parseFloat(dishForm.price) < 1000
+                      ? 'border-rose-500 focus:border-rose-600 focus:ring-2 focus:ring-rose-500/20'
+                      : 'border-stone-300 focus:border-[#8a1e14]'
+                  }`}
                   required
                 />
+                {dishForm.price && !isNaN(parseFloat(dishForm.price)) && parseFloat(dishForm.price) < 1000 && (
+                  <p className="mt-1.5 text-xs text-rose-600 font-serif font-bold flex items-center gap-1">
+                    <span>⚠️</span> Số tiền tối thiểu phải từ 1.000đ trở lên!
+                  </p>
+                )}
               </div>
 
               {/* Tải ảnh lên Amazon S3 & Bộ ảnh mẫu */}
