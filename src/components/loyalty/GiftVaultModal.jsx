@@ -68,63 +68,52 @@ export default function GiftVaultModal({
     return remainingGifts;
   }, [remainingGifts, filterCategory]);
 
-  const [mounted, setMounted] = useState(isOpen);
+  const [rendered, setRendered] = useState(isOpen);
   const [isClosing, setIsClosing] = useState(false);
   const [touchStartY, setTouchStartY] = useState(null);
   const closeTimerRef = useRef(null);
 
-  // Sync mounted state with isOpen prop for smooth entrance/exit
+  // Sync rendered state with isOpen prop for smooth entrance/exit
   useEffect(() => {
     if (isOpen) {
-      if (closeTimerRef.current) {
-        clearTimeout(closeTimerRef.current);
-        closeTimerRef.current = null;
-      }
-      setMounted(true);
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+      setRendered(true);
       setIsClosing(false);
-    } else if (mounted && !isClosing) {
+    } else if (rendered) {
       setIsClosing(true);
       closeTimerRef.current = setTimeout(() => {
-        setMounted(false);
+        setRendered(false);
         setIsClosing(false);
-        closeTimerRef.current = null;
       }, 250);
     }
     return () => {
       if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
     };
-  }, [isOpen, mounted, isClosing]);
+  }, [isOpen, rendered]);
 
   const triggerClose = useCallback(() => {
-    if (isClosing) return;
-    setIsClosing(true);
-    closeTimerRef.current = setTimeout(() => {
-      setMounted(false);
-      setIsClosing(false);
-      closeTimerRef.current = null;
-      onClose();
-    }, 250);
-  }, [isClosing, onClose]);
+    onClose();
+  }, [onClose]);
 
   // Đóng bằng phím ESC
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && mounted && !isClosing) triggerClose();
+      if (e.key === 'Escape' && rendered && !isClosing) triggerClose();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [mounted, isClosing, triggerClose]);
+  }, [rendered, isClosing, triggerClose]);
 
   // Khóa cuộn trang khi Modal mở
   useEffect(() => {
-    if (mounted) {
+    if (rendered) {
       const orig = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
       return () => {
         document.body.style.overflow = orig;
       };
     }
-  }, [mounted]);
+  }, [rendered]);
 
   // Mobile Swipe down to close
   const handleTouchStart = (e) => setTouchStartY(e.touches[0].clientY);
@@ -134,15 +123,17 @@ export default function GiftVaultModal({
     setTouchStartY(null);
   };
 
-  if (!mounted) return null;
+  if (!rendered) return null;
 
   return (
     <div
+      id="gift-vault-modal-dialog"
       className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-xs ${
         isClosing ? 'animate-gift-vault-backdrop-out' : 'animate-gift-vault-backdrop-in'
       }`}
       role="dialog"
       aria-modal="true"
+      aria-label="Kho Quà Tri Kỷ 1986"
     >
       {/* Click outside backdrop */}
       <div className="absolute inset-0" onClick={triggerClose} aria-hidden="true" />
