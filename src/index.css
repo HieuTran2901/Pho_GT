@@ -2,6 +2,7 @@
 @import './styles/core-animations.css';
 @import './styles/interactive-animations.css';
 @import './styles/seatmap.css';
+@import './styles/giftvault-animations.css';
 
 @tailwind base;
 @tailwind components;

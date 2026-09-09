@@ -1,0 +1,101 @@
+﻿/* ==========================================================================
+   Gift Vault Smooth Slide-Up Entrance & Exit Animations (Desktop & Mobile)
+   ========================================================================== */
+
+/* --- Backdrop Transitions --- */
+@keyframes giftVaultBackdropFadeIn {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(4px);
+  }
+}
+
+@keyframes giftVaultBackdropFadeOut {
+  from {
+    opacity: 1;
+    backdrop-filter: blur(4px);
+  }
+  to {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+}
+
+/* --- Mobile Bottom Sheet: Smooth Slide-Up from screen bottom --- */
+@keyframes giftVaultSlideUpMobile {
+  0% {
+    opacity: 0.4;
+    transform: translateY(100%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes giftVaultSlideDownMobile {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+}
+
+/* --- Desktop Modal: Fluid Center Glide-Up with subtle scale elevation --- */
+@keyframes giftVaultSlideUpDesktop {
+  0% {
+    opacity: 0;
+    transform: translateY(52px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes giftVaultSlideDownDesktop {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(36px) scale(0.97);
+  }
+}
+
+/* Base / Mobile Animation Classes */
+.animate-gift-vault-backdrop-in {
+  animation: giftVaultBackdropFadeIn 0.3s ease-out forwards;
+}
+
+.animate-gift-vault-backdrop-out {
+  animation: giftVaultBackdropFadeOut 0.22s ease-in forwards;
+}
+
+.animate-gift-vault-slide-in {
+  animation: giftVaultSlideUpMobile 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.animate-gift-vault-slide-out {
+  animation: giftVaultSlideDownMobile 0.24s cubic-bezier(0.4, 0, 1, 1) forwards;
+  will-change: transform, opacity;
+}
+
+/* Desktop Overrides (>= 640px) */
+@media (min-width: 640px) {
+  .animate-gift-vault-slide-in {
+    animation: giftVaultSlideUpDesktop 0.36s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .animate-gift-vault-slide-out {
+    animation: giftVaultSlideDownDesktop 0.22s cubic-bezier(0.4, 0, 1, 1) forwards;
+  }
+}

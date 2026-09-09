@@ -182,6 +182,7 @@ export default function NavbarMobileMoreSheet({
             <div className="bg-white rounded-2xl border border-stone-200/80 divide-y divide-stone-100 shadow-xs overflow-hidden">
               {/* Kho quà */}
               <div
+                id="more-sheet-gift-vault-btn"
                 onClick={() => {
                   onClose();
                   if (onOpenGiftVault) onOpenGiftVault();

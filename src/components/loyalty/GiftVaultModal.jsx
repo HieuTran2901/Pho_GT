@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { X, Award, ShieldCheck, Star } from 'lucide-react';
 import { useGiftVaultState } from './useGiftVaultState';
 import GiftVaultTabs from './GiftVaultTabs';
@@ -55,67 +55,111 @@ export default function GiftVaultModal({
     if (!remainingGifts || remainingGifts.length === 0) return [];
     const freeCount = remainingGifts.filter(g => g.rewardType === 'FREE_ITEM').length;
     const discountCount = remainingGifts.filter(g => g.rewardType === 'DISCOUNT_CASH' || g.rewardType === 'DISCOUNT_PERCENT').length;
-
-    const list = [
-      { id: 'ALL', label: 'Tất cả', count: remainingGifts.length }
-    ];
-    if (freeCount > 0) {
-      list.push({ id: 'FREE_ITEM', label: 'Món 0đ', icon: '🎁', count: freeCount });
-    }
-    if (discountCount > 0) {
-      list.push({ id: 'DISCOUNT', label: 'Giảm tiền', icon: '🏷️', count: discountCount });
-    }
+    const list = [{ id: 'ALL', label: 'Tất cả', count: remainingGifts.length }];
+    if (freeCount > 0) list.push({ id: 'FREE_ITEM', label: 'Món 0đ', icon: '🎁', count: freeCount });
+    if (discountCount > 0) list.push({ id: 'DISCOUNT', label: 'Giảm tiền', icon: '🏷️', count: discountCount });
     return list;
   }, [remainingGifts]);
 
   // Lọc danh sách quà tặng theo chip
   const filteredRemainingGifts = useMemo(() => {
-    if (filterCategory === 'FREE_ITEM') {
-      return remainingGifts.filter(g => g.rewardType === 'FREE_ITEM');
-    }
-    if (filterCategory === 'DISCOUNT') {
-      return remainingGifts.filter(g => g.rewardType === 'DISCOUNT_CASH' || g.rewardType === 'DISCOUNT_PERCENT');
-    }
+    if (filterCategory === 'FREE_ITEM') return remainingGifts.filter(g => g.rewardType === 'FREE_ITEM');
+    if (filterCategory === 'DISCOUNT') return remainingGifts.filter(g => g.rewardType === 'DISCOUNT_CASH' || g.rewardType === 'DISCOUNT_PERCENT');
     return remainingGifts;
   }, [remainingGifts, filterCategory]);
+
+  const [mounted, setMounted] = useState(isOpen);
+  const [isClosing, setIsClosing] = useState(false);
+  const [touchStartY, setTouchStartY] = useState(null);
+  const closeTimerRef = useRef(null);
+
+  // Sync mounted state with isOpen prop for smooth entrance/exit
+  useEffect(() => {
+    if (isOpen) {
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = null;
+      }
+      setMounted(true);
+      setIsClosing(false);
+    } else if (mounted && !isClosing) {
+      setIsClosing(true);
+      closeTimerRef.current = setTimeout(() => {
+        setMounted(false);
+        setIsClosing(false);
+        closeTimerRef.current = null;
+      }, 250);
+    }
+    return () => {
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    };
+  }, [isOpen, mounted, isClosing]);
+
+  const triggerClose = useCallback(() => {
+    if (isClosing) return;
+    setIsClosing(true);
+    closeTimerRef.current = setTimeout(() => {
+      setMounted(false);
+      setIsClosing(false);
+      closeTimerRef.current = null;
+      onClose();
+    }, 250);
+  }, [isClosing, onClose]);
 
   // Đóng bằng phím ESC
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isOpen) onClose();
+      if (e.key === 'Escape' && mounted && !isClosing) triggerClose();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [mounted, isClosing, triggerClose]);
 
   // Khóa cuộn trang khi Modal mở
   useEffect(() => {
-    if (isOpen) {
+    if (mounted) {
+      const orig = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
+      return () => {
+        document.body.style.overflow = orig;
+      };
     }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isOpen]);
+  }, [mounted]);
 
-  if (!isOpen) return null;
+  // Mobile Swipe down to close
+  const handleTouchStart = (e) => setTouchStartY(e.touches[0].clientY);
+  const handleTouchEnd = (e) => {
+    if (touchStartY === null) return;
+    if (e.changedTouches[0].clientY - touchStartY > 60) triggerClose();
+    setTouchStartY(null);
+  };
+
+  if (!mounted) return null;
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-xs transition-opacity duration-300"
+      className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-xs ${
+        isClosing ? 'animate-gift-vault-backdrop-out' : 'animate-gift-vault-backdrop-in'
+      }`}
       role="dialog"
       aria-modal="true"
     >
       {/* Click outside backdrop */}
-      <div className="absolute inset-0" onClick={onClose} aria-hidden="true" />
+      <div className="absolute inset-0" onClick={triggerClose} aria-hidden="true" />
 
       {/* Main Modal Box (Hòm Gấm Tri Kỷ 1986) */}
-      <div className="relative w-full max-w-3xl max-h-[94vh] sm:max-h-[88vh] bg-[#140a07] border-t sm:border-2 border-amber-500/60 rounded-t-3xl sm:rounded-3xl shadow-[0_25px_70px_rgba(0,0,0,0.95),0_0_40px_rgba(212,175,55,0.2)] flex flex-col overflow-hidden z-10 text-stone-200">
+      <div className={`relative w-full max-w-3xl max-h-[94vh] sm:max-h-[88vh] bg-[#140a07] border-t sm:border-2 border-amber-500/60 rounded-t-3xl sm:rounded-3xl shadow-[0_25px_70px_rgba(0,0,0,0.95),0_0_40px_rgba(212,175,55,0.2)] flex flex-col overflow-hidden z-10 text-stone-200 ${
+        isClosing ? 'animate-gift-vault-slide-out' : 'animate-gift-vault-slide-in'
+      }`}>
         
         {/* DRAG HANDLE CHO MOBILE BOTTOM SHEET */}
-        <div className="sm:hidden w-full pt-2.5 pb-1 flex justify-center bg-[#1f0f0a] cursor-grab">
+        <div 
+          className="sm:hidden w-full pt-2.5 pb-1 flex justify-center bg-[#1f0f0a] cursor-grab touch-none"
+          onClick={triggerClose}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          title="Vuốt hoặc chạm để đóng"
+        >
           <div className="w-10 h-1 rounded-full bg-white/30" />
         </div>
 
@@ -162,7 +206,7 @@ export default function GiftVaultModal({
 
             <button
               type="button"
-              onClick={onClose}
+              onClick={triggerClose}
               className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/10 hover:bg-white/20 text-stone-300 hover:text-white flex items-center justify-center transition-all duration-200 hover:rotate-90 cursor-pointer shadow-md"
               aria-label="Đóng hòm quà"
             >
