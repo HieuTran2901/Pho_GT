@@ -119,7 +119,23 @@ export default function AdminLoginView({ onBackToHome }) {
       });
     }, 1000);
 
-    return () => clearInterval(timer);
+    const handleVisibility = () => {
+      try {
+        const savedUntil = sessionStorage.getItem(STORAGE_LOCKOUT_KEY);
+        if (savedUntil) {
+          const remaining = Math.ceil((parseInt(savedUntil, 10) - Date.now()) / 1000);
+          setLockoutSeconds(remaining > 0 ? remaining : 0);
+        }
+      } catch {}
+    };
+    window.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', handleVisibility);
+
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', handleVisibility);
+    };
   }, [lockoutSeconds > 0]);
 
   const handleSubmit = async (e) => {

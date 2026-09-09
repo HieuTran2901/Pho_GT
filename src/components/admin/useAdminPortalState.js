@@ -123,43 +123,55 @@ export function useAdminPortalState() {
   }, [fetchStats, fetchOrders, fetchDishes]);
 
   const filteredDishes = useMemo(() => {
+    const q = dishSearch ? dishSearch.trim().toLowerCase() : '';
     return dishes.filter(dish => {
       const matchCat = dishCategoryFilter === 'ALL' || 
         dish.category?.id === dishCategoryFilter || 
         dish.categoryId === dishCategoryFilter;
-      const matchSearch = !dishSearch ||
-        dish.name?.toLowerCase().includes(dishSearch.toLowerCase()) ||
-        dish.description?.toLowerCase().includes(dishSearch.toLowerCase()) ||
-        dish.portion?.toLowerCase().includes(dishSearch.toLowerCase());
-      return matchCat && matchSearch;
+      if (!matchCat) return false;
+      if (!q) return true;
+      return (
+        (dish.name && dish.name.toLowerCase().includes(q)) ||
+        (dish.description && dish.description.toLowerCase().includes(q)) ||
+        (dish.portion && dish.portion.toLowerCase().includes(q))
+      );
     });
   }, [dishes, dishCategoryFilter, dishSearch]);
 
   const filteredOrders = useMemo(() => {
+    const q = orderSearch ? orderSearch.trim().toLowerCase() : '';
     return orders.filter(o => {
       const matchesStatus = orderFilter === 'ALL' || o.status === orderFilter;
-      const matchesSearch = !orderSearch || 
-        o.orderCode?.toLowerCase().includes(orderSearch.toLowerCase()) ||
-        o.guestPhone?.includes(orderSearch) ||
-        o.guestName?.toLowerCase().includes(orderSearch.toLowerCase());
-      return matchesStatus && matchesSearch;
+      if (!matchesStatus) return false;
+      if (!q) return true;
+      return (
+        (o.orderCode && o.orderCode.toLowerCase().includes(q)) ||
+        (o.guestPhone && o.guestPhone.includes(q)) ||
+        (o.guestName && o.guestName.toLowerCase().includes(q))
+      );
     });
   }, [orders, orderFilter, orderSearch]);
 
   const orderCounts = useMemo(() => {
-    return {
-      all: orders.length,
-      pending: orders.filter(o => o.status === 'PENDING').length,
-      confirmed: orders.filter(o => o.status === 'CONFIRMED').length,
-      completed: orders.filter(o => o.status === 'COMPLETED').length,
-      cancelled: orders.filter(o => o.status === 'CANCELLED').length,
-    };
+    const counts = { all: orders.length, pending: 0, confirmed: 0, completed: 0, cancelled: 0 };
+    for (let i = 0; i < orders.length; i++) {
+      const status = orders[i].status;
+      if (status === 'PENDING') counts.pending++;
+      else if (status === 'CONFIRMED') counts.confirmed++;
+      else if (status === 'COMPLETED') counts.completed++;
+      else if (status === 'CANCELLED') counts.cancelled++;
+    }
+    return counts;
   }, [orders]);
 
   const ordersShiftRevenue = useMemo(() => {
-    return orders
-      .filter(o => o.status !== 'CANCELLED')
-      .reduce((sum, o) => sum + (o.finalAmount || 0), 0);
+    let sum = 0;
+    for (let i = 0; i < orders.length; i++) {
+      if (orders[i].status !== 'CANCELLED') {
+        sum += (orders[i].finalAmount || 0);
+      }
+    }
+    return sum;
   }, [orders]);
 
   const handleUpdateOrderStatus = useCallback(async (orderId, newStatus) => {

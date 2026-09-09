@@ -218,7 +218,7 @@ export default function AdminDishImageSelector({ dishForm, setDishForm }) {
         <input
           type="text"
           value={dishForm.imageUrl || ''}
-          onChange={(e) => setDishForm({ ...dishForm, imageUrl: e.target.value })}
+          onChange={(e) => setDishForm(prev => ({ ...prev, imageUrl: e.target.value }))}
           placeholder="Hoặc dán trực tiếp đường dẫn URL ảnh (https://...)"
           className="w-full px-3.5 py-2 bg-white border border-stone-300 rounded-xl text-stone-900 focus:outline-none focus:border-[#8a1e14] shadow-2xs text-xs font-mono"
         />
@@ -243,15 +243,15 @@ export default function AdminDishImageSelector({ dishForm, setDishForm }) {
                 key={preset.name}
                 type="button"
                 onClick={() => {
-                  setDishForm({
-                    ...dishForm,
+                  setDishForm(prev => ({
+                    ...prev,
                     imageUrl: preset.url,
-                    tag: dishForm.tag || preset.tag,
-                    tagIcon: dishForm.tagIcon || preset.tagIcon,
-                    portion: dishForm.portion || preset.portion,
-                    name: dishForm.name || preset.name,
-                    price: dishForm.price || (preset.price ? String(preset.price) : '')
-                  });
+                    tag: prev.tag || preset.tag,
+                    tagIcon: prev.tagIcon || preset.tagIcon,
+                    portion: prev.portion || preset.portion,
+                    name: prev.name || preset.name,
+                    price: prev.price || (preset.price ? String(preset.price) : '')
+                  }));
                 }}
                 className={`group flex-shrink-0 w-28 snap-start rounded-xl overflow-hidden border p-1 text-left transition-all active:scale-95 ${
                   isSelected
@@ -288,15 +288,15 @@ export default function AdminDishImageSelector({ dishForm, setDishForm }) {
                 key={preset.name}
                 type="button"
                 onClick={() => {
-                  setDishForm({
-                    ...dishForm,
+                  setDishForm(prev => ({
+                    ...prev,
                     imageUrl: preset.url,
-                    tag: dishForm.tag || preset.tag,
-                    tagIcon: dishForm.tagIcon || preset.tagIcon,
-                    portion: dishForm.portion || preset.portion,
-                    name: dishForm.name || preset.name,
-                    price: dishForm.price || (preset.price ? String(preset.price) : '')
-                  });
+                    tag: prev.tag || preset.tag,
+                    tagIcon: prev.tagIcon || preset.tagIcon,
+                    portion: prev.portion || preset.portion,
+                    name: prev.name || preset.name,
+                    price: prev.price || (preset.price ? String(preset.price) : '')
+                  }));
                 }}
                 className={`group relative rounded-xl overflow-hidden border p-1 text-left transition-all ${
                   isSelected
