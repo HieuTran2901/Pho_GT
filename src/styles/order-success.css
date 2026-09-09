@@ -1,0 +1,144 @@
+﻿/* ========================================================================= */
+/* ORDER STEP 3 SUCCESS: HERITAGE STAMP, CONFETTI & PERFORATED TICKET STUB   */
+/* ========================================================================= */
+
+/* 1. 3D Stamp Slam Impact */
+@keyframes stampSlam3D {
+  0% {
+    opacity: 0;
+    transform: scale(2.6) rotate(-22deg);
+    filter: drop-shadow(0 0 20px rgba(220, 38, 38, 0.9));
+  }
+  45% {
+    opacity: 1;
+    transform: scale(0.92) rotate(-6deg);
+    filter: drop-shadow(0 0 15px rgba(220, 38, 38, 0.7));
+  }
+  65% {
+    transform: scale(1.06) rotate(-8deg);
+  }
+  85% {
+    transform: scale(0.98) rotate(-7deg);
+  }
+  100% {
+    opacity: 0.95;
+    transform: scale(1) rotate(-8deg);
+    filter: drop-shadow(0 2px 8px rgba(185, 28, 28, 0.5));
+  }
+}
+
+.animate-stamp-slam {
+  animation: stampSlam3D 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.35s both;
+  transform-origin: center center;
+}
+
+/* 2. Micro Shockwave Burst upon stamp hit */
+@keyframes stampShockwave {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+.animate-stamp-shockwave {
+  animation: stampShockwave 0.8s ease-out 0.65s both;
+}
+
+/* 3. Golden Confetti Pop */
+@keyframes goldConfettiParticle {
+  0% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  60% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate(var(--tx), var(--ty)) scale(0.2) rotate(var(--tr));
+    opacity: 0;
+  }
+}
+
+.animate-confetti-particle {
+  animation: goldConfettiParticle 1.4s cubic-bezier(0.12, 0.8, 0.32, 1) forwards;
+}
+
+/* 4. Radar Ring Pulse */
+@keyframes radarSweepRing {
+  0% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.6);
+  }
+  70% {
+    transform: scale(1.04);
+    box-shadow: 0 0 0 8px rgba(245, 158, 11, 0);
+  }
+  100% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+  }
+}
+
+.animate-radar-ring {
+  animation: radarSweepRing 2.2s infinite ease-in-out;
+}
+
+/* 5. Steaming Aroma Wisp for Success Bowl */
+@keyframes successSteamWisp {
+  0% {
+    transform: translateY(0) scale(0.7) rotate(0deg);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.65;
+  }
+  70% {
+    opacity: 0.3;
+  }
+  100% {
+    transform: translateY(-28px) scale(1.4) rotate(12deg);
+    opacity: 0;
+  }
+}
+
+.animate-success-steam-1 {
+  animation: successSteamWisp 3.2s infinite ease-out 0.2s;
+}
+
+.animate-success-steam-2 {
+  animation: successSteamWisp 4s infinite ease-out 1.2s;
+}
+
+/* 6. Perforated Ticket Notches */
+.ticket-perforation-left {
+  position: absolute;
+  top: 56px;
+  left: -10px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: #241710;
+  border-right: 1px solid rgba(245, 158, 11, 0.4);
+  box-shadow: inset -2px 0 4px rgba(0, 0, 0, 0.5);
+  z-index: 10;
+}
+
+.ticket-perforation-right {
+  position: absolute;
+  top: 56px;
+  right: -10px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: #241710;
+  border-left: 1px solid rgba(245, 158, 11, 0.4);
+  box-shadow: inset 2px 0 4px rgba(0, 0, 0, 0.5);
+  z-index: 10;
+}
