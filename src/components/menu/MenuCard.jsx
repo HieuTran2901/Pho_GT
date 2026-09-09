@@ -325,7 +325,7 @@ const MenuCard = React.memo(function MenuCard({
                         }`}
                       />
                       <span className="text-[11px] sm:text-[11.5px] leading-tight text-stone-600 font-normal">
-                        {highlight}
+                        {typeof highlight === 'string' ? highlight.replace(/^Nguyên liệu tuyển chọn:\s*/i, '') : highlight}
                       </span>
                     </div>
                   ))}

@@ -89,7 +89,12 @@ export function normalizeBackendDish(dish) {
     };
   });
 
-  const highlights = parsedIngredients.map((i) => `Nguyên liệu tuyển chọn: ${i}`);
+  const highlights = parsedIngredients.map((i) => {
+    if (typeof i === 'string') {
+      return i.replace(/^Nguyên liệu tuyển chọn:\s*/i, '').trim();
+    }
+    return i;
+  });
 
   return {
     id: dish.id,

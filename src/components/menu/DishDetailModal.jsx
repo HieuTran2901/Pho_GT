@@ -173,7 +173,7 @@ export default function DishDetailModal({
                 {selectedDetailItem.highlights.map((hl, hIdx) => (
                   <div key={hIdx} className="flex items-center gap-2 text-xs text-stone-700">
                     <CheckCircle2 className="w-3.5 h-3.5 text-[#96281b] shrink-0" />
-                    <span>{hl}</span>
+                    <span>{typeof hl === 'string' ? hl.replace(/^Nguyên liệu tuyển chọn:\s*/i, '') : hl}</span>
                   </div>
                 ))}
               </div>
