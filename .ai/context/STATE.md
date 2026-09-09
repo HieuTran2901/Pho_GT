@@ -165,6 +165,16 @@
   - **Bọc `React.memo` cho các phân bước form đặt bàn**: Bọc `React.memo` cho `OrderStep1Booking.jsx` và `OrderStep2Payment.jsx`, cô lập hoàn toàn phạm vi render khi component cha `OrderSection` re-render do hiệu ứng cuộn trang.
   - **Thẩm định chất lượng bởi TITAN**: `npm run build` PASS 100% (0 errors, 0 warnings), toàn bộ tệp tuân thủ nghiêm ngặt `FILE-SIZE-R001` (< 500 dòng): `App.jsx` (490 dòng), `GiftVaultModal.jsx` (484 dòng), `OrderStep1Booking.jsx` (367 dòng), `OrderStep2Payment.jsx` (383 dòng).
 
+- [x] **Triệt Tiêu Hoàn Toàn Hiện Tượng Giật Trang (Scroll Yanking) Khi Đổi Bước Đặt Bàn (M4.9 - RAVEN & EYE)**:
+  - **Căn nguyên lỗi**: Hàm `scrollToOrderSection` trong `useOrderSectionState.js` từng lên lịch một mảng gồm 6 `setTimeout` kéo dài đến 2.000ms (`[80, 250, 550, 950, 1400, 2000]`). Khi người dùng vừa chuyển bước và bắt đầu dùng tay kéo trang xuống để đọc thông tin, các timer liên tiếp kích hoạt `window.scrollTo` giật ngược màn hình về đầu thẻ, tạo cảm giác giật cục và chống lại thao tác người dùng.
+  - **Giải pháp tối ưu**:
+    - Thay thế mảng 6 timers bằng 1 lần cuộn duy nhất sau 50ms (đủ cho React hoàn tất render bước mới).
+    - Thêm điều kiện thông minh `isComfortablyVisible`: Nếu thẻ form đã nằm gọn trong tầm mắt (`rect.top >= 40 && rect.top <= 180`), bỏ qua lệnh cuộn hoàn toàn để không gây giật màn hình.
+    - Lắng nghe sự kiện người dùng (`wheel`, `touchstart` passive listeners) để **hủy ngay lập tức mọi timer cuộn tự động** khi người dùng chủ động chạm/vuốt màn hình.
+    - Loại bỏ việc nhồi hash `#order-form-card` vào `replaceState` trong hàm xử lý kết quả thanh toán.
+  - **Thẩm định Trực Nghiệm bởi EYE (`verify_no_scroll_yank.mjs`)**: 100% PASS trên iPhone 14. Sau khi chuyển sang Bước 2 hoặc quay lại Bước 1 và người dùng cuộn xuống, vị trí scroll giữ nguyên 100% sau 2 giây (0px dịch chuyển giật ngược).
+  - **Thẩm định chất lượng bởi TITAN**: `npm run build` PASS 100% (0 errors, 0 warnings), `useOrderSectionState.js` giữ đúng 490 dòng (`FILE-SIZE-R001` < 500 dòng).
+
 ## 📌 Critical Invariants & Lessons Learned (Ghi Nhớ Sống Còn Cho Các Agent Kế Tiếp)
 
 0. **Nguồn Luật Gốc Tối Cao Của Toàn Bộ Agent (RULE-SOURCE-001):**
@@ -219,6 +229,9 @@
 14. **Quy Tắc Bảo Toàn Hiệu Lực `React.memo` (Memoization Boundary & Stable Handlers):**
    - **Bài học:** Bọc component con trong `React.memo` là vô nghĩa nếu component cha truyền props là các hàm inline arrow `() => setX(true)`. Mỗi lần component cha render, một instance hàm mới được sinh ra, khiến shallow comparison của `React.memo` luôn trả về `false` và kích hoạt re-render toàn bộ cây con.
    - **Chuẩn thực thi:** Mọi event handler truyền xuống component được bọc `React.memo` BẮT BUỘC phải được ổn định bằng `useCallback(..., [])`.
+15. **Quy Tắc Không Dùng Chuỗi `setTimeout` Để Cuộn Trang (Zero Scroll Yanking & User-Dominance):**
+   - **Bài học:** Việc sử dụng một mảng `setTimeout` lặp lại (ví dụ sau 200ms, 500ms, 1000ms, 2000ms) để ép trình duyệt cuộn về một phần tử là một anti-pattern nghiêm trọng. Nó sẽ cưỡng bức màn hình nhảy giật ngược lên trên khi người dùng đang chủ động vuốt xuống, tạo cảm giác website bị lỗi và chống lại cử chỉ của người dùng.
+   - **Chuẩn thực thi:** Chỉ kích hoạt lệnh cuộn 1 lần duy nhất sau khi DOM sẵn sàng. Luôn kiểm tra xem phần tử đích đã nằm trong tầm nhìn chưa (`isComfortablyVisible`). Bắt buộc đăng ký sự kiện `wheel` và `touchstart` để hủy ngay lập tức mọi timer cuộn còn đang chờ.
 
 ## Active Work & Next Objectives
 - [ ] **M2.6**: Tích hợp Modal tùy biến "Gu Ăn Phở" khi thực khách chọn món trên MenuCard.

@@ -121,8 +121,21 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
     scrollTimersRef.current = [];
   }, []);
 
+  // Hủy toàn bộ timer cuộn tự động ngay khi người dùng chủ động chạm hoặc cuộn màn hình
+  useEffect(() => {
+    const handleUserInteraction = () => clearScrollTimers();
+    window.addEventListener('wheel', handleUserInteraction, { passive: true });
+    window.addEventListener('touchstart', handleUserInteraction, { passive: true });
+    return () => {
+      window.removeEventListener('wheel', handleUserInteraction);
+      window.removeEventListener('touchstart', handleUserInteraction);
+    };
+  }, [clearScrollTimers]);
+
   const scrollToOrderSection = useCallback((target = 'card') => {
     if (typeof window === 'undefined') return;
+
+    clearScrollTimers();
 
     const performScroll = () => {
       const cardEl = document.getElementById('order-form-card');
@@ -130,31 +143,23 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
       const targetEl = (target === 'card' && cardEl) ? cardEl : (cardEl || orderEl);
       if (targetEl) {
         const isMobile = window.innerWidth < 1024;
-        let targetY;
-        if (isMobile) {
-          const cEl = cardEl || targetEl;
-          const rect = cEl.getBoundingClientRect();
-          targetY = rect.top + window.scrollY - 68;
-        } else {
-          const oEl = orderEl || targetEl;
-          const rect = oEl.getBoundingClientRect();
-          targetY = rect.top + window.scrollY + 2;
+        const rect = targetEl.getBoundingClientRect();
+        // Không giật lại nếu form đã nằm vừa vặn trong tầm mắt
+        const isComfortablyVisible = rect.top >= 40 && rect.top <= 180;
+        if (!isComfortablyVisible) {
+          const offset = isMobile ? 68 : -2;
+          const targetY = rect.top + window.scrollY - offset;
+          window.scrollTo({
+            top: Math.max(0, Math.round(targetY)),
+            behavior: 'smooth'
+          });
         }
-        window.scrollTo({
-          top: Math.max(0, Math.round(targetY)),
-          behavior: 'smooth'
-        });
       }
     };
 
-    performScroll();
-    clearScrollTimers();
-
-    const delays = [80, 250, 550, 950, 1400, 2000];
-    delays.forEach((d) => {
-      const t = setTimeout(performScroll, d);
-      scrollTimersRef.current.push(t);
-    });
+    // Chỉ cuộn nhẹ nhàng 1 lần duy nhất sau 50ms khi React render bước mới
+    const t = setTimeout(performScroll, 50);
+    scrollTimersRef.current.push(t);
   }, [sectionRef, clearScrollTimers]);
 
   const handleCloseSeatMap = useCallback(() => {
@@ -167,10 +172,11 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
 
   useEffect(() => {
     return () => {
+      clearScrollTimers();
       if (submitTimerRef.current) clearTimeout(submitTimerRef.current);
       if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
     };
-  }, []);
+  }, [clearScrollTimers]);
 
   // Handle return URL parameters (support full reload, hashchange, and popstate)
   useEffect(() => {
@@ -230,7 +236,7 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
 
         const cleanTimer = setTimeout(() => {
           if (typeof window !== 'undefined') {
-            window.history.replaceState(null, '', window.location.pathname + '#order-form-card');
+            window.history.replaceState(null, '', window.location.pathname);
           }
         }, 2200);
         scrollTimersRef.current.push(cleanTimer);
@@ -246,7 +252,7 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
 
         const cleanTimer = setTimeout(() => {
           if (typeof window !== 'undefined') {
-            window.history.replaceState(null, '', window.location.pathname + '#order-form-card');
+            window.history.replaceState(null, '', window.location.pathname);
           }
         }, 2200);
         scrollTimersRef.current.push(cleanTimer);
