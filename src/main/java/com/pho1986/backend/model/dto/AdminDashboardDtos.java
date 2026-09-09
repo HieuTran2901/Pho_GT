@@ -1,6 +1,7 @@
 package com.pho1986.backend.model.dto;
 
 import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -74,7 +75,7 @@ public class AdminDashboardDtos {
         private String name;
 
         @NotNull(message = "Giá bán không được để trống")
-        @Positive(message = "Giá bán phải lớn hơn 0")
+        @Min(value = 1000L, message = "Số tiền tối thiểu phải từ 1.000đ trở lên")
         @Max(value = 1000000000L, message = "Giá bán không được vượt quá 1.000.000.000 VNĐ")
         private Double price;
 

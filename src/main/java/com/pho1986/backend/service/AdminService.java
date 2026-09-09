@@ -141,6 +141,9 @@ public class AdminService {
         }
         String slug = baseSlug + "-" + UUID.randomUUID().toString().substring(0, 8);
 
+        if (request.getPrice() != null && request.getPrice() < 1000.0) {
+            throw new IllegalArgumentException("Số tiền tối thiểu phải từ 1.000đ trở lên");
+        }
         String trimmedName = request.getName() != null ? request.getName().trim() : "";
         String trimmedPortion = request.getPortion() != null && !request.getPortion().trim().isEmpty() 
                 ? request.getPortion().trim() : "Tô thường";
@@ -186,6 +189,9 @@ public class AdminService {
             dish.setName(request.getName().trim());
         }
         if (request.getPrice() != null) {
+            if (request.getPrice() < 1000.0) {
+                throw new IllegalArgumentException("Số tiền tối thiểu phải từ 1.000đ trở lên");
+            }
             dish.setPrice(request.getPrice());
         }
         if (request.getDescription() != null) {
