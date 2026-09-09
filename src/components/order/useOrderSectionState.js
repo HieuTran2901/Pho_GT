@@ -41,7 +41,6 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
   const submitTimerRef = useRef(null);
   const copyTimerRef = useRef(null);
   const hasAutoFilledRef = useRef(Boolean(user?.fullName || user?.phone));
-  const hasHandledReturnRef = useRef(false);
 
   const todayDateStr = useMemo(() => new Date().toISOString().split('T')[0], []);
 
@@ -326,14 +325,12 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
     };
   }, [step, paymentData?.paymentCode, paymentData?.status, isVietQrConfirmed, onClearCart]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = useCallback((e) => {
     e.preventDefault();
     if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
       document.activeElement.blur();
     }
-
     setIsLoading(true);
-
     if (submitTimerRef.current) clearTimeout(submitTimerRef.current);
     submitTimerRef.current = setTimeout(() => {
       setIsLoading(false);
@@ -344,9 +341,9 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
       setStep(2);
       scrollToOrderSection();
     }, 450);
-  };
+  }, [formData.branch, scrollToOrderSection]);
 
-  const handleConfirmOrder = async () => {
+  const handleConfirmOrder = useCallback(async () => {
     setIsProcessingPayment(true);
     setPaymentError(null);
     try {
@@ -418,21 +415,21 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
     } finally {
       setIsProcessingPayment(false);
     }
-  };
+  }, [calculatedAmount, formData, bookingCode, selectedPaymentMethod, selectedTable, cartItems, onClearCart, scrollToOrderSection]);
 
-  const handleBackToStep1 = () => { setDirection('backward'); setStep(1); scrollToOrderSection(); };
-  const handleBackToStep2 = () => { setDirection('backward'); setStep(2); scrollToOrderSection(); };
+  const handleBackToStep1 = useCallback(() => { setDirection('backward'); setStep(1); scrollToOrderSection(); }, [scrollToOrderSection]);
+  const handleBackToStep2 = useCallback(() => { setDirection('backward'); setStep(2); scrollToOrderSection(); }, [scrollToOrderSection]);
 
-  const handleCopyCode = (text) => {
+  const handleCopyCode = useCallback((text) => {
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
       navigator.clipboard.writeText(text);
       setIsCopied(true);
       if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
       copyTimerRef.current = setTimeout(() => setIsCopied(false), 2000);
     }
-  };
+  }, []);
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     setDirection('backward');
     setStep(1);
     scrollToOrderSection();
@@ -450,7 +447,7 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
     });
     setSelectedPaymentMethod('POST_PAID_AT_STORE');
     setIsMoreMethodsOpen(false);
-  };
+  }, [user?.fullName, user?.phone, scrollToOrderSection]);
 
   return {
     formData,

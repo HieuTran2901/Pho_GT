@@ -239,7 +239,7 @@ export function useMenuSectionState(onAddToCart) {
     });
   }, []);
 
-  const handleMouseDown = (e) => {
+  const handleMouseDown = useCallback((e) => {
     const el = scrollContainerRef.current;
     if (!el) return;
     dragRef.current = {
@@ -248,9 +248,9 @@ export function useMenuSectionState(onAddToCart) {
       scrollLeft: el.scrollLeft,
       hasDragged: false,
     };
-  };
+  }, []);
 
-  const handleMouseMove = (e) => {
+  const handleMouseMove = useCallback((e) => {
     if (!dragRef.current.isDragging) return;
     e.preventDefault();
     const el = scrollContainerRef.current;
@@ -261,11 +261,11 @@ export function useMenuSectionState(onAddToCart) {
       dragRef.current.hasDragged = true;
     }
     el.scrollLeft = dragRef.current.scrollLeft - walk;
-  };
+  }, []);
 
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
     dragRef.current.isDragging = false;
-  };
+  }, []);
 
   const centerCategoryTab = useCallback((catId) => {
     const container = scrollContainerRef.current;
@@ -326,6 +326,7 @@ export function useMenuSectionState(onAddToCart) {
 
   useEffect(() => {
     const sectionIds = ['pho-bo', 'special', 'pho-ga', 'sides'];
+    let rafId = null;
 
     const handleScroll = () => {
       if (isManualScrollingRef.current) return;
@@ -363,8 +364,19 @@ export function useMenuSectionState(onAddToCart) {
       }
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    const onScrollThrottled = () => {
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => {
+        handleScroll();
+        rafId = null;
+      });
+    };
+
+    window.addEventListener('scroll', onScrollThrottled, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScrollThrottled);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
   }, [centerCategoryTab]);
 
   const filteredItems = useMemo(() => {

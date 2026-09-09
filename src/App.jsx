@@ -72,6 +72,8 @@ export default function App() {
   const [cartItems, setCartItems] = useState(() => {
     return loadCartFromStorage(currentCartKey);
   });
+  const cartItemsRef = useRef(cartItems);
+  cartItemsRef.current = cartItems;
 
   // Tự động chuyển đổi và nạp giỏ hàng tương ứng khi chuyển tài khoản hoặc đăng xuất/đăng nhập
   useEffect(() => {
@@ -82,7 +84,7 @@ export default function App() {
       // 1. Cất giỏ hàng hiện tại vào đúng partition của user cũ
       if (oldKey && typeof window !== 'undefined') {
         try {
-          localStorage.setItem(oldKey, JSON.stringify(cartItems));
+          localStorage.setItem(oldKey, JSON.stringify(cartItemsRef.current));
         } catch {}
       }
 
@@ -94,7 +96,7 @@ export default function App() {
       const newCart = loadCartFromStorage(newKey);
       setCartItems(newCart);
     }
-  }, [currentCartKey, cartItems]);
+  }, [currentCartKey]);
 
   // Đồng bộ giỏ hàng vào partition của user đang hoạt động khi thêm/xóa/sửa món
   useEffect(() => {
@@ -217,7 +219,7 @@ export default function App() {
       image: item.image,
       price: item.price,
     });
-  }, [showToast]);
+  }, [showToast, getCartTargetCoordinates]);
 
   // [RAVEN & URBAN] Thêm quà tặng Tri Kỷ (0đ) vào giỏ hàng với quỹ đạo Parabol bay vào giỏ
   const handleApplyGiftToCart = useCallback((gift, coords) => {
