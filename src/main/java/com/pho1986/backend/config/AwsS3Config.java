@@ -21,7 +21,7 @@ public class AwsS3Config {
     @Value("${aws.s3.bucket-name:pho-media-assets}")
     private String bucketName;
 
-    @Value("${aws.s3.region:ap-southeast-1}")
+    @Value("${aws.s3.region:ap-southeast-2}")
     private String region;
 
     @Value("${aws.s3.access-key:}")
