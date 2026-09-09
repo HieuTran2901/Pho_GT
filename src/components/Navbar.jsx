@@ -326,13 +326,34 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
                 )}
               </button>
 
-              {/* Tablet Menu Button (Hidden on mobile < md where Bottom Nav is active, visible on md to xl) */}
+              {/* Mobile Menu Button (< md): Opens Khám Phá & Tiện Ích 1986 Bottom Sheet */}
               <button
+                type="button"
+                id="mobile-more-menu-btn"
+                onClick={() => setMobileMoreSheetOpen(!mobileMoreSheetOpen)}
+                className="md:hidden p-1.5 rounded-lg text-stone-800 hover:bg-stone-200/80 active:scale-95 shrink-0 cursor-pointer border border-stone-300/70"
+                aria-label="Khám phá và tiện ích"
+                title="Khám phá & Tiện ích 1986"
+              >
+                {mobileMoreSheetOpen ? (
+                  <X className="w-5 h-5 text-[#9b2a1f]" />
+                ) : (
+                  <Menu className="w-5 h-5 text-stone-800" />
+                )}
+              </button>
+
+              {/* Tablet Menu Button (md to xl): Toggles Drawer Menu */}
+              <button
+                type="button"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="hidden md:flex xl:hidden p-1.5 sm:p-2 rounded-lg text-stone-800 hover:bg-stone-200 shrink-0 cursor-pointer"
+                className="hidden md:flex xl:hidden p-1.5 sm:p-2 rounded-lg text-stone-800 hover:bg-stone-200 shrink-0 cursor-pointer border border-stone-300/70"
                 aria-label="Menu"
               >
-                {mobileMenuOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6" />}
+                {mobileMenuOpen ? (
+                  <X className="w-5 h-5 sm:w-6 sm:h-6 text-[#9b2a1f]" />
+                ) : (
+                  <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
+                )}
               </button>
             </div>
 
