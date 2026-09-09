@@ -157,6 +157,32 @@ export default function App() {
     };
   }, []);
 
+  // [RAVEN & URBAN] Xác định tọa độ giỏ hàng chuẩn xác cho cả Desktop & Mobile
+  const getCartTargetCoordinates = useCallback(() => {
+    if (typeof window === 'undefined') return { endX: 0, endY: 0 };
+    // Mobile (< 768px): Nhắm đúng nút Giỏ hàng nổi trung tâm ở Bottom Nav
+    if (window.innerWidth < 768) {
+      const mobileCart = document.getElementById('mobile-bottom-cart-btn') || 
+                         document.querySelector('button[aria-label="Xem giỏ hàng"]');
+      if (mobileCart && mobileCart.offsetParent !== null) {
+        const rect = mobileCart.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          return { endX: rect.left + rect.width / 2, endY: rect.top + rect.height / 2 };
+        }
+      }
+      return { endX: window.innerWidth / 2, endY: window.innerHeight - 38 };
+    }
+    // Desktop / Tablet (>= 768px): Nhắm nút Giỏ hàng trên Header
+    const desktopCart = document.getElementById('navbar-cart-btn');
+    if (desktopCart && desktopCart.offsetParent !== null) {
+      const rect = desktopCart.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        return { endX: rect.left + rect.width / 2, endY: rect.top + rect.height / 2 };
+      }
+    }
+    return { endX: window.innerWidth - 65, endY: 42 };
+  }, []);
+
   const handleAddToCart = useCallback((item, coords) => {
     // 1. Add item to cart state
     setCartItems((prev) => {
@@ -171,17 +197,7 @@ export default function App() {
 
     // 2. Spawn parabolic flying bowl if coordinates exist
     if (coords && typeof window !== 'undefined') {
-      const cartBtn = document.getElementById('navbar-cart-btn');
-      const targetRect = cartBtn ? cartBtn.getBoundingClientRect() : {
-        left: window.innerWidth - 65,
-        top: 38,
-        width: 40,
-        height: 40
-      };
-
-      const endX = targetRect.left + targetRect.width / 2;
-      const endY = targetRect.top + targetRect.height / 2;
-
+      const { endX, endY } = getCartTargetCoordinates();
       const newFly = {
         id: Date.now() + Math.random(),
         image: item.image,
@@ -191,7 +207,6 @@ export default function App() {
         endX,
         endY
       };
-
       setFlyingBowls((prev) => [...prev, newFly]);
     }
 
@@ -226,16 +241,7 @@ export default function App() {
 
     // 1. Phóng dải vé Parabol lượn vào giỏ hàng nếu có tọa độ nút bấm
     if (coords && typeof window !== 'undefined') {
-      const cartBtn = document.getElementById('navbar-cart-btn');
-      const targetRect = cartBtn ? cartBtn.getBoundingClientRect() : {
-        left: window.innerWidth - 65,
-        top: 38,
-        width: 40,
-        height: 40
-      };
-
-      const endX = targetRect.left + targetRect.width / 2;
-      const endY = targetRect.top + targetRect.height / 2;
+      const { endX, endY } = getCartTargetCoordinates();
 
       const newFlyGift = {
         id: Date.now() + Math.random(),
@@ -259,7 +265,7 @@ export default function App() {
       image: giftItem.image,
       savings: giftItem.originalPrice
     });
-  }, [showToast]);
+  }, [showToast, getCartTargetCoordinates]);
 
   const handleGiftFlightComplete = useCallback((flyId) => {
     setFlyingGifts((prev) => prev.filter((f) => f.id !== flyId));

@@ -5,68 +5,65 @@ export default function OrderPrivilegesPanel({ isVisible }) {
   return (
     <>
       {/* ========================================================= */}
-      {/* MOBILE VIEW (< lg): COMPACT BENTO PRIVILEGES & 1-TAP CALL */}
+      {/* MOBILE VIEW (< lg): COMPACT MICRO-RIBBON & 1-TAP CALL    */}
       {/* ========================================================= */}
-      <div className={`lg:hidden space-y-4 transition-all duration-700 ${isVisible ? 'reveal-slide-left' : 'opacity-0'}`}>
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-red/20 text-brand-red text-xs font-bold uppercase tracking-wider border border-brand-red/30 mb-2.5">
-            <ChefHat className="w-3.5 h-3.5 text-amber-400" />
-            <span>Đặt Trước Giữ Chỗ</span>
-          </div>
-          <h2 className="font-serif text-2xl sm:text-3xl font-bold text-amber-50 leading-tight">
-            Bát Phở Nóng Chờ Bạn, Không Chờ Đợi
-          </h2>
-          <p className="text-stone-300 text-xs sm:text-sm mt-1.5 leading-relaxed">
-            Giờ cao điểm quán rất đông. Đặt trước để có bàn thoáng và phở lên ngay khi bạn bước vào quán.
-          </p>
-        </div>
-
-        {/* 3 Bento Privilege Micro-Cards */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-3 pt-1">
-          <div className="bg-white/5 border border-amber-500/30 rounded-2xl p-2.5 sm:p-3 text-center flex flex-col items-center justify-between shadow-xs">
-            <span className="text-xl sm:text-2xl mb-1">⏳</span>
-            <span className="font-bold text-amber-300 text-xs sm:text-sm">30 Phút</span>
-            <span className="text-[10px] text-stone-400 leading-tight mt-0.5">Giữ bàn miễn phí</span>
-          </div>
-
-          <div className="bg-white/5 border border-amber-500/30 rounded-2xl p-2.5 sm:p-3 text-center flex flex-col items-center justify-between shadow-xs">
-            <span className="text-xl sm:text-2xl mb-1">🥢</span>
-            <span className="font-bold text-amber-300 text-xs sm:text-sm">Tặng Quẩy</span>
-            <span className="text-[10px] text-stone-400 leading-tight mt-0.5">& Trà sen khai vị</span>
-          </div>
-
-          <div className="bg-white/5 border border-amber-500/30 rounded-2xl p-2.5 sm:p-3 text-center flex flex-col items-center justify-between shadow-xs">
-            <span className="text-xl sm:text-2xl mb-1">♨️</span>
-            <span className="font-bold text-amber-300 text-xs sm:text-sm">Nóng 90°C</span>
-            <span className="text-[10px] text-stone-400 leading-tight mt-0.5">Giữ nhiệt tận nơi</span>
-          </div>
-        </div>
-
-        {/* Instant 1-Tap Quick Dial Hotline Bar */}
-        <a
-          href="tel:19008686"
-          className="flex items-center justify-between p-3 sm:p-3.5 rounded-2xl bg-gradient-to-r from-[#8b2316] to-[#5e170e] border border-red-400/40 shadow-lg active:scale-98 transition-transform group"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white shrink-0 shadow-xs">
-              <Phone className="w-5 h-5 text-amber-300" />
+      <div className={`lg:hidden space-y-2.5 transition-all duration-700 ${isVisible ? 'reveal-slide-left' : 'opacity-0'}`}>
+        {/* Compact Header with 1-Tap Hotline Pill */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-brand-red/20 text-brand-red text-[10px] font-bold uppercase tracking-wider border border-brand-red/30 mb-1">
+              <ChefHat className="w-3 h-3 text-amber-400" />
+              <span>Đặt Trước Giữ Chỗ</span>
             </div>
-            <div>
-              <div className="text-[11px] text-red-200 font-medium">Tổng đài đặt bàn nhanh:</div>
-              <div className="font-serif text-base sm:text-lg font-bold text-white tracking-wide">
+            <h2 className="font-serif text-xl font-bold text-amber-50 leading-tight truncate">
+              Bát Phở Nóng Chờ Bạn
+            </h2>
+          </div>
+
+          {/* Instant 1-Tap Quick Dial Hotline Pill */}
+          <a
+            href="tel:19008686"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#8b2316] to-[#5e170e] border border-red-400/40 shadow-md active:scale-95 transition-transform shrink-0"
+            title="Gọi tổng đài miễn phí 1900 8686"
+          >
+            <div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center text-white shrink-0">
+              <Phone className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+            </div>
+            <div className="text-left">
+              <div className="text-[9px] text-red-200 font-mono leading-none">Miễn cước</div>
+              <div className="font-serif text-xs font-bold text-white tracking-wide leading-none mt-0.5">
                 1900 8686
               </div>
             </div>
+          </a>
+        </div>
+
+        {/* 3 Bento Micro-Promises Ribbon (1 Compact Row ~38px) */}
+        <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-white/5 border border-amber-500/20 text-center shadow-xs">
+          <div className="flex items-center justify-center gap-1.5 py-1">
+            <span className="text-sm">⏳</span>
+            <div className="text-left">
+              <div className="font-bold text-amber-200 text-[11px] leading-tight">30 Phút</div>
+              <div className="text-[9px] text-stone-400 leading-none">Giữ miễn phí</div>
+            </div>
           </div>
-          <div className="text-right shrink-0">
-            <span className="text-[9px] sm:text-[10px] bg-amber-400 text-stone-950 font-bold px-2 py-0.5 rounded-full block mb-0.5 shadow-xs">
-              MIỄN PHÍ CƯỚC
-            </span>
-            <span className="text-[11px] text-amber-200 font-bold underline group-hover:text-amber-100 transition-colors">
-              Chạm gọi ngay →
-            </span>
+
+          <div className="flex items-center justify-center gap-1.5 py-1 border-x border-white/10">
+            <span className="text-sm">🥢</span>
+            <div className="text-left">
+              <div className="font-bold text-amber-200 text-[11px] leading-tight">Tặng Quẩy</div>
+              <div className="text-[9px] text-stone-400 leading-none">& Trà sen</div>
+            </div>
           </div>
-        </a>
+
+          <div className="flex items-center justify-center gap-1.5 py-1">
+            <span className="text-sm">♨️</span>
+            <div className="text-left">
+              <div className="font-bold text-amber-200 text-[11px] leading-tight">Nóng 90°C</div>
+              <div className="text-[9px] text-stone-400 leading-none">Tận bàn/nơi</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* ========================================================= */}

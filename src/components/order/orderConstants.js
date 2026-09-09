@@ -16,6 +16,13 @@ export const TASTE_PREFERENCES = [
   'Thêm quẩy giòn'
 ];
 
+export const QUICK_TIME_SLOTS = [
+  { time: '11:30', period: 'Trưa nay', label: 'Trưa 11:30' },
+  { time: '12:00', period: 'Trưa nay', label: 'Trưa 12:00' },
+  { time: '18:30', period: 'Tối nay', label: 'Tối 18:30' },
+  { time: '19:30', period: 'Tối nay', label: 'Tối 19:30' }
+];
+
 export const EXTENDED_PAYMENT_METHODS = [
   {
     id: 'SEPAY',

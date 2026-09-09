@@ -55,6 +55,7 @@ export default function NavbarMobileBottomNav({
         {/* Tab 3: Giỏ hàng (Floating Center Elevated Button) */}
         <div className="flex flex-col items-center -mt-5">
           <button
+            id="mobile-bottom-cart-btn"
             onClick={onOpenCart}
             aria-label="Xem giỏ hàng"
             className={`relative w-12 h-12 rounded-full bg-gradient-to-tr from-[#9b2a1f] to-[#b33324] text-amber-100 flex items-center justify-center shadow-lg border-2 border-[#f7f4ed] hover:scale-105 active:scale-95 transition-all cursor-pointer ${
