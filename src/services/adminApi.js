@@ -128,5 +128,14 @@ export const adminApi = {
     return await fetchAdminWithRetry(`${API_BASE_URL}/dishes/${dishId}`, {
       method: 'DELETE',
     });
+  },
+
+  async uploadDishImage(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    return await fetchAdminWithRetry(`${API_BASE_URL}/dishes/upload-image`, {
+      method: 'POST',
+      body: formData,
+    });
   }
 };

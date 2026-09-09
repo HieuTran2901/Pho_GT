@@ -166,7 +166,7 @@ function AdminHeader({
                 {user?.fullName || 'Quản Trị Viên 1986'}
               </div>
               <div className="text-[10px] text-stone-400 font-sans">
-                {user?.role === 'ROLE_ADMIN' ? 'Chủ quán' : 'Nhân viên trực'}
+                {user?.role === 'ADMIN' || user?.role === 'ROLE_ADMIN' ? 'Chủ quán' : 'Nhân viên trực'}
               </div>
             </div>
             <button

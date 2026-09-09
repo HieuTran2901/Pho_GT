@@ -41,7 +41,7 @@ export default function AdminLoginView({ onBackToHome }) {
     try {
       const user = await login(phone, password);
       if (user?.role !== 'ADMIN') {
-        setErrorMsg('Tài khoản này không có quyền Quản Trị Viên (Yêu cầu ROLE_ADMIN).');
+        setErrorMsg('Tài khoản của bạn không có quyền truy cập khu vực Quản Trị Viên. Vui lòng kiểm tra lại hoặc liên hệ quản lý.');
       }
     } catch (err) {
       const waitSec = err.retryAfterSeconds || err.data?.data?.retryAfterSeconds;

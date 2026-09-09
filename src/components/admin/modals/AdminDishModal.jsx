@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import AdminDishImageSelector from '../tabs/AdminDishImageSelector';
 
 function AdminDishModal({
   dishModalOpen,
@@ -26,7 +27,7 @@ function AdminDishModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.94, y: 15 }}
             transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-            className="w-full max-w-lg bg-[#faf6ee] border-2 border-[#8a1e14]/40 rounded-3xl p-7 shadow-2xl relative text-stone-900"
+            className="w-full max-w-xl max-h-[90vh] overflow-y-auto bg-[#faf6ee] border-2 border-[#8a1e14]/40 rounded-3xl p-5 sm:p-7 shadow-2xl relative text-stone-900"
           >
             <button
               type="button"
@@ -88,18 +89,8 @@ function AdminDishModal({
                 />
               </div>
 
-              <div>
-                <label className="block text-[#8a1e14] font-bold font-serif mb-1 uppercase tracking-wider text-[11px]">
-                  Đường Dẫn Ảnh Món
-                </label>
-                <input
-                  type="text"
-                  value={dishForm.imageUrl}
-                  onChange={(e) => setDishForm({ ...dishForm, imageUrl: e.target.value })}
-                  placeholder="https://..."
-                  className="w-full px-3.5 py-2.5 bg-white border border-stone-300 rounded-xl text-stone-900 focus:outline-none focus:border-[#8a1e14] shadow-2xs"
-                />
-              </div>
+              {/* Tải ảnh lên Amazon S3 & Bộ ảnh mẫu */}
+              <AdminDishImageSelector dishForm={dishForm} setDishForm={setDishForm} />
 
               <div>
                 <label className="block text-[#8a1e14] font-bold font-serif mb-1 uppercase tracking-wider text-[11px]">

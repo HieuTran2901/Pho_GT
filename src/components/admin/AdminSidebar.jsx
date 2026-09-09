@@ -292,7 +292,7 @@ function AdminSidebar({
                   {user?.fullName || 'Quản Trị Viên'}
                 </div>
                 <div className="text-[10px] text-stone-400 truncate">
-                  {user?.role === 'ROLE_ADMIN' ? 'Chủ quán (Admin)' : 'Nhân viên trực'}
+                  {user?.role === 'ADMIN' || user?.role === 'ROLE_ADMIN' ? 'Chủ quán (Admin)' : 'Nhân viên trực'}
                 </div>
               </div>
             </div>
