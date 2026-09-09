@@ -1,0 +1,292 @@
+﻿import React, { useEffect } from 'react';
+import {
+  X,
+  Compass,
+  Bike,
+  Sparkles,
+  MessageSquareQuote,
+  Gift,
+  ScrollText,
+  Phone,
+  MapPin,
+  User,
+  LogOut,
+  ChevronRight
+} from 'lucide-react';
+
+export default function NavbarMobileMoreSheet({
+  isOpen,
+  onClose,
+  setActiveTab,
+  onOpenOrder,
+  onOpenGiftVault,
+  onOpenOrderHistory,
+  isAuthenticated,
+  user,
+  tierInfo,
+  openAuthModal,
+  logout,
+  onToast
+}) {
+  // Lock body scroll when sheet is open
+  useEffect(() => {
+    if (!isOpen) return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  const handleNavClick = (tabId, href) => {
+    setActiveTab(tabId);
+    onClose();
+    if (href) {
+      const el = document.querySelector(href);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
+
+  return (
+    <div className="md:hidden fixed inset-0 z-50 flex flex-col justify-end animate-fadeIn">
+      {/* Backdrop overlay */}
+      <div 
+        className="absolute inset-0 bg-black/60 backdrop-blur-xs"
+        onClick={onClose}
+        aria-label="Đóng bảng tiện ích"
+      />
+
+      {/* Bottom Sheet Container */}
+      <div className="relative w-full max-w-lg mx-auto bg-[#fbf7f0] text-stone-800 rounded-t-3xl border-t-2 border-[#9b2a1f]/30 shadow-2xl max-h-[85vh] flex flex-col overflow-hidden animate-bottom-sheet-up">
+        {/* Drag Handle Bar */}
+        <div className="pt-3 pb-1 flex justify-center cursor-pointer" onClick={onClose}>
+          <div className="w-12 h-1.5 rounded-full bg-stone-300" />
+        </div>
+
+        {/* Sheet Header */}
+        <div className="px-5 py-3 flex items-center justify-between border-b border-stone-200/80 bg-stone-100/50">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full bg-[#9b2a1f]/10 text-[#9b2a1f] flex items-center justify-center">
+              <Compass className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="font-serif font-bold text-sm tracking-wide text-[#9b2a1f]">
+                KHÁM PHÁ & TIỆN ÍCH 1986
+              </div>
+              <div className="text-[10px] text-stone-500 font-sans">
+                Dịch vụ & văn hóa phở truyền thống
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full bg-stone-200/70 hover:bg-stone-300 text-stone-600 flex items-center justify-center cursor-pointer transition-colors"
+            aria-label="Đóng"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Sheet Scrollable Body */}
+        <div className="p-4 overflow-y-auto space-y-4 pb-8">
+          {/* 1. Primary CTA: Đặt bàn & Giao tận nơi */}
+          <div 
+            onClick={() => {
+              handleNavClick('order', '#order-form-card');
+              if (onOpenOrder) onOpenOrder();
+            }}
+            className="p-3.5 rounded-2xl bg-gradient-to-r from-[#9b2a1f] to-[#7a1c12] text-amber-100 shadow-md flex items-center justify-between cursor-pointer hover:shadow-lg transition-all active:scale-98"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0 border border-white/15">
+                <Bike className="w-5 h-5 text-amber-200" />
+              </div>
+              <div>
+                <div className="font-serif font-bold text-sm text-white flex items-center gap-1.5">
+                  <span>Đặt Bàn & Giao Tận Nơi</span>
+                  <span className="text-[9px] px-1.5 py-0.2 bg-amber-400/30 border border-amber-300/40 text-amber-200 rounded font-sans font-bold">
+                    Nhanh 15p
+                  </span>
+                </div>
+                <div className="text-[11px] text-amber-200/80 mt-0.5">
+                  Giữ chỗ đẹp hoặc giao nóng hổi tận cửa
+                </div>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-amber-300/80 shrink-0" />
+          </div>
+
+          {/* 2. Brand Discovery Section */}
+          <div className="space-y-1.5">
+            <div className="text-[11px] font-bold text-stone-500 uppercase tracking-wider px-1">
+              Câu chuyện & Cảm nhận
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {/* Bí quyết 1986 */}
+              <div
+                onClick={() => handleNavClick('story', '#story')}
+                className="p-3 rounded-xl bg-white border border-stone-200/80 shadow-xs hover:border-[#9b2a1f]/40 cursor-pointer transition-all active:scale-98"
+              >
+                <div className="w-7 h-7 rounded-lg bg-amber-100 text-[#9b2a1f] flex items-center justify-center mb-1.5">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div className="font-serif font-bold text-xs text-stone-800">
+                  Bí Quyết 1986
+                </div>
+                <div className="text-[10px] text-stone-500 mt-0.5 leading-tight">
+                  Nước dùng 24h & công thức gia truyền
+                </div>
+              </div>
+
+              {/* Thực khách nói gì */}
+              <div
+                onClick={() => handleNavClick('reviews', '#reviews')}
+                className="p-3 rounded-xl bg-white border border-stone-200/80 shadow-xs hover:border-[#9b2a1f]/40 cursor-pointer transition-all active:scale-98"
+              >
+                <div className="w-7 h-7 rounded-lg bg-rose-100 text-[#9b2a1f] flex items-center justify-center mb-1.5">
+                  <MessageSquareQuote className="w-4 h-4" />
+                </div>
+                <div className="font-serif font-bold text-xs text-stone-800">
+                  Khách Hàng Nói Gì
+                </div>
+                <div className="text-[10px] text-stone-500 mt-0.5 leading-tight">
+                  Đánh giá từ người sành ăn Hà Thành
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. Loyalty & Utilities Section */}
+          <div className="space-y-1.5">
+            <div className="text-[11px] font-bold text-stone-500 uppercase tracking-wider px-1">
+              Tiện ích & Quyền lợi
+            </div>
+            <div className="bg-white rounded-2xl border border-stone-200/80 divide-y divide-stone-100 shadow-xs overflow-hidden">
+              {/* Kho quà */}
+              <div
+                onClick={() => {
+                  onClose();
+                  if (onOpenGiftVault) onOpenGiftVault();
+                }}
+                className="p-3 flex items-center justify-between hover:bg-stone-50 cursor-pointer transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-amber-50 text-[#8a1e14] flex items-center justify-center shrink-0">
+                    <Gift className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="font-serif font-bold text-xs text-stone-800">
+                      Kho Quà Tri Kỷ 1986
+                    </div>
+                    <div className="text-[10px] text-stone-500">
+                      Đổi điểm lấy quẩy giòn, trứng chần, bát phở
+                    </div>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-stone-400 shrink-0" />
+              </div>
+
+              {/* Lịch sử đơn */}
+              <div
+                onClick={() => {
+                  onClose();
+                  if (onOpenOrderHistory) onOpenOrderHistory();
+                }}
+                className="p-3 flex items-center justify-between hover:bg-stone-50 cursor-pointer transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-stone-100 text-[#8a1e14] flex items-center justify-center shrink-0">
+                    <ScrollText className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="font-serif font-bold text-xs text-stone-800">
+                      Sổ Lịch Sử Đơn Hàng
+                    </div>
+                    <div className="text-[10px] text-stone-500">
+                      Tra cứu tình trạng đơn phở đã đặt
+                    </div>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-stone-400 shrink-0" />
+              </div>
+            </div>
+          </div>
+
+          {/* 4. Support & Contacts */}
+          <div className="space-y-1.5">
+            <div className="text-[11px] font-bold text-stone-500 uppercase tracking-wider px-1">
+              Hỗ trợ & Chi nhánh
+            </div>
+            <div className="bg-white rounded-2xl border border-stone-200/80 p-3 space-y-2.5 shadow-xs">
+              <a
+                href="tel:19008686"
+                className="flex items-center justify-between text-stone-800 hover:text-[#9b2a1f] transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
+                    <Phone className="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <div className="font-serif font-bold text-xs">Hotline: 1900 8686</div>
+                    <div className="text-[10px] text-stone-500">Hỗ trợ 06:00 – 22:30 mỗi ngày</div>
+                  </div>
+                </div>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">
+                  Gọi ngay
+                </span>
+              </a>
+
+              <div className="pt-2 border-t border-stone-100 flex items-center gap-2.5 text-stone-600 text-xs">
+                <MapPin className="w-4 h-4 text-[#9b2a1f] shrink-0" />
+                <span className="text-[11px] leading-tight">
+                  10 Chi nhánh gia truyền tại Hà Nội & TP. Hồ Chí Minh
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* 5. Authentication Status / Action */}
+          <div className="pt-1">
+            {isAuthenticated && user ? (
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-stone-200/60 text-xs">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-[#9b2a1f] text-amber-200 font-bold flex items-center justify-center font-serif text-[10px]">
+                    {user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                  <span className="font-serif font-bold text-stone-800">{user.fullName}</span>
+                  {tierInfo?.icon && <span>{tierInfo.icon}</span>}
+                </div>
+                <button
+                  onClick={() => {
+                    logout();
+                    onClose();
+                    if (onToast) onToast('Bạn đã đăng xuất tài khoản thành công!');
+                  }}
+                  className="text-red-700 hover:text-red-900 font-bold flex items-center gap-1 cursor-pointer"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Đăng xuất</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => {
+                  onClose();
+                  openAuthModal('login');
+                }}
+                className="w-full py-2.5 rounded-xl bg-white border border-[#9b2a1f]/40 hover:bg-stone-50 text-[#9b2a1f] font-serif font-bold text-xs flex items-center justify-center gap-2 shadow-xs cursor-pointer transition-colors"
+              >
+                <User className="w-4 h-4" />
+                <span>ĐĂNG NHẬP / ĐĂNG KÝ HỘI VIÊN TRI KỶ</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

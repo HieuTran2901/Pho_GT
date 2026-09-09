@@ -26,12 +26,14 @@ import NavbarDesktopDropdown from './navbar/NavbarDesktopDropdown';
 import NavbarMobileDrawer from './navbar/NavbarMobileDrawer';
 import NavbarMobileBottomNav from './navbar/NavbarMobileBottomNav';
 import NavbarMobileMemberSheet from './navbar/NavbarMobileMemberSheet';
+import NavbarMobileMoreSheet from './navbar/NavbarMobileMoreSheet';
 
 function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHistory, onOpenGiftVault, isCartJiggling, onToast }) {
   const [activeTab, setActiveTab] = useState('hero');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [mobileMemberSheetOpen, setMobileMemberSheetOpen] = useState(false);
+  const [mobileMoreSheetOpen, setMobileMoreSheetOpen] = useState(false);
   const dropdownRef = useRef(null);
 
   const { user, isAuthenticated, isInitialized, openAuthModal, logout } = useAuth();
@@ -303,12 +305,12 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
                 </div>
               </a>
 
-              {/* Cart Trigger */}
+              {/* Cart Trigger (Hidden on mobile < md because Bottom Nav has floating center Cart FAB) */}
               <button
                 id="navbar-cart-btn"
                 onClick={onOpenCart}
                 aria-label="Giỏ hàng phở"
-                className={`relative p-1.5 sm:p-2 rounded-full bg-stone-200/80 hover:bg-stone-300 text-stone-800 transition-all duration-200 border border-stone-300 hover:scale-105 active:scale-90 hover:shadow-md shrink-0 group cursor-pointer ${
+                className={`hidden md:flex relative p-1.5 sm:p-2 rounded-full bg-stone-200/80 hover:bg-stone-300 text-stone-800 transition-all duration-200 border border-stone-300 hover:scale-105 active:scale-90 hover:shadow-md shrink-0 group cursor-pointer ${
                   isCartJiggling ? 'animate-cart-jiggle ring-2 ring-amber-400/80' : ''
                 }`}
               >
@@ -324,10 +326,10 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
                 )}
               </button>
 
-              {/* Mobile Menu Button */}
+              {/* Tablet Menu Button (Hidden on mobile < md where Bottom Nav is active, visible on md to xl) */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="xl:hidden p-1.5 sm:p-2 rounded-lg text-stone-800 hover:bg-stone-200 shrink-0 cursor-pointer"
+                className="hidden md:flex xl:hidden p-1.5 sm:p-2 rounded-lg text-stone-800 hover:bg-stone-200 shrink-0 cursor-pointer"
                 aria-label="Menu"
               >
                 {mobileMenuOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6" />}
@@ -372,7 +374,8 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
         tierInfo={tierInfo}
         setMobileMemberSheetOpen={setMobileMemberSheetOpen}
         openAuthModal={openAuthModal}
-        onOpenOrder={onOpenOrder}
+        mobileMoreSheetOpen={mobileMoreSheetOpen}
+        setMobileMoreSheetOpen={setMobileMoreSheetOpen}
       />
 
       {/* 4. Mobile Member Bottom Sheet */}
@@ -393,6 +396,22 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
         onOpenOrderHistory={onOpenOrderHistory}
         onOpenGiftVault={onOpenGiftVault}
         setActiveTab={setActiveTab}
+        logout={logout}
+        onToast={onToast}
+      />
+
+      {/* 5. Mobile More / Explore Bottom Sheet */}
+      <NavbarMobileMoreSheet
+        isOpen={mobileMoreSheetOpen}
+        onClose={() => setMobileMoreSheetOpen(false)}
+        setActiveTab={setActiveTab}
+        onOpenOrder={onOpenOrder}
+        onOpenGiftVault={onOpenGiftVault}
+        onOpenOrderHistory={onOpenOrderHistory}
+        isAuthenticated={isAuthenticated}
+        user={user}
+        tierInfo={tierInfo}
+        openAuthModal={openAuthModal}
         logout={logout}
         onToast={onToast}
       />

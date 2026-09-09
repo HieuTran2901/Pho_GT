@@ -4,7 +4,7 @@ import {
   Utensils,
   ShoppingBag,
   User,
-  Bike
+  Compass
 } from 'lucide-react';
 
 export default function NavbarMobileBottomNav({
@@ -19,7 +19,8 @@ export default function NavbarMobileBottomNav({
   tierInfo,
   setMobileMemberSheetOpen,
   openAuthModal,
-  onOpenOrder
+  mobileMoreSheetOpen,
+  setMobileMoreSheetOpen
 }) {
   return (
     <nav 
@@ -101,21 +102,18 @@ export default function NavbarMobileBottomNav({
           </span>
         </button>
 
-        {/* Tab 5: Đặt bàn */}
-        <a
-          href="#order-form-card"
-          onClick={(e) => {
-            e.preventDefault();
-            setActiveTab('order');
-            if (onOpenOrder) onOpenOrder();
-          }}
-          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all ${
-            activeTab === 'order' ? 'text-[#9b2a1f]' : 'text-stone-600 hover:text-stone-900'
+        {/* Tab 5: Khám phá / Tiện ích */}
+        <button
+          type="button"
+          onClick={() => setMobileMoreSheetOpen(true)}
+          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer ${
+            mobileMoreSheetOpen ? 'text-[#9b2a1f]' : 'text-stone-600 hover:text-stone-900'
           }`}
+          aria-label="Khám phá và tiện ích"
         >
-          <Bike className="w-5 h-5 mb-0.5" />
-          <span className={`text-[10px] ${activeTab === 'order' ? 'font-bold' : 'font-medium'}`}>Đặt bàn</span>
-        </a>
+          <Compass className="w-5 h-5 mb-0.5" />
+          <span className={`text-[10px] ${mobileMoreSheetOpen ? 'font-bold' : 'font-medium'}`}>Khám phá</span>
+        </button>
       </div>
     </nav>
   );
