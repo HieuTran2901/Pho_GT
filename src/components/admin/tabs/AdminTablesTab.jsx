@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Coffee, Layers, Flame, Users, CheckCircle2, ChevronRight } from 'lucide-react';
+import { Coffee, Layers, Flame, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { formatVND } from '../adminConstants';
 

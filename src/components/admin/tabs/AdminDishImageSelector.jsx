@@ -1,6 +1,5 @@
 import React, { useState, useRef } from 'react';
 import {
-  Image as ImageIcon,
   Check,
   UploadCloud,
   Loader2,

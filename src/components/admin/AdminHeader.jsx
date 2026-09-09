@@ -6,8 +6,7 @@ import {
   Volume2,
   VolumeX,
   Bell,
-  LogOut,
-  Users
+  LogOut
 } from 'lucide-react';
 import { getShiftInfo } from './adminMockData';
 

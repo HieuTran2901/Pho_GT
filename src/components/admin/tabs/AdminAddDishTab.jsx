@@ -2,7 +2,6 @@ import React from 'react';
 import {
   ArrowLeft,
   RefreshCw,
-  UtensilsCrossed,
   PlusCircle,
   Sparkles,
   ChevronDown
