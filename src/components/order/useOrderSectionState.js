@@ -55,12 +55,7 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
 
   const selectedTasteSet = useMemo(() => {
     if (!formData.note) return new Set();
-    return new Set(
-      formData.note
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean)
-    );
+    return new Set(formData.note.split(',').map((s) => s.trim()).filter(Boolean));
   }, [formData.note]);
 
   // Auto-fill user contact info once
@@ -78,52 +73,44 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
   const handleInputChange = useCallback((e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    if (name === 'branch') {
-      setSelectedTable(null);
-    }
+    if (name === 'branch') setSelectedTable(null);
   }, []);
 
   const handleSetOrderType = useCallback((type) => {
     setFormData((prev) => ({ ...prev, orderType: type }));
     setSelectedPaymentMethod(type === 'dine-in' ? 'POST_PAID_AT_STORE' : 'COD');
-    if (type === 'delivery') {
-      setSelectedTable(null);
-    }
+    if (type === 'delivery') setSelectedTable(null);
   }, []);
 
   const handleSetGuestCount = useCallback((count) => {
     setFormData((prev) => ({ ...prev, guestCount: count }));
-    setSelectedTable((prevTable) => {
-      if (prevTable && prevTable.capacity < parseInt(count, 10)) {
-        return null;
-      }
-      return prevTable;
-    });
+    setSelectedTable((prevTable) => (prevTable && prevTable.capacity < parseInt(count, 10)) ? null : prevTable);
   }, []);
 
   const handleToggleTaste = useCallback((pref) => {
     setFormData((prev) => {
-      const current = (prev.note || '')
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean);
-      const exists = current.includes(pref);
-      const updated = exists ? current.filter((s) => s !== pref) : [...current, pref];
+      const current = (prev.note || '').split(',').map((s) => s.trim()).filter(Boolean);
+      const updated = current.includes(pref) ? current.filter((s) => s !== pref) : [...current, pref];
       return { ...prev, note: updated.join(', ') };
     });
   }, []);
 
   const scrollTimersRef = useRef([]);
   const lastProcessedUrlRef = useRef('');
+  const isPaymentReturnActiveRef = useRef(false);
 
-  const clearScrollTimers = useCallback(() => {
+  const clearScrollTimers = useCallback((reason = '') => {
+    if (isPaymentReturnActiveRef.current && (reason.startsWith('user-') || reason === 'unmount')) return;
     scrollTimersRef.current.forEach((t) => clearTimeout(t));
     scrollTimersRef.current = [];
   }, []);
 
-  // Hủy toàn bộ timer cuộn tự động ngay khi người dùng chủ động chạm hoặc cuộn màn hình
+  // Hủy toàn bộ timer cuộn tự động khi người dùng chủ động tương tác màn hình (trừ khi đang trong luồng thanh toán return)
   useEffect(() => {
-    const handleUserInteraction = () => clearScrollTimers();
+    const handleUserInteraction = (e) => {
+      if (isPaymentReturnActiveRef.current) return;
+      clearScrollTimers(`user-${e.type}`);
+    };
     window.addEventListener('wheel', handleUserInteraction, { passive: true });
     window.addEventListener('touchstart', handleUserInteraction, { passive: true });
     return () => {
@@ -132,12 +119,13 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
     };
   }, [clearScrollTimers]);
 
-  const scrollToOrderSection = useCallback((target = 'card') => {
+  const scrollToOrderSection = useCallback((target = 'card', isPaymentReturn = false) => {
     if (typeof window === 'undefined') return;
 
-    clearScrollTimers();
+    if (isPaymentReturn) isPaymentReturnActiveRef.current = true;
+    clearScrollTimers('new-scroll');
 
-    const performScroll = () => {
+    const performScroll = (behavior = 'smooth') => {
       const cardEl = document.getElementById('order-form-card');
       const orderEl = sectionRef.current || document.getElementById('order');
       const targetEl = (target === 'card' && cardEl) ? cardEl : (cardEl || orderEl);
@@ -151,15 +139,27 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
           const targetY = rect.top + window.scrollY - offset;
           window.scrollTo({
             top: Math.max(0, Math.round(targetY)),
-            behavior: 'smooth'
+            behavior
           });
         }
       }
     };
 
-    // Chỉ cuộn nhẹ nhàng 1 lần duy nhất sau 50ms khi React render bước mới
-    const t = setTimeout(performScroll, 50);
-    scrollTimersRef.current.push(t);
+    if (isPaymentReturn) {
+      performScroll('instant');
+      [100, 300, 700, 1200].forEach((delay) => {
+        const t = setTimeout(() => performScroll('smooth'), delay);
+        scrollTimersRef.current.push(t);
+      });
+      const endTimer = setTimeout(() => {
+        isPaymentReturnActiveRef.current = false;
+      }, 1500);
+      scrollTimersRef.current.push(endTimer);
+    } else {
+      // Chỉ cuộn nhẹ nhàng 1 lần duy nhất sau 50ms khi React render bước mới trong trang
+      const t = setTimeout(() => performScroll('smooth'), 50);
+      scrollTimersRef.current.push(t);
+    }
   }, [sectionRef, clearScrollTimers]);
 
   const handleCloseSeatMap = useCallback(() => {
@@ -172,7 +172,7 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
 
   useEffect(() => {
     return () => {
-      clearScrollTimers();
+      clearScrollTimers('unmount');
       if (submitTimerRef.current) clearTimeout(submitTimerRef.current);
       if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
     };
@@ -203,7 +203,10 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
         (momoResultCode && momoResultCode !== '0');
 
       if (!isSuccess && !isCancelled) return;
-      if (lastProcessedUrlRef.current === window.location.href) return;
+      if (lastProcessedUrlRef.current === window.location.href) {
+        if (isSuccess || isCancelled) scrollToOrderSection('card', true);
+        return;
+      }
       lastProcessedUrlRef.current = window.location.href;
 
       const saved = getOrderSession(orderCode);
@@ -232,13 +235,13 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
           message: 'Thanh toán trực tuyến thành công! Thẻ bàn di sản của quý khách đã được xác nhận.'
         });
 
-        scrollToOrderSection('card');
+        scrollToOrderSection('card', true);
 
         const cleanTimer = setTimeout(() => {
           if (typeof window !== 'undefined') {
             window.history.replaceState(null, '', window.location.pathname);
           }
-        }, 2200);
+        }, 3500);
         scrollTimersRef.current.push(cleanTimer);
       } else if (isCancelled) {
         setStep(2);
@@ -248,13 +251,13 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
           message: 'Giao dịch thanh toán chưa hoàn tất hoặc đã bị hủy. Quý khách vui lòng chọn lại phương thức thanh toán phù hợp.'
         });
 
-        scrollToOrderSection('card');
+        scrollToOrderSection('card', true);
 
         const cleanTimer = setTimeout(() => {
           if (typeof window !== 'undefined') {
             window.history.replaceState(null, '', window.location.pathname);
           }
-        }, 2200);
+        }, 3500);
         scrollTimersRef.current.push(cleanTimer);
       }
     };
