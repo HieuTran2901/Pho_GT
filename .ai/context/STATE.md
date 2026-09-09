@@ -240,6 +240,14 @@
   - **Bảo toàn chuẩn M4.9:** 100% không ảnh hưởng đến chuyển bước thủ công trong trang Bước 1 $\leftrightarrow$ Bước 2 (không có hiện tượng cuộn giật giật khi người dùng chủ động kéo đọc nội dung).
   - **Thẩm định Puppeteer:** 100% PASS cho cả SePay và MoMo (`scrollY: ~6900`, `cardTop: ~68px` căn chỉnh hoàn hảo dưới header).
 
+- [x] **Nâng Cấp Giao Diện Hoàn Tất — Đề Xuất 4: Tinh Hoa Hội Tụ (M5.3)**:
+  - **Con dấu triện son 1986 dập 3D (`stampSlam3D`):** Dập "CỘP" xuống góc thẻ bàn với hiệu ứng chấn động (`stampShockwave`) và bụi vàng kim.
+  - **Làn khói phở nghi ngút & Radar đếm ngược (`radarSweepRing`):** Huy hiệu checkmark với làn khói bốc nghi ngút và bộ đếm ngược thời gian thực 30 phút giữ bàn (`29:59` đếm lùi từng giây).
+  - **Thẻ bàn xé vé răng cưa cổ điển (`ticket-perforation-left/right`):** Mép khuyết coupon xé vé, đường phân tách ticket stub đứt nét, viền khảm chỉ vàng hổ phách.
+  - **Hành trình tiếp đón 3 chặng (`Concierge Journey Tracker`):** 1. Xác nhận $\rightarrow$ 2. Bếp nổi lửa 90°C $\rightarrow$ 3. Tiếp đón tại bàn.
+  - **Tiện ích:** Nút Google Maps chỉ đường 1 chạm, nút Sao chép mã giữ bàn hiệu ứng nảy hạt vàng, 100% responsive trên mobile & desktop.
+  - **Kiểm định:** `npm run build` thành công, `FILE-SIZE-R001` tuân thủ nghiêm ngặt (`OrderStep3Success.jsx`: 304 dòng, `order-success.css`: 138 dòng).
+
 16. **Quy Tắc Điều Hướng Cuộn Khi Chuyển Hướng Trở Về Từ Cổng Thanh Toán (Payment Return Redirect Resilient Scroll):**
    - **Bài học:** Khi trở về từ cổng thanh toán bên ngoài (SePay, MoMo, VNPay), trình duyệt reload trang hoặc nhận redirect hashchange. Vòng đời mount/remount của React 18 hoặc sự kiện chạm màn hình (`touchstart`) khi quay lại app có thể kích hoạt hủy nhầm các timer cuộn. Ngoài ra, việc tải ảnh đầy đủ ở đầu trang làm dịch chuyển vị trí form (layout shift).
    - **Chuẩn thực thi:** Thiết lập cờ `isPaymentReturnActiveRef` trong 1.5s đầu để bỏ qua sự kiện `touchstart` lạc hướng khi vừa chuyển app, thực hiện bước nhảy `instant` ban đầu tiếp nối chuỗi smooth settling có kiểm tra `isComfortablyVisible`, và kéo dài thời gian dọn URL `cleanTimer` (3.5s) để đảm bảo trải nghiệm trơn tru.
