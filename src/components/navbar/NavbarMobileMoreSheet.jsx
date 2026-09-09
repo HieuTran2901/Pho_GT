@@ -1,4 +1,4 @@
-﻿import React, { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import {
   X,
   Compass,
@@ -99,25 +99,39 @@ export default function NavbarMobileMoreSheet({
               handleNavClick('order', '#order-form-card');
               if (onOpenOrder) onOpenOrder();
             }}
-            className="p-3.5 rounded-2xl bg-gradient-to-r from-[#9b2a1f] to-[#7a1c12] text-amber-100 shadow-md flex items-center justify-between cursor-pointer hover:shadow-lg transition-all active:scale-98"
+            className="p-4 rounded-2xl bg-gradient-to-r from-[#92241a] via-[#851e15] to-[#6d170f] text-amber-100 shadow-md cursor-pointer hover:shadow-lg transition-all active:scale-98 border border-amber-500/30 relative overflow-hidden group"
           >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0 border border-white/15">
-                <Bike className="w-5 h-5 text-amber-200" />
+            {/* Subtle vintage glow & watermark */}
+            <div className="absolute top-0 right-0 w-36 h-36 bg-amber-400/10 rounded-full blur-2xl pointer-events-none" />
+            <div className="absolute -right-4 -bottom-4 opacity-10 pointer-events-none text-white">
+              <Bike className="w-24 h-24" />
+            </div>
+
+            <div className="flex items-center justify-between gap-3 relative z-10">
+              <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                <div className="w-11 h-11 rounded-2xl bg-white/15 backdrop-blur-xs flex items-center justify-center shrink-0 border border-white/20 shadow-xs">
+                  <Bike className="w-5 h-5 text-amber-200" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-400/20 border border-amber-300/30 text-[10px] font-bold text-amber-300 tracking-wide font-sans">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                      Giao nhanh 15 phút
+                    </span>
+                  </div>
+                  <div className="font-serif font-bold text-[15px] text-white tracking-wide">
+                    Đặt Bàn & Giao Tận Nơi
+                  </div>
+                  <div className="text-[11px] text-amber-100/80 mt-0.5 leading-tight">
+                    Giữ chỗ bàn tiệc hoặc giao phở nóng tận cửa
+                  </div>
+                </div>
               </div>
-              <div>
-                <div className="font-serif font-bold text-sm text-white flex items-center gap-1.5">
-                  <span>Đặt Bàn & Giao Tận Nơi</span>
-                  <span className="text-[9px] px-1.5 py-0.2 bg-amber-400/30 border border-amber-300/40 text-amber-200 rounded font-sans font-bold">
-                    Nhanh 15p
-                  </span>
-                </div>
-                <div className="text-[11px] text-amber-200/80 mt-0.5">
-                  Giữ chỗ đẹp hoặc giao nóng hổi tận cửa
-                </div>
+
+              <div className="w-8 h-8 rounded-full bg-white/10 group-hover:bg-white/20 flex items-center justify-center shrink-0 border border-white/15 text-amber-200 transition-colors">
+                <ChevronRight className="w-4 h-4" />
               </div>
             </div>
-            <ChevronRight className="w-5 h-5 text-amber-300/80 shrink-0" />
           </div>
 
           {/* 2. Brand Discovery Section */}
