@@ -6,12 +6,16 @@ import com.pho1986.backend.model.entity.Category;
 import com.pho1986.backend.model.entity.Dish;
 import com.pho1986.backend.model.entity.Order;
 import com.pho1986.backend.service.AdminService;
+import com.pho1986.backend.service.S3StorageService;
 import jakarta.validation.Valid;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/admin")
@@ -19,9 +23,11 @@ import java.util.List;
 public class AdminController {
 
     private final AdminService adminService;
+    private final S3StorageService s3StorageService;
 
-    public AdminController(AdminService adminService) {
+    public AdminController(AdminService adminService, S3StorageService s3StorageService) {
         this.adminService = adminService;
+        this.s3StorageService = s3StorageService;
     }
 
     @GetMapping("/stats")
@@ -74,5 +80,11 @@ public class AdminController {
     public ResponseEntity<ApiResponse<Void>> deleteDish(@PathVariable String id) {
         adminService.deleteDish(id);
         return ResponseEntity.ok(ApiResponse.ok(null, "Xóa món ăn thành công!"));
+    }
+
+    @PostMapping(value = "/dishes/upload-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<Map<String, String>>> uploadDishImage(@RequestParam("file") MultipartFile file) {
+        String imageUrl = s3StorageService.uploadDishImage(file);
+        return ResponseEntity.ok(ApiResponse.ok(Map.of("imageUrl", imageUrl), "Tải ảnh lên S3 thành công!"));
     }
 }
