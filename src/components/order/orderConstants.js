@@ -25,15 +25,9 @@ export const QUICK_TIME_SLOTS = [
 
 export const EXTENDED_PAYMENT_METHODS = [
   {
-    id: 'SEPAY',
-    name: 'Cổng SePay Checkout',
-    subname: 'VietQR / Thẻ ATM',
-    badge: 'SePay',
-    badgeBg: 'bg-[#003c71]/25 border-[#003c71]/40 text-sky-300'
-  },
-  {
     id: 'MOMO',
     name: 'Ví MoMo',
+    shortName: 'MoMo',
     subname: '1-Chạm liên kết',
     badge: 'MoMo',
     badgeBg: 'bg-[#a50064]/25 border-[#a50064]/40 text-pink-300'
@@ -41,6 +35,7 @@ export const EXTENDED_PAYMENT_METHODS = [
   {
     id: 'VNPAY',
     name: 'VNPAY-QR',
+    shortName: 'VNPAY',
     subname: '30+ Ngân hàng',
     badge: 'VNPAY',
     badgeBg: 'bg-[#005baa]/25 border-[#005baa]/40 text-blue-300'
@@ -48,6 +43,7 @@ export const EXTENDED_PAYMENT_METHODS = [
   {
     id: 'ZALOPAY',
     name: 'Ví ZaloPay',
+    shortName: 'ZaloPay',
     subname: 'Mở qua Zalo',
     badge: 'Zalo',
     badgeBg: 'bg-[#0068ff]/25 border-[#0068ff]/40 text-cyan-300'
@@ -55,9 +51,19 @@ export const EXTENDED_PAYMENT_METHODS = [
   {
     id: 'CREDIT_CARD',
     name: 'Thẻ Quốc Tế',
+    shortName: 'Thẻ QT',
     subname: 'Visa / Master',
     isCard: true,
+    badge: 'Card',
     badgeBg: 'bg-amber-500/20 border-amber-500/40 text-amber-300'
+  },
+  {
+    id: 'SEPAY',
+    name: 'Cổng SePay Checkout',
+    shortName: 'SePay',
+    subname: 'VietQR / Thẻ ATM',
+    badge: 'SePay',
+    badgeBg: 'bg-[#003c71]/25 border-[#003c71]/40 text-sky-300'
   }
 ];
 
@@ -73,14 +79,14 @@ export const PAYMENT_GUIDANCE = {
 };
 
 export const PAYMENT_CTA_LABELS = {
-  VIETQR: 'Mở Mã Quét VietQR Tiếp Theo →',
+  VIETQR: 'Mở Quét Mã VietQR →',
   POST_PAID_AT_STORE: 'Xác Nhận Giữ Chỗ Tại Quán →',
   COD: 'Xác Nhận Đặt Giao Phở (COD) →',
-  SEPAY: 'Mở Cổng Thanh Toán SePay →',
+  SEPAY: 'Thanh Toán Qua SePay →',
   MOMO: 'Thanh Toán Qua Ví MoMo →',
   VNPAY: 'Mở Cổng VNPAY-QR →',
   ZALOPAY: 'Thanh Toán Qua ZaloPay →',
-  CREDIT_CARD: 'Thanh Toán Bằng Thẻ Quốc Tế →'
+  CREDIT_CARD: 'Thanh Toán Thẻ Quốc Tế →'
 };
 
 const SESSION_STORAGE_KEY_PREFIX = 'pho1986_order_';
