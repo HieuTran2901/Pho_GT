@@ -9,6 +9,7 @@ import org.springframework.util.StringUtils;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -23,6 +24,9 @@ public class AwsS3Config {
 
     @Value("${aws.s3.region:ap-southeast-2}")
     private String region;
+
+    @Value("${aws.s3.profile:pho-uploader}")
+    private String profile;
 
     @Value("${aws.s3.access-key:}")
     private String accessKey;
@@ -39,6 +43,15 @@ public class AwsS3Config {
             credentialsProvider = StaticCredentialsProvider.create(
                     AwsBasicCredentials.create(accessKey.trim(), secretKey.trim())
             );
+        } else if (StringUtils.hasText(profile)) {
+            try {
+                log.info("[CLOUD & SENTINEL] Khởi tạo S3Client với Profile Credentials Provider (Profile: {}, Region: {}, Bucket: {})", profile, region, bucketName);
+                credentialsProvider = ProfileCredentialsProvider.create(profile.trim());
+                credentialsProvider.resolveCredentials();
+            } catch (Exception ex) {
+                log.warn("[CLOUD & SENTINEL] Không thể nạp profile '{}', chuyển sang DefaultCredentialsProvider: {}", profile, ex.getMessage());
+                credentialsProvider = DefaultCredentialsProvider.create();
+            }
         } else {
             log.info("[CLOUD & SENTINEL] Khởi tạo S3Client với DefaultCredentialsProvider (Region: {}, Bucket: {})", region, bucketName);
             credentialsProvider = DefaultCredentialsProvider.create();
@@ -56,6 +69,10 @@ public class AwsS3Config {
 
     public String getRegion() {
         return region;
+    }
+
+    public String getProfile() {
+        return profile;
     }
 
     public boolean hasExplicitCredentials() {
