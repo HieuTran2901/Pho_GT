@@ -233,6 +233,17 @@
    - **Bài học:** Việc sử dụng một mảng `setTimeout` lặp lại (ví dụ sau 200ms, 500ms, 1000ms, 2000ms) để ép trình duyệt cuộn về một phần tử là một anti-pattern nghiêm trọng. Nó sẽ cưỡng bức màn hình nhảy giật ngược lên trên khi người dùng đang chủ động vuốt xuống, tạo cảm giác website bị lỗi và chống lại cử chỉ của người dùng.
    - **Chuẩn thực thi:** Chỉ kích hoạt lệnh cuộn 1 lần duy nhất sau khi DOM sẵn sàng. Luôn kiểm tra xem phần tử đích đã nằm trong tầm nhìn chưa (`isComfortablyVisible`). Bắt buộc đăng ký sự kiện `wheel` và `touchstart` để hủy ngay lập tức mọi timer cuộn còn đang chờ.
 
+- [x] **Xử Lý Cuộn Trở Về Từ Cổng Thanh Toán Trực Tuyến SePay & MoMo Resilient Scroll (M5.2)**:
+  - **Khắc phục lỗi đọng ở đầu trang (`scrollY: 0`):** Khi chuyển hướng từ cổng SePay / MoMo về lại web với tham số `paymentStatus=success` hoặc `resultCode=0`, form đã chuyển sang Bước 3 (Hoàn tất) nhưng người dùng bị bỏ lại ở Hero section thay vì được cuộn xuống form.
+  - **Cơ chế phòng thủ đa tầng (`isPaymentReturnActiveRef`):** Khóa tạm thời việc hủy scroll do các sự kiện `touchstart` lạc hướng khi người dùng vừa chuyển đổi từ app ngân hàng/MoMo về lại trình duyệt di động trong 1.5s đầu.
+  - **Chuỗi định vị thích ứng (`Multi-stage Settling`):** Bước nhảy tức thì (`instant`) đưa tầm nhìn ngay lập tức tới gần form, tiếp nối bởi chuỗi định vị êm dịu (`[100, 300, 700, 1200]ms`) nếu thẻ chưa nằm trọn vẹn trong vùng mắt nhìn (`!isComfortablyVisible`).
+  - **Bảo toàn chuẩn M4.9:** 100% không ảnh hưởng đến chuyển bước thủ công trong trang Bước 1 $\leftrightarrow$ Bước 2 (không có hiện tượng cuộn giật giật khi người dùng chủ động kéo đọc nội dung).
+  - **Thẩm định Puppeteer:** 100% PASS cho cả SePay và MoMo (`scrollY: ~6900`, `cardTop: ~68px` căn chỉnh hoàn hảo dưới header).
+
+16. **Quy Tắc Điều Hướng Cuộn Khi Chuyển Hướng Trở Về Từ Cổng Thanh Toán (Payment Return Redirect Resilient Scroll):**
+   - **Bài học:** Khi trở về từ cổng thanh toán bên ngoài (SePay, MoMo, VNPay), trình duyệt reload trang hoặc nhận redirect hashchange. Vòng đời mount/remount của React 18 hoặc sự kiện chạm màn hình (`touchstart`) khi quay lại app có thể kích hoạt hủy nhầm các timer cuộn. Ngoài ra, việc tải ảnh đầy đủ ở đầu trang làm dịch chuyển vị trí form (layout shift).
+   - **Chuẩn thực thi:** Thiết lập cờ `isPaymentReturnActiveRef` trong 1.5s đầu để bỏ qua sự kiện `touchstart` lạc hướng khi vừa chuyển app, thực hiện bước nhảy `instant` ban đầu tiếp nối chuỗi smooth settling có kiểm tra `isComfortablyVisible`, và kéo dài thời gian dọn URL `cleanTimer` (3.5s) để đảm bảo trải nghiệm trơn tru.
+
 ## Active Work & Next Objectives
 - [ ] **M2.6**: Tích hợp Modal tùy biến "Gu Ăn Phở" khi thực khách chọn món trên MenuCard.
 - [ ] **M2.7**: Tích hợp Hero Section động cá nhân hóa đón chào khách quen với nút "Gọi lại bát quen".
@@ -240,4 +251,5 @@
 ## Blockers & Known Debt
 - **Blockers**: Không có blocker kỹ thuật hiện tại. 100% tính năng đã qua thẩm định `vite build`, `mvnw test` và security audit.
 - **Technical Debt**: Đã dọn dẹp sạch toàn bộ nợ kỹ thuật về kích thước file (> 500 dòng), rò rỉ state chéo tài khoản, các lỗ hổng PII / Hardcoded credentials, trải nghiệm Rate Limit Lockout, và tối ưu hóa công thái học form mobile trọn vẹn trong viewport.
+
 
