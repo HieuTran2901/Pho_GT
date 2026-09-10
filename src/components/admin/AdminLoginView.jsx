@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   ShieldCheck,
   Lock,
@@ -7,15 +7,17 @@ import {
   AlertCircle,
   Sparkles,
   Clock,
-  ShieldAlert,
-  ArrowRight
+  ShieldAlert
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import AuthLockoutBanner from '../auth/AuthLockoutBanner';
 
 const MAX_LOGIN_ATTEMPTS = 5;
 const DEFAULT_LOCKOUT_SECONDS = 60;
 const STORAGE_LOCKOUT_KEY = 'pho1986_admin_lockout_until';
 const STORAGE_ATTEMPTS_KEY = 'pho1986_admin_failed_attempts';
+const STORAGE_ROUND_KEY = 'pho1986_admin_lockout_round';
+const STORAGE_PERMANENT_KEY = 'pho1986_admin_permanent_locked';
 
 export default function AdminLoginView({ onBackToHome }) {
   const { login, logout } = useAuth();
@@ -23,6 +25,25 @@ export default function AdminLoginView({ onBackToHome }) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Khôi phục trạng thái khóa vĩnh viễn
+  const [isPermanentLocked, setIsPermanentLocked] = useState(() => {
+    try {
+      return sessionStorage.getItem(STORAGE_PERMANENT_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  // Khôi phục vòng thử hiện tại
+  const [currentRound, setCurrentRound] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem(STORAGE_ROUND_KEY);
+      return saved ? parseInt(saved, 10) : 1;
+    } catch {
+      return 1;
+    }
+  });
 
   // Khôi phục trạng thái tạm khóa từ sessionStorage (chống bypass bằng cách F5 / refresh trang)
   const [lockoutSeconds, setLockoutSeconds] = useState(() => {
@@ -51,18 +72,21 @@ export default function AdminLoginView({ onBackToHome }) {
   const maxLockoutRef = useRef(DEFAULT_LOCKOUT_SECONDS);
 
   // Kích hoạt tạm khóa hệ thống và lưu mốc thời gian tuyệt đối
-  const triggerLockout = useCallback((seconds = DEFAULT_LOCKOUT_SECONDS) => {
+  const triggerLockout = useCallback((seconds = DEFAULT_LOCKOUT_SECONDS, roundOverride = null) => {
     const sec = Math.max(Number(seconds), 1);
     maxLockoutRef.current = Math.max(sec, 60);
     const until = Date.now() + sec * 1000;
+    const activeRound = roundOverride !== null ? roundOverride : currentRound;
     try {
       sessionStorage.setItem(STORAGE_LOCKOUT_KEY, until.toString());
       sessionStorage.removeItem(STORAGE_ATTEMPTS_KEY);
+      sessionStorage.setItem(STORAGE_ROUND_KEY, activeRound.toString());
     } catch {}
     setFailedAttempts(0);
     setLockoutSeconds(sec);
+    setCurrentRound(activeRound);
     setErrorMsg('');
-  }, []);
+  }, [currentRound]);
 
   // Ghi nhận 1 lần thử sai: cảnh báo số lần còn lại hoặc khóa khi đủ 5 lần
   const recordFailureAttempt = useCallback((customMsg = '') => {
@@ -73,10 +97,18 @@ export default function AdminLoginView({ onBackToHome }) {
     } catch {}
 
     if (next >= MAX_LOGIN_ATTEMPTS) {
-      triggerLockout(DEFAULT_LOCKOUT_SECONDS);
+      if (currentRound >= 5) {
+        setIsPermanentLocked(true);
+        try { sessionStorage.setItem(STORAGE_PERMANENT_KEY, 'true'); } catch {}
+        setErrorMsg('Tài khoản quản trị đã bị niêm phong do quá 5 vòng thử sai.');
+      } else {
+        const cooldowns = [60, 180, 300, 600];
+        const sec = cooldowns[Math.min(currentRound - 1, cooldowns.length - 1)];
+        triggerLockout(sec, currentRound);
+      }
     } else {
       const remaining = MAX_LOGIN_ATTEMPTS - next;
-      const remainingText = `(còn ${remaining} lần thử trước khi tạm khóa)`;
+      const remainingText = `(Vòng ${currentRound}/5: còn ${remaining} lần thử)`;
       const baseMsg = customMsg || 'Số điện thoại hoặc mật khẩu không chính xác.';
       setErrorMsg(`${baseMsg} ${remainingText}`);
     }
@@ -102,6 +134,11 @@ export default function AdminLoginView({ onBackToHome }) {
             setLockoutSeconds(0);
             setErrorMsg('');
             clearInterval(timer);
+            setCurrentRound((prev) => {
+              const next = Math.min(5, prev + 1);
+              try { sessionStorage.setItem(STORAGE_ROUND_KEY, next.toString()); } catch {}
+              return next;
+            });
           } else {
             setLockoutSeconds(remaining);
           }
@@ -113,6 +150,11 @@ export default function AdminLoginView({ onBackToHome }) {
         if (prev <= 1) {
           clearInterval(timer);
           setErrorMsg('');
+          setCurrentRound((r) => {
+            const next = Math.min(5, r + 1);
+            try { sessionStorage.setItem(STORAGE_ROUND_KEY, next.toString()); } catch {}
+            return next;
+          });
           return 0;
         }
         return prev - 1;
@@ -184,22 +226,35 @@ export default function AdminLoginView({ onBackToHome }) {
       try {
         sessionStorage.removeItem(STORAGE_ATTEMPTS_KEY);
         sessionStorage.removeItem(STORAGE_LOCKOUT_KEY);
+        sessionStorage.removeItem(STORAGE_ROUND_KEY);
+        sessionStorage.removeItem(STORAGE_PERMANENT_KEY);
       } catch {}
       setFailedAttempts(0);
+      setCurrentRound(1);
+      setIsPermanentLocked(false);
     } catch (err) {
-      // Nhận diện tín hiệu Rate Limit từ Backend (HTTP 429)
-      const waitSec = err.retryAfterSeconds || err.data?.data?.retryAfterSeconds;
-      if (waitSec && Number(waitSec) > 0) {
-        triggerLockout(Number(waitSec));
-      } else if (err.message && err.message.includes('thử lại sau')) {
-        const match = err.message.match(/(\d+)\s*giây/);
-        if (match && match[1]) {
-          triggerLockout(parseInt(match[1], 10));
-        } else {
-          triggerLockout(DEFAULT_LOCKOUT_SECONDS);
-        }
+      if (err.isPermanent || err.status === 423) {
+        setIsPermanentLocked(true);
+        try { sessionStorage.setItem(STORAGE_PERMANENT_KEY, 'true'); } catch {}
+        setLockoutSeconds(0);
+        setErrorMsg(err.message || 'Tài khoản quản trị đã bị niêm phong do quá 5 vòng thử sai.');
       } else {
-        recordFailureAttempt(err.message || 'Số điện thoại hoặc mật khẩu không chính xác.');
+        const round = err.round || err.data?.data?.round;
+        if (round) {
+          setCurrentRound(Number(round));
+          try { sessionStorage.setItem(STORAGE_ROUND_KEY, round.toString()); } catch {}
+        }
+        // Nhận diện tín hiệu Rate Limit từ Backend (HTTP 429)
+        const waitSec = err.retryAfterSeconds || err.data?.data?.retryAfterSeconds;
+        if (waitSec && Number(waitSec) > 0) {
+          triggerLockout(Number(waitSec), round || currentRound);
+        } else if (err.message && err.message.includes('thử lại sau')) {
+          const match = err.message.match(/(\d+)\s*giây/);
+          const sec = match && match[1] ? parseInt(match[1], 10) : DEFAULT_LOCKOUT_SECONDS;
+          triggerLockout(sec, round || currentRound);
+        } else {
+          recordFailureAttempt(err.message || 'Số điện thoại hoặc mật khẩu không chính xác.');
+        }
       }
     } finally {
       setLoading(false);
@@ -245,53 +300,16 @@ export default function AdminLoginView({ onBackToHome }) {
           </p>
         </div>
 
-        {/* Retro Heritage Lockout Banner khi bị tạm khóa nhập sai quá 5 lần */}
-        {lockoutSeconds > 0 ? (
-          <div className="mb-6 p-4 bg-[#2a1309] border-2 border-[#ea580c] rounded-2xl text-amber-100 shadow-xl shadow-red-950/40 font-sans animate-shake relative overflow-hidden">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-red-950/90 border border-[#ea580c]/60 flex items-center justify-center shrink-0 mt-0.5 text-rose-400">
-                <ShieldAlert className="w-5 h-5 text-[#ea580c] animate-pulse" />
-              </div>
-              <div className="flex-1 text-xs">
-                <div className="flex items-center justify-between">
-                  <span className="font-serif font-bold text-[#fcf9f2] text-sm uppercase tracking-wide">
-                    Tạm Khóa Thử Lại
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#8a1e14] text-amber-200 font-mono font-bold text-xs border border-amber-500/40 shadow-xs">
-                    <Clock className="w-3.5 h-3.5 animate-spin text-amber-300" />
-                    00:{String(lockoutSeconds).padStart(2, '0')}
-                  </span>
-                </div>
-                <p className="text-amber-200/90 mt-1.5 leading-relaxed font-sans">
-                  Bạn đã nhập sai thông tin quản trị quá 5 lần. Để chống tấn công vét cạn (Brute-force) và bảo vệ an toàn cho nhà hàng, hệ thống tạm dừng nhận thử lại trong <strong>{lockoutSeconds} giây</strong>.
-                </p>
-
-                {/* Dải Progress Bar đếm lùi thời gian thực */}
-                <div className="mt-3 h-1.5 w-full bg-[#ea580c]/20 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-amber-500 to-[#ea580c] transition-all duration-1000 ease-linear rounded-full"
-                    style={{
-                      width: `${Math.min(100, Math.max(0, (lockoutSeconds / (maxLockoutRef.current || 60)) * 100))}%`
-                    }}
-                  />
-                </div>
-
-                <div className="mt-3 pt-2.5 border-t border-amber-900/40 flex items-center justify-between gap-2">
-                  <span className="text-[11px] text-amber-400/80 font-serif">
-                    Form tự động mở lại sau đếm ngược
-                  </span>
-                  <button
-                    type="button"
-                    onClick={onBackToHome}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#8a1e14] hover:bg-[#731910] text-amber-100 text-[10.5px] font-serif font-bold uppercase tracking-wider transition-all shadow-xs active:scale-95"
-                  >
-                    <span>Về trang chủ</span>
-                    <ArrowRight className="w-3 h-3" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+        {/* Multi-Tier Lockout & Cooldown Banner (SENTINEL & URBAN) */}
+        {(isPermanentLocked || lockoutSeconds > 0) ? (
+          <AuthLockoutBanner
+            isPermanent={isPermanentLocked}
+            lockoutSeconds={lockoutSeconds}
+            currentRound={currentRound}
+            maxRounds={5}
+            errorMessage={errorMsg}
+            onGuestOrder={onBackToHome}
+          />
         ) : errorMsg ? (
           <div className="mb-6 p-3.5 bg-[#8a1e14]/25 border border-[#8a1e14] rounded-xl text-xs text-rose-300 flex items-start gap-2.5 font-sans animate-shake">
             <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
@@ -310,7 +328,7 @@ export default function AdminLoginView({ onBackToHome }) {
               </div>
               <input
                 type="tel"
-                disabled={lockoutSeconds > 0}
+                disabled={lockoutSeconds > 0 || isPermanentLocked}
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="0999999999"
@@ -330,7 +348,7 @@ export default function AdminLoginView({ onBackToHome }) {
               </div>
               <input
                 type="password"
-                disabled={lockoutSeconds > 0}
+                disabled={lockoutSeconds > 0 || isPermanentLocked}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
@@ -342,10 +360,15 @@ export default function AdminLoginView({ onBackToHome }) {
 
           <button
             type="submit"
-            disabled={loading || lockoutSeconds > 0}
+            disabled={loading || lockoutSeconds > 0 || isPermanentLocked}
             className="w-full mt-2 py-3 bg-gradient-to-r from-[#8a1e14] to-[#a32217] hover:from-[#9c2217] hover:to-[#b8271a] text-[#fcf9f2] font-semibold rounded-lg shadow-lg shadow-[#8a1e14]/40 border border-[#d4af37]/40 transition-all transform active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed font-serif tracking-wide text-base flex items-center justify-center gap-2"
           >
-            {lockoutSeconds > 0 ? (
+            {isPermanentLocked ? (
+              <>
+                <ShieldAlert className="w-4 h-4 text-red-400" />
+                <span className="uppercase tracking-wide">Tài Khoản Đã Bị Khóa Bảo Vệ</span>
+              </>
+            ) : lockoutSeconds > 0 ? (
               <>
                 <Clock className="w-4 h-4 animate-pulse text-amber-300" />
                 <span className="uppercase tracking-wide">Tạm Khóa Thử Lại ({lockoutSeconds}s)</span>

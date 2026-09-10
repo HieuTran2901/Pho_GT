@@ -3,7 +3,7 @@
  * Connects frontend to Spring Boot backend (/api/v1/auth) with resilient fallback.
  */
 
-import { getApiBaseUrl } from './apiConfig';
+import { getApiBaseUrl, notifyIfAccountLocked } from './apiConfig';
 
 const API_BASE_URL = getApiBaseUrl('auth');
 
@@ -12,12 +12,17 @@ const FRIENDLY_NETWORK_ERROR = 'Dạ, quán đang tạm thời gián đoạn k�
 /**
  * Handle API HTTP responses and error formatting
  */
-async function handleResponse(response) {
+async function handleResponse(response, isLoginAttempt = false) {
   const json = await response.json().catch(() => null);
 
   if (!response.ok) {
+    if (!isLoginAttempt) {
+      notifyIfAccountLocked(response.status, json);
+    }
     const errorMsg = (json && (json.message || json.error)) 
-      || (response.status === 401 
+      || (response.status === 423
+          ? 'Tài khoản của quý khách đã bị khóa bảo vệ. Vui lòng liên hệ Hotline quán để được hỗ trợ mở khóa.'
+          : response.status === 401 
           ? 'Số điện thoại hoặc mật khẩu chưa chính xác. Quý khách vui lòng kiểm tra lại nhé!'
           : response.status === 429
           ? 'Hệ thống tạm khóa đăng nhập để bảo vệ an toàn. Quý khách vui lòng chờ một lát nhé!'
@@ -29,6 +34,11 @@ async function handleResponse(response) {
     const error = new Error(errorMsg);
     error.status = response.status;
     error.data = json;
+    error.isPermanent = response.status === 423 || Boolean(json?.data?.permanent);
+    error.round = json?.data?.round ? Number(json.data.round) : undefined;
+    error.maxRounds = json?.data?.maxRounds ? Number(json.data.maxRounds) : 5;
+    error.failedAttemptsInRound = json?.data?.failedAttemptsInRound;
+
     if (json?.data?.retryAfterSeconds) {
       error.retryAfterSeconds = Number(json.data.retryAfterSeconds);
     } else {
@@ -70,7 +80,7 @@ export const authApi = {
         }),
       });
 
-      return await handleResponse(response);
+      return await handleResponse(response, true);
     } catch (err) {
       // Bắt lỗi mất kết nối mạng hoặc Backend chưa phản hồi với câu từ thân thiện
       if (err.name === 'TypeError' || err.message?.includes('fetch') || err.message?.includes('NetworkError')) {
@@ -95,7 +105,7 @@ export const authApi = {
         body: JSON.stringify({ phone, password }),
       });
 
-      return await handleResponse(response);
+      return await handleResponse(response, true);
     } catch (err) {
       // Bắt lỗi mất kết nối mạng hoặc Backend chưa phản hồi với câu từ thân thiện
       if (err.name === 'TypeError' || err.message?.includes('fetch') || err.message?.includes('NetworkError')) {

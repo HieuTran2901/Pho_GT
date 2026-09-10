@@ -26,3 +26,17 @@ export const getApiBaseUrl = (endpoint) => {
   // Localhost development fallback
   return `http://localhost:8080/api/v1/${cleanEndpoint}`;
 };
+
+/**
+ * [SENTINEL & RAVEN] Tự động phát hiện lỗi HTTP 423 / ACCOUNT_LOCKED và phát tín hiệu toàn cục
+ */
+export const notifyIfAccountLocked = (status, data) => {
+  if (status === 423 || data?.code === 'ACCOUNT_LOCKED' || (data?.locked && data?.permanent)) {
+    const reason = data?.message || data?.data?.lockReason || 'Tài khoản của quý khách hiện đang bị khóa bởi Quản trị viên Phở 1986.';
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('pho1986:account-locked', { detail: { reason } }));
+    }
+    return true;
+  }
+  return false;
+};

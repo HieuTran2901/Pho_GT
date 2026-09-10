@@ -9,6 +9,7 @@ import {
   Users,
   TrendingUp,
   UserCheck,
+  CreditCard,
   Settings,
   Store,
   ArrowLeft,
@@ -196,12 +197,24 @@ function AdminSidebar({
 
             {/* 5. Khách hàng */}
             <button
-              onClick={() => { notify('Chức năng Quản lý Khách hàng thân thiết đang được chuẩn bị!', 'info'); setMobileDrawerOpen(false); }}
-              className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-serif font-medium text-[#c8bba8] hover:text-white hover:bg-white/5 transition-all"
+              onClick={() => { setActiveTab('customers'); setMobileDrawerOpen(false); }}
+              className={`relative w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-serif transition-colors z-10 ${
+                activeTab === 'customers'
+                  ? 'text-white font-bold shadow-md shadow-black/20'
+                  : 'text-[#c8bba8] hover:text-white hover:bg-white/5 font-medium'
+              }`}
             >
-              <Users className="w-4 h-4 text-amber-500" />
-              <span>Khách hàng</span>
+              {activeTab === 'customers' && (
+                <motion.div
+                  layoutId="activeSidebarIndicator"
+                  className="absolute inset-0 bg-gradient-to-r from-[#8a1e14] via-[#7a170e] to-[#60120b] rounded-xl border border-[#d4af37]/40 shadow-lg shadow-black/30 -z-10"
+                  transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+                />
+              )}
+              <Users className={`w-4 h-4 relative z-10 ${activeTab === 'customers' ? 'text-amber-300' : 'text-amber-500'}`} />
+              <span className="relative z-10">Khách hàng</span>
             </button>
+
 
             {/* 6. Doanh thu & Báo cáo */}
             <button
@@ -221,7 +234,32 @@ function AdminSidebar({
               <span>Quản lý nhân viên</span>
             </button>
 
-            {/* 8. Cài đặt */}
+            {/* 8. Cổng Thanh Toán (M5.4 Payment Hub) */}
+            <button
+              onClick={() => { setActiveTab('payments'); setMobileDrawerOpen(false); }}
+              className={`relative w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-serif transition-colors z-10 ${
+                activeTab === 'payments'
+                  ? 'text-white font-bold shadow-md shadow-black/20'
+                  : 'text-[#c8bba8] hover:text-white hover:bg-white/5 font-medium'
+              }`}
+            >
+              {activeTab === 'payments' && (
+                <motion.div
+                  layoutId="activeSidebarIndicator"
+                  className="absolute inset-0 bg-gradient-to-r from-[#8a1e14] via-[#7a170e] to-[#60120b] rounded-xl border border-[#d4af37]/40 shadow-lg shadow-black/30 -z-10"
+                  transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+                />
+              )}
+              <div className="flex items-center gap-3 relative z-10">
+                <CreditCard className={`w-4 h-4 ${activeTab === 'payments' ? 'text-amber-300' : 'text-amber-500'}`} />
+                <span>Cổng Thanh Toán</span>
+              </div>
+              <span className="relative z-10 px-1.5 py-0.2 rounded text-[9px] font-mono bg-[#d4af37]/20 text-[#d4af37] border border-[#d4af37]/40">
+                Hub
+              </span>
+            </button>
+
+            {/* 9. Cài đặt */}
             <button
               onClick={() => { notify('Cài đặt hệ thống quán đang hoạt động ổn định!', 'info'); setMobileDrawerOpen(false); }}
               className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-serif font-medium text-[#c8bba8] hover:text-white hover:bg-white/5 transition-all"

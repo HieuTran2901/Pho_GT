@@ -1,6 +1,7 @@
-import React, { useState, useCallback } from 'react';
-import { Send, Clock, ChevronDown } from 'lucide-react';
+import { useState, useCallback, memo } from 'react';
+import { Send, Clock, ChevronDown, RotateCcw } from 'lucide-react';
 import { TASTE_PREFERENCES, QUICK_TIME_SLOTS } from './orderConstants';
+import OrderLockoutBanner from './OrderLockoutBanner';
 
 function OrderStep1Booking({
   formData,
@@ -14,7 +15,10 @@ function OrderStep1Booking({
   handleToggleTaste,
   isLoading,
   handleSubmit,
-  direction
+  direction,
+  isOrderLocked,
+  lockoutReason,
+  handleResetLockout
 }) {
   const [isTasteExpanded, setIsTasteExpanded] = useState(() => {
     return Boolean(formData.note && formData.note.trim().length > 0);
@@ -337,30 +341,49 @@ function OrderStep1Booking({
         )}
       </div>
 
+      {/* [URBAN & RAVEN] Banner Niêm Phong Đặt Bàn khi SĐT hoặc tài khoản bị khóa */}
+      {isOrderLocked && (
+        <OrderLockoutBanner
+          reason={lockoutReason}
+          onChangePhone={() => handleResetLockout(() => handleInputChange({ target: { name: 'phone', value: '' } }))}
+        />
+      )}
+
       {/* Submit Button with Mobile Safe-Zone Clearance (pb-24 sm:pb-0) */}
       <div className="pt-2 pb-24 sm:pb-0">
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="w-full py-3.5 rounded-xl bg-gradient-to-r from-brand-red to-amber-600 hover:from-brand-redhover hover:to-amber-700 text-white font-bold text-xs sm:text-sm shadow-lg transition-all flex items-center justify-center gap-2 active:scale-98 cursor-pointer"
-        >
-          {isLoading ? (
-            <span className="flex items-center gap-2">
-              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-              <span>Đang Xử Lý Yêu Cầu...</span>
-            </span>
-          ) : (
-            <>
-              <Send className="w-4 h-4 text-white" />
-              <span>
-                {formData.orderType === 'dine-in' ? 'Xác Nhận Đặt Bàn Tại Quán' : 'Xác Nhận Đặt Giao Phở'}
+        {isOrderLocked ? (
+          <button
+            type="button"
+            onClick={() => handleResetLockout(() => handleInputChange({ target: { name: 'phone', value: '' } }))}
+            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-700 via-amber-600 to-red-800 hover:brightness-110 text-amber-100 font-serif font-bold text-xs sm:text-sm shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer border border-amber-400/40"
+          >
+            <RotateCcw className="w-4 h-4 text-amber-200" />
+            <span>SỐ NÀY ĐANG TẠM KHÓA • BẤM ĐỂ ĐỔI SỐ KHÁC</span>
+          </button>
+        ) : (
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-brand-red to-amber-600 hover:from-brand-redhover hover:to-amber-700 text-white font-bold text-xs sm:text-sm shadow-lg transition-all flex items-center justify-center gap-2 active:scale-98 cursor-pointer"
+          >
+            {isLoading ? (
+              <span className="flex items-center gap-2">
+                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                <span>Đang Xử Lý Yêu Cầu...</span>
               </span>
-            </>
-          )}
-        </button>
+            ) : (
+              <>
+                <Send className="w-4 h-4 text-white" />
+                <span>
+                  {formData.orderType === 'dine-in' ? 'Xác Nhận Đặt Bàn Tại Quán' : 'Xác Nhận Đặt Giao Phở'}
+                </span>
+              </>
+            )}
+          </button>
+        )}
       </div>
     </form>
   );
 }
 
-export default React.memo(OrderStep1Booking);
+export default memo(OrderStep1Booking);

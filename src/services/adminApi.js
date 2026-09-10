@@ -137,5 +137,88 @@ export const adminApi = {
       method: 'POST',
       body: formData,
     });
+  },
+
+  async getPaymentGateways() {
+    return await fetchAdminWithRetry(`${API_BASE_URL}/payments/gateways`, {
+      method: 'GET',
+    });
+  },
+
+  async updatePaymentGateway(gatewayId, { status, maintenanceMessage }) {
+    return await fetchAdminWithRetry(`${API_BASE_URL}/payments/gateways/${gatewayId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status, maintenanceMessage }),
+    });
+  },
+
+  async unlockUser(userId) {
+    return await fetchAdminWithRetry(`${API_BASE_URL}/users/${encodeURIComponent(userId)}/unlock`, {
+      method: 'POST',
+    });
+  },
+
+  // --- QUẢN LÝ KHÁCH HÀNG (CUSTOMER MANAGEMENT) ---
+  async getCustomers({ search = '', status = 'ALL', tier = 'ALL' } = {}) {
+    const params = new URLSearchParams();
+    if (search && search.trim()) params.append('search', search.trim());
+    if (status && status !== 'ALL') params.append('status', status);
+    if (tier && tier !== 'ALL') params.append('tier', tier);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return await fetchAdminWithRetry(`${API_BASE_URL}/customers${query}`, {
+      method: 'GET',
+    });
+  },
+
+  async getCustomerMetrics() {
+    return await fetchAdminWithRetry(`${API_BASE_URL}/customers/metrics`, {
+      method: 'GET',
+    });
+  },
+
+  async getCustomerDetail(customerId) {
+    return await fetchAdminWithRetry(`${API_BASE_URL}/customers/${encodeURIComponent(customerId)}`, {
+      method: 'GET',
+    });
+  },
+
+  async updateCustomerStatus(customerId, { status, reason }) {
+    return await fetchAdminWithRetry(`${API_BASE_URL}/customers/${encodeURIComponent(customerId)}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status, reason }),
+    });
+  },
+
+  async adjustCustomerPoints(customerId, { points, reason }) {
+    return await fetchAdminWithRetry(`${API_BASE_URL}/customers/${encodeURIComponent(customerId)}/adjust-points`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ points, reason }),
+    });
+  },
+
+  async unlockCustomer(customerId) {
+    return await fetchAdminWithRetry(`${API_BASE_URL}/customers/${encodeURIComponent(customerId)}/unlock`, {
+      method: 'POST',
+    });
+  },
+
+  async blacklistCustomer(customerId, { reason, banPhone = true, banDevice = true, banIp = false, ipBanDays = 7 }) {
+    return await fetchAdminWithRetry(`${API_BASE_URL}/customers/${encodeURIComponent(customerId)}/blacklist`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ reason, banPhone, banDevice, banIp, ipBanDays }),
+    });
   }
 };
+

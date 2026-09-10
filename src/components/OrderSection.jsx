@@ -9,6 +9,8 @@ import OrderStep3QrPayment from './order/OrderStep3QrPayment';
 import OrderStep3Success from './order/OrderStep3Success';
 import OrderProgressStepper from './order/OrderProgressStepper';
 import { useOrderSectionState } from './order/useOrderSectionState';
+import { usePaymentGatewaysStatus } from './order/usePaymentGatewaysStatus';
+import { submitSePayCheckout } from '../utils/submitSePayCheckout';
 
 function OrderSection({ cartItems = [], onClearCart } = {}) {
   const [sectionRef, isVisible] = useScrollReveal({ threshold: 0.12 });
@@ -35,6 +37,9 @@ function OrderSection({ cartItems = [], onClearCart } = {}) {
     todayDateStr,
     calculatedAmount,
     selectedTasteSet,
+    isOrderLocked,
+    lockoutReason,
+    handleResetLockout,
     handleInputChange,
     handleSetOrderType,
     handleSetGuestCount,
@@ -48,6 +53,11 @@ function OrderSection({ cartItems = [], onClearCart } = {}) {
     handleCopyCode,
     handleReset
   } = useOrderSectionState(sectionRef, { cartItems, onClearCart });
+
+  const { isMaintenance, isDisabled, getMaintenanceMessage } = usePaymentGatewaysStatus(
+    selectedPaymentMethod,
+    setSelectedPaymentMethod
+  );
 
   const isQrScreen = (selectedPaymentMethod === 'MOMO' || selectedPaymentMethod === 'VIETQR' || selectedPaymentMethod === 'SEPAY') && !isVietQrConfirmed;
   const shouldShowCard = isVisible || step > 1;
@@ -93,6 +103,9 @@ function OrderSection({ cartItems = [], onClearCart } = {}) {
                   isLoading={isLoading}
                   handleSubmit={handleSubmit}
                   direction={direction}
+                  isOrderLocked={isOrderLocked}
+                  lockoutReason={lockoutReason}
+                  handleResetLockout={handleResetLockout}
                 />
               )}
 
@@ -112,6 +125,12 @@ function OrderSection({ cartItems = [], onClearCart } = {}) {
                   isProcessingPayment={isProcessingPayment}
                   calculatedAmount={calculatedAmount}
                   direction={direction}
+                  isMaintenance={isMaintenance}
+                  isDisabled={isDisabled}
+                  getMaintenanceMessage={getMaintenanceMessage}
+                  isOrderLocked={isOrderLocked}
+                  lockoutReason={lockoutReason}
+                  handleResetLockout={handleResetLockout}
                 />
               )}
 

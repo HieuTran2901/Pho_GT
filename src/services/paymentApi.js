@@ -3,7 +3,7 @@
  * Connects frontend to Spring Boot backend (/api/v1/payments) with resilient offline fallback.
  */
 
-import { getApiBaseUrl } from './apiConfig';
+import { getApiBaseUrl, notifyIfAccountLocked } from './apiConfig';
 
 const API_BASE_URL = getApiBaseUrl('payments');
 
@@ -30,6 +30,7 @@ export const paymentApi = {
       const response = await fetch(API_BASE_URL, {
         method: 'POST',
         headers,
+        credentials: 'include',
         body: JSON.stringify({
           orderCode,
           paymentMethod,
@@ -42,12 +43,26 @@ export const paymentApi = {
       });
 
       const json = await response.json().catch(() => null);
+
+      // [SENTINEL & RAVEN] Chốt chặn tài khoản bị khóa: Tuyệt đối không fallback mã QR tĩnh
+      if (response.status === 423 || json?.data?.code === 'ACCOUNT_LOCKED') {
+        notifyIfAccountLocked(response.status, json);
+        const err = new Error(json?.message || 'Tài khoản hoặc số điện thoại này hiện đang bị tạm khóa. Không thể thanh toán.');
+        err.status = 423;
+        err.isLocked = true;
+        err.data = json;
+        throw err;
+      }
+
       if (response.ok && json?.data) {
         return json.data;
       } else if (json?.message) {
         console.warn('[PaymentApi] Backend message:', json.message);
       }
     } catch (e) {
+      if (e.isLocked || e.status === 423) {
+        throw e;
+      }
       console.warn('[PaymentApi] Backend offline or unreachable, falling back to client generation:', e.message);
     }
 

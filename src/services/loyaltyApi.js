@@ -5,7 +5,7 @@
  * Kết nối REST API /api/v1/loyalty để tra cứu phần thưởng, điểm tích lũy và đổi quà.
  */
 
-import { getApiBaseUrl } from './apiConfig';
+import { getApiBaseUrl, notifyIfAccountLocked } from './apiConfig';
 
 const API_BASE_URL = getApiBaseUrl('loyalty');
 
@@ -13,6 +13,7 @@ async function handleResponse(response) {
   const json = await response.json().catch(() => null);
 
   if (!response.ok) {
+    notifyIfAccountLocked(response.status, json);
     const errorMsg = (json && (json.message || json.error))
       || (response.status === 401
           ? 'Phiên đăng nhập đã hết hạn. Quý khách vui lòng đăng nhập lại nhé!'
@@ -34,21 +35,22 @@ export const loyaltyApi = {
    */
   async getAvailableRewards() {
     const response = await fetch(`${API_BASE_URL}/rewards`, {
+      credentials: 'include',
       headers: { 'Accept': 'application/json' }
     });
     return handleResponse(response);
   },
 
   /**
-   * Lấy thông tin điểm Tri Kỷ & tiến độ thăng hạng (Cần Auth Token)
+   * Lấy thông tin điểm Tri Kỷ & tiến độ thăng hạng (Hỗ trợ HttpOnly Cookie & Bearer Token)
    */
   async getLoyaltySummary(token) {
-    if (!token) return null;
+    const headers = { 'Accept': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
     const response = await fetch(`${API_BASE_URL}/summary`, {
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
+      credentials: 'include',
+      headers
     });
     return handleResponse(response);
   },
@@ -57,16 +59,16 @@ export const loyaltyApi = {
    * Đổi quà bằng điểm Tri Kỷ
    */
   async redeemReward(rewardId, token) {
-    if (!token) {
-      throw new Error('Vui lòng đăng nhập để đổi quà bằng điểm Tri Kỷ');
-    }
+    const headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
     const response = await fetch(`${API_BASE_URL}/redeem`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
+      credentials: 'include',
+      headers,
       body: JSON.stringify({ rewardId })
     });
     return handleResponse(response);
@@ -76,12 +78,12 @@ export const loyaltyApi = {
    * Xem sổ nhật ký điểm thưởng (Lịch sử tích/tiêu)
    */
   async getLoyaltyLedger(token) {
-    if (!token) return [];
+    const headers = { 'Accept': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
     const response = await fetch(`${API_BASE_URL}/ledger`, {
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
+      credentials: 'include',
+      headers
     });
     return handleResponse(response);
   }

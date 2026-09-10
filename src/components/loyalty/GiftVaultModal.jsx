@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { X, Award, ShieldCheck, Star } from 'lucide-react';
 import { useGiftVaultState } from './useGiftVaultState';
 import GiftVaultTabs from './GiftVaultTabs';
@@ -114,12 +114,14 @@ export default function GiftVaultModal({
     }
   }, [rendered]);
 
+  const touchStartYRef = useRef(null);
+
   // Mobile Swipe down to close
-  const handleTouchStart = (e) => setTouchStartY(e.touches[0].clientY);
+  const handleTouchStart = (e) => { touchStartYRef.current = e.touches[0].clientY; };
   const handleTouchEnd = (e) => {
-    if (touchStartY === null) return;
-    if (e.changedTouches[0].clientY - touchStartY > 60) triggerClose();
-    setTouchStartY(null);
+    if (touchStartYRef.current === null) return;
+    if (e.changedTouches[0].clientY - touchStartYRef.current > 60) triggerClose();
+    touchStartYRef.current = null;
   };
 
   if (!rendered) return null;

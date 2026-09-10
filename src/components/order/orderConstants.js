@@ -67,6 +67,49 @@ export const EXTENDED_PAYMENT_METHODS = [
   }
 ];
 
+export const BRAND_STYLES = {
+  MOMO: {
+    activeBorder: 'border-[#d82d8b]',
+    activeBg: 'bg-[#d82d8b]/15',
+    activeGlow: 'shadow-[0_0_14px_rgba(216,45,139,0.4)] ring-1 ring-[#d82d8b]',
+    activeText: 'text-[#ff66b2]',
+    badgeBg: 'bg-[#a50064]/35 border-[#a50064]/60 text-pink-200',
+    bannerStyle: 'bg-[#a50064]/15 border-[#a50064]/30 text-pink-200'
+  },
+  VNPAY: {
+    activeBorder: 'border-[#005baa]',
+    activeBg: 'bg-[#005baa]/15',
+    activeGlow: 'shadow-[0_0_14px_rgba(0,91,170,0.4)] ring-1 ring-[#005baa]',
+    activeText: 'text-[#4ea8de]',
+    badgeBg: 'bg-[#005baa]/35 border-[#005baa]/60 text-blue-200',
+    bannerStyle: 'bg-[#005baa]/15 border-[#005baa]/30 text-blue-200'
+  },
+  ZALOPAY: {
+    activeBorder: 'border-[#008fe5]',
+    activeBg: 'bg-[#008fe5]/15',
+    activeGlow: 'shadow-[0_0_14px_rgba(0,143,229,0.4)] ring-1 ring-[#008fe5]',
+    activeText: 'text-[#38bdf8]',
+    badgeBg: 'bg-[#0068ff]/35 border-[#0068ff]/60 text-cyan-200',
+    bannerStyle: 'bg-[#0068ff]/15 border-[#0068ff]/30 text-cyan-200'
+  },
+  CREDIT_CARD: {
+    activeBorder: 'border-amber-400',
+    activeBg: 'bg-amber-500/15',
+    activeGlow: 'shadow-[0_0_14px_rgba(251,191,36,0.4)] ring-1 ring-amber-400',
+    activeText: 'text-amber-300',
+    badgeBg: 'bg-amber-500/30 border-amber-500/60 text-amber-200',
+    bannerStyle: 'bg-amber-500/15 border-amber-500/30 text-amber-200'
+  },
+  SEPAY: {
+    activeBorder: 'border-sky-400',
+    activeBg: 'bg-sky-500/15',
+    activeGlow: 'shadow-[0_0_14px_rgba(56,189,248,0.4)] ring-1 ring-sky-400',
+    activeText: 'text-sky-300',
+    badgeBg: 'bg-[#003c71]/40 border-sky-400/50 text-sky-200',
+    bannerStyle: 'bg-sky-500/15 border-sky-500/30 text-sky-200'
+  }
+};
+
 export const PAYMENT_GUIDANCE = {
   VIETQR: 'Quý khách chọn VietQR: Được ưu tiên xếp bàn đẹp & tặng kèm đĩa quẩy nóng giòn.',
   POST_PAID_AT_STORE: 'Quý khách chọn Trả sau tại quán: Bàn được giữ miễn phí 30 phút, thanh toán tại quầy.',

@@ -3,7 +3,7 @@
  * Tích hợp kết nối tới /api/v1/orders đồng thời hỗ trợ lưu trữ & đồng bộ cục bộ (Local Sync).
  */
 
-import { getApiBaseUrl } from './apiConfig';
+import { getApiBaseUrl, notifyIfAccountLocked } from './apiConfig';
 
 const API_BASE_URL = getApiBaseUrl('orders');
 
@@ -126,6 +126,9 @@ export const orderApi = {
         if (json?.data && Array.isArray(json.data)) {
           serverOrders = json.data;
         }
+      } else {
+        const json = await res.json().catch(() => null);
+        notifyIfAccountLocked(res.status, json);
       }
     } catch (err) {
       console.warn('[OrderApi] Không thể kết nối backend, sử dụng dữ liệu cục bộ:', err.message);
@@ -232,5 +235,53 @@ export const orderApi = {
     // Fallback tìm trong local orders
     const localOrders = this.getLocalOrders();
     return localOrders.find(o => o.orderCode === orderCode) || null;
+  },
+
+  /**
+   * [M5.4] Lấy trạng thái hoạt động & bảo trì của các cổng thanh toán
+   */
+  async getPaymentGatewaysStatus() {
+    try {
+      const paymentsUrl = getApiBaseUrl('payments');
+      const res = await fetch(`${paymentsUrl}/gateways`, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json?.data) return json.data;
+      }
+    } catch (e) {
+      console.warn('[OrderApi] Lấy trạng thái cổng thanh toán thất bại:', e);
+    }
+    return [];
+  },
+
+  /**
+   * [SENTINEL & RAVEN] Pre-flight kiểm tra tính hợp lệ của tài khoản / SĐT trước khi đặt bàn
+   */
+  async checkEligibility(phone = '') {
+    try {
+      const cleanPhone = encodeURIComponent(String(phone || '').replace(/[\s.-]+/g, ''));
+      const url = `${API_BASE_URL}/eligibility${cleanPhone ? `?phone=${cleanPhone}` : ''}`;
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      });
+      const json = await res.json().catch(() => null);
+      if (res.status === 423 || json?.data?.code === 'ACCOUNT_LOCKED') {
+        notifyIfAccountLocked(res.status, json);
+        const err = new Error(json?.message || 'Tài khoản hoặc số điện thoại này hiện đang bị tạm khóa dịch vụ.');
+        err.status = 423;
+        err.isLocked = true;
+        err.data = json;
+        throw err;
+      }
+      return res.ok;
+    } catch (e) {
+      if (e.isLocked || e.status === 423) throw e;
+      return true;
+    }
   }
 };

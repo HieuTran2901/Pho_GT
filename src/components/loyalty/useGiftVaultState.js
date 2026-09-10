@@ -56,12 +56,6 @@ export function useGiftVaultState({
     }
   }, [myGifts, storageKey]);
 
-  // Lấy token xác thực
-  const token = useMemo(() => {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem('pho1986_token') || localStorage.getItem('token');
-  }, [user]);
-
   // Điểm Tri Kỷ hiện có của người dùng
   const availablePoints = useMemo(() => {
     return user?.loyaltyAccount?.availablePoints ?? 120;
@@ -82,18 +76,18 @@ export function useGiftVaultState({
     }
   }, []);
 
-  // Tải nhật ký điểm nếu đã đăng nhập
+  // Tải nhật ký điểm nếu đã đăng nhập (HttpOnly Cookie tự động đính kèm)
   const fetchLedger = useCallback(async () => {
-    if (!token) return;
+    if (!user) return;
     try {
-      const logs = await loyaltyApi.getLoyaltyLedger(token);
+      const logs = await loyaltyApi.getLoyaltyLedger();
       if (Array.isArray(logs)) {
         setLedger(logs);
       }
     } catch (err) {
       console.warn('[GiftVault] Không thể tải nhật ký điểm:', err.message);
     }
-  }, [token]);
+  }, [user]);
 
   useEffect(() => {
     if (isOpen) {
@@ -119,9 +113,7 @@ export function useGiftVaultState({
 
     setRedeemingId(reward.id);
     try {
-      if (token) {
-        await loyaltyApi.redeemReward(reward.id, token);
-      }
+      await loyaltyApi.redeemReward(reward.id);
 
       // Tạo đối tượng quà mới đưa vào "Quà của tôi"
       const newGift = {
@@ -153,7 +145,7 @@ export function useGiftVaultState({
     } finally {
       setRedeemingId(null);
     }
-  }, [user, availablePoints, token, openAuthModal, onToast]);
+  }, [user, availablePoints, openAuthModal, onToast]);
 
   // Kiểm tra xem món quà này đã có trong giỏ hàng chưa
   const isGiftInCart = useCallback((gift) => {

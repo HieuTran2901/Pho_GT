@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, memo } from 'react';
 import { 
   X, User, Phone, Lock, Eye, EyeOff, Sparkles, Gift, 
-  CheckCircle2, Utensils, ShieldCheck, ArrowRight, Heart, Clock, ShieldAlert 
+  CheckCircle2, Utensils, ShieldCheck, ArrowRight, Heart, Clock, RotateCcw 
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import AuthLockoutBanner from './auth/AuthLockoutBanner';
 
 function AuthModal({ onToast }) {
   const { authModalOpen, closeAuthModal, authTab, setAuthTab, login, register } = useAuth();
@@ -17,6 +18,8 @@ function AuthModal({ onToast }) {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [lockoutSeconds, setLockoutSeconds] = useState(0);
+  const [isPermanentLocked, setIsPermanentLocked] = useState(false);
+  const [currentRound, setCurrentRound] = useState(1);
   const maxLockoutRef = useRef(60);
   const [mounted, setMounted] = useState(authModalOpen);
   const [isClosing, setIsClosing] = useState(false);
@@ -70,16 +73,40 @@ function AuthModal({ onToast }) {
     if (lockoutSeconds <= 0) return;
     const interval = setInterval(() => {
       setLockoutSeconds((prev) => {
-        if (prev <= 1) { clearInterval(interval); setErrorMessage(''); return 0; }
+        if (prev <= 1) {
+          clearInterval(interval);
+          setErrorMessage('');
+          setCurrentRound((r) => Math.min(5, r + 1));
+          return 0;
+        }
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(interval);
   }, [lockoutSeconds]);
 
+  const phoneInputRef = useRef(null);
+
+  // [RAVEN & URBAN] Cơ chế 1-click đổi số điện thoại & reset trạng thái khóa form
+  const handleChangePhone = useCallback(() => {
+    setIsPermanentLocked(false);
+    setErrorMessage('');
+    setPhone('');
+    setPassword('');
+    setTimeout(() => {
+      if (phoneInputRef.current) {
+        phoneInputRef.current.focus();
+      }
+    }, 50);
+  }, []);
+
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
     if (lockoutSeconds > 0) return;
+    if (isPermanentLocked) {
+      handleChangePhone();
+      return;
+    }
     setErrorMessage('');
 
     // Sanitize phone number (strip whitespace, dashes, dots)
@@ -109,10 +136,13 @@ function AuthModal({ onToast }) {
         const user = await register(cleanPhone, fullName.trim(), password, null, saveTasteProfile);
         if (onToast) onToast({ type: 'member_welcome', user, isNew: true, points: 50 });
       }
-      // Reset sensitive password after successful login/registration
-      setPassword('');
-      setLockoutSeconds(0);
+      setPassword(''); setLockoutSeconds(0); setIsPermanentLocked(false);
     } catch (err) {
+      if (err.isPermanent || err.status === 423) {
+        setIsPermanentLocked(true); setLockoutSeconds(0);
+      }
+      const activeRound = err.round || err.data?.data?.round;
+      if (activeRound) setCurrentRound(Number(activeRound));
       const waitSec = err.retryAfterSeconds || err.data?.data?.retryAfterSeconds;
       if (waitSec && Number(waitSec) > 0) {
         maxLockoutRef.current = Math.max(Number(waitSec), 60);
@@ -129,7 +159,7 @@ function AuthModal({ onToast }) {
     } finally {
       setIsLoading(false);
     }
-  }, [phone, password, fullName, authTab, saveTasteProfile, login, register, onToast, lockoutSeconds]);
+  }, [phone, password, fullName, authTab, saveTasteProfile, login, register, onToast, lockoutSeconds, isPermanentLocked, handleChangePhone]);
 
   // Demo fill quick login
   const handleQuickDemo = useCallback((type) => {
@@ -179,14 +209,11 @@ function AuthModal({ onToast }) {
 
         {/* Header: Dấu Mộc & Tiêu Đề Cổ Kính */}
         <div className="bg-gradient-to-b from-[#f2e7d5] via-[#f7f0e3] to-[#fbf9f4] pt-7 pb-4 px-6 text-center border-b border-[#e2d5be] relative overflow-hidden shrink-0">
-          
-          {/* Làn khói phở bốc hơi thanh thoát từ dấu mộc (Phương án 1: Làn Khói Phở) */}
           <div className="absolute top-2 left-1/2 -translate-x-1/2 pointer-events-none flex justify-center w-24 h-10 overflow-visible z-10">
             <span className="w-1.5 h-6 bg-gradient-to-t from-[#8a1e14]/20 via-[#d4af37]/25 to-transparent rounded-full blur-[1px] animate-seal-steam-1 inline-block mr-1.5"></span>
             <span className="w-2 h-7 bg-gradient-to-t from-[#8a1e14]/25 via-[#f59e0b]/20 to-transparent rounded-full blur-[1px] animate-seal-steam-2 inline-block ml-1.5"></span>
           </div>
 
-          {/* Con dấu mộc đỏ tròn "1986" đóng dứt khoát (Phương án 2: Dấu Mộc Son Đỏ 1986) */}
           <div className="mx-auto w-14 h-14 rounded-full border-2 border-[#8a1e14] p-0.5 flex items-center justify-center bg-white shadow-md mb-2.5 animate-seal-stamp origin-center relative z-20">
             <div className="w-full h-full rounded-full border border-dashed border-[#8a1e14] flex flex-col items-center justify-center text-[#8a1e14]">
               <span className="text-[7px] font-bold uppercase tracking-tighter">TRI KỶ</span>
@@ -210,30 +237,18 @@ function AuthModal({ onToast }) {
           <div className="flex rounded-xl bg-[#ede3cf] p-1 border border-[#d6c7ac]">
             <button
               type="button"
-              onClick={() => { setAuthTab('login'); setErrorMessage(''); setPassword(''); }}
-              className={`flex-1 py-2.5 text-xs sm:text-sm font-serif font-bold rounded-lg transition-all ${
-                authTab === 'login'
-                  ? 'bg-white text-[#8a1e14] shadow-sm border border-[#cbb898]'
-                  : 'text-[#6b584c] hover:text-[#2b1810]'
-              }`}
+              onClick={() => { setAuthTab('login'); setErrorMessage(''); setPassword(''); setIsPermanentLocked(false); }}
+              className={`flex-1 py-2.5 text-xs sm:text-sm font-serif font-bold rounded-lg transition-all ${authTab === 'login' ? 'bg-white text-[#8a1e14] shadow-sm border border-[#cbb898]' : 'text-[#6b584c] hover:text-[#2b1810]'}`}
             >
               ĐĂNG NHẬP (KHÁCH QUEN)
             </button>
-
             <button
               type="button"
-              onClick={() => { setAuthTab('register'); setErrorMessage(''); setPassword(''); }}
-              className={`flex-1 py-2.5 text-xs sm:text-sm font-serif font-bold rounded-lg transition-all relative flex items-center justify-center gap-1.5 ${
-                authTab === 'register'
-                  ? 'bg-white text-[#8a1e14] shadow-sm border border-[#cbb898]'
-                  : 'text-[#6b584c] hover:text-[#2b1810]'
-              }`}
+              onClick={() => { setAuthTab('register'); setErrorMessage(''); setPassword(''); setIsPermanentLocked(false); }}
+              className={`flex-1 py-2.5 text-xs sm:text-sm font-serif font-bold rounded-lg transition-all relative flex items-center justify-center gap-1.5 ${authTab === 'register' ? 'bg-white text-[#8a1e14] shadow-sm border border-[#cbb898]' : 'text-[#6b584c] hover:text-[#2b1810]'}`}
             >
               <span>ĐĂNG KÝ MỚI</span>
-              {/* Badge +50 điểm Tri kỷ */}
-              <span className="bg-gradient-to-r from-amber-500 to-red-600 text-white text-[9px] font-sans font-bold px-1.5 py-0.5 rounded-full shadow-xs animate-pulse">
-                +50Đ
-              </span>
+              <span className="bg-gradient-to-r from-amber-500 to-red-600 text-white text-[9px] font-sans font-bold px-1.5 py-0.5 rounded-full shadow-xs animate-pulse">+50Đ</span>
             </button>
           </div>
         </div>
@@ -241,57 +256,24 @@ function AuthModal({ onToast }) {
         {/* Form Body */}
         <div className="p-6 pt-2 overflow-y-auto flex-1">
           
-          {/* Retro Heritage Lockout Banner khi bị tạm khóa nhập sai quá 5 lần */}
-          {lockoutSeconds > 0 ? (
-            <div className="mb-4 p-3.5 rounded-xl bg-[#fff8ed] border-2 border-[#ea580c] shadow-sm relative overflow-hidden animate-shake">
-              <div className="flex items-start gap-3">
-                <div className="w-9 h-9 rounded-full bg-[#8a1e14]/10 border border-[#8a1e14]/20 flex items-center justify-center shrink-0 mt-0.5 text-[#8a1e14]">
-                  <ShieldAlert className="w-5 h-5 animate-pulse text-[#ea580c]" />
-                </div>
-                <div className="flex-1 text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="font-serif font-bold text-[#8a1e14] text-sm uppercase tracking-wide">
-                      Tạm Khóa Thử Lại
-                    </span>
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#8a1e14] text-amber-100 font-mono font-bold text-xs shadow-xs">
-                      <Clock className="w-3 h-3 animate-spin" />
-                      00:{String(lockoutSeconds).padStart(2, '0')}
-                    </span>
-                  </div>
-                  <p className="text-[#6b4a38] font-sans mt-1 leading-relaxed">
-                    Quý khách đã nhập sai mật khẩu quá 5 lần. Để bảo vệ an toàn cho tài khoản, hệ thống tạm dừng nhận thử lại trong <strong>{lockoutSeconds} giây</strong>.
-                  </p>
-
-                  {/* Cải tiến 2: Dải Progress Bar đếm lùi thời gian thực */}
-                  <div className="mt-2 h-1.5 w-full bg-[#ea580c]/15 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-gradient-to-r from-amber-500 to-[#ea580c] transition-all duration-1000 ease-linear rounded-full"
-                      style={{ width: `${Math.min(100, Math.max(0, (lockoutSeconds / (maxLockoutRef.current || 60)) * 100))}%` }}
-                    />
-                  </div>
-
-                  {/* Cải tiến 1: 1-Click Action Button Đặt bàn ngay không cần đăng nhập */}
-                  <div className="mt-2.5 pt-2 border-t border-[#ea580c]/20 flex items-center justify-between gap-2">
-                    <span className="text-[11px] text-[#8a1e14] font-medium flex items-center gap-1">
-                      <Utensils className="w-3.5 h-3.5 shrink-0" />
-                      <span>Đặt bàn vãng lai ngay:</span>
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        handleClose();
-                        const el = document.getElementById('order-form-card') || document.getElementById('order');
-                        if (el) el.scrollIntoView({ behavior: 'smooth' });
-                      }}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#8a1e14] hover:bg-[#731910] text-amber-100 text-[10.5px] font-serif font-bold uppercase tracking-wider transition-all shadow-xs hover:shadow active:scale-95 group cursor-pointer"
-                    >
-                      <span>Đặt bàn ngay</span>
-                      <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+          {/* Multi-Tier Lockout & Cooldown Banner (SENTINEL & URBAN) */}
+          {(isPermanentLocked || lockoutSeconds > 0) ? (
+            <AuthLockoutBanner
+              isPermanent={isPermanentLocked}
+              lockoutSeconds={lockoutSeconds}
+              currentRound={currentRound}
+              maxRounds={5}
+              errorMessage={errorMessage}
+              onChangePhone={handleChangePhone}
+              onForgotPassword={() => {
+                if (onToast) onToast('Quán đã nhận yêu cầu. Đang kích hoạt lấy lại mật khẩu qua SMS OTP cho số ' + (phone || 'của bác') + '.');
+              }}
+              onGuestOrder={() => {
+                handleClose();
+                const el = document.getElementById('order-form-card') || document.getElementById('order');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+            />
           ) : errorMessage ? (
             <div className="mb-4 p-2.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2 animate-shake">
               <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0"></span>
@@ -301,7 +283,6 @@ function AuthModal({ onToast }) {
 
           {/* Form Fields */}
           <form onSubmit={handleSubmit} className="space-y-3.5">
-            
             {/* Trường Họ và tên (Chỉ hiện khi Đăng Ký) */}
             {authTab === 'register' && (
               <div>
@@ -327,19 +308,38 @@ function AuthModal({ onToast }) {
 
             {/* Trường Số điện thoại */}
             <div>
-              <label htmlFor="auth-phone" className="block text-xs font-serif font-bold text-[#3a251b] mb-1">
-                Số Điện Thoại <span className="text-[#8a1e14]">*</span>
-              </label>
+              <div className="flex justify-between items-center mb-1">
+                <label htmlFor="auth-phone" className="block text-xs font-serif font-bold text-[#3a251b]">
+                  Số Điện Thoại <span className="text-[#8a1e14]">*</span>
+                </label>
+                {isPermanentLocked && (
+                  <button
+                    type="button"
+                    onClick={handleChangePhone}
+                    className="text-[11px] text-amber-700 hover:text-[#8a1e14] font-serif font-semibold inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    <span>Đổi số khác</span>
+                  </button>
+                )}
+              </div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-500">
                   <Phone className="w-4 h-4" />
                 </div>
                 <input
+                  ref={phoneInputRef}
                   id="auth-phone"
                   type="tel"
                   disabled={lockoutSeconds > 0}
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => {
+                    setPhone(e.target.value);
+                    if (isPermanentLocked || errorMessage) {
+                      setIsPermanentLocked(false);
+                      setErrorMessage('');
+                    }
+                  }}
                   placeholder="0988 888 888"
                   className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-white border border-[#d6c7ac] text-[#2b1810] text-sm placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-[#8a1e14] focus:border-[#8a1e14] transition-all shadow-xs disabled:opacity-60 disabled:bg-stone-100 disabled:cursor-not-allowed"
                   required
@@ -374,7 +374,13 @@ function AuthModal({ onToast }) {
                   type={showPassword ? 'text' : 'password'}
                   disabled={lockoutSeconds > 0}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (isPermanentLocked || errorMessage) {
+                      setIsPermanentLocked(false);
+                      setErrorMessage('');
+                    }
+                  }}
                   placeholder={authTab === 'register' ? 'Tối thiểu 6 ký tự' : 'Nhập mật khẩu của bạn'}
                   className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-white border border-[#d6c7ac] text-[#2b1810] text-sm placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-[#8a1e14] focus:border-[#8a1e14] transition-all shadow-xs disabled:opacity-60 disabled:bg-stone-100 disabled:cursor-not-allowed"
                   required
@@ -395,68 +401,59 @@ function AuthModal({ onToast }) {
             {authTab === 'register' && (
               <div className="p-3 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50/70 border border-dashed border-amber-400/80 my-2">
                 <div className="flex items-start gap-2.5">
-                  <div className="w-8 h-8 rounded-full bg-amber-500/15 text-[#8a1e14] flex items-center justify-center shrink-0 mt-0.5">
-                    <Gift className="w-4 h-4" />
-                  </div>
+                  <div className="w-8 h-8 rounded-full bg-amber-500/15 text-[#8a1e14] flex items-center justify-center shrink-0 mt-0.5"><Gift className="w-4 h-4" /></div>
                   <div className="text-[11px] text-[#4a3528] leading-snug">
-                    <div className="font-serif font-bold text-[#8a1e14] text-xs">
-                      Đặc quyền Bát Phở Tri Kỷ 1986
-                    </div>
-                    <div className="mt-1 flex items-center gap-1.5 text-stone-700">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                      <span>Tặng ngay <strong>50 điểm Tri Kỷ</strong> để đổi quẩy giòn</span>
-                    </div>
-                    <div className="mt-0.5 flex items-center gap-1.5 text-stone-700">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                      <span>1-Click <strong>"Gọi lại bát quen"</strong> chuẩn vị ruột</span>
-                    </div>
+                    <div className="font-serif font-bold text-[#8a1e14] text-xs">Đặc quyền Bát Phở Tri Kỷ 1986</div>
+                    <div className="mt-1 flex items-center gap-1.5 text-stone-700"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" /><span>Tặng ngay <strong>50 điểm Tri Kỷ</strong> để đổi quẩy giòn</span></div>
+                    <div className="mt-0.5 flex items-center gap-1.5 text-stone-700"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" /><span>1-Click <strong>"Gọi lại bát quen"</strong> chuẩn vị ruột</span></div>
                   </div>
                 </div>
-
                 <label className="flex items-center gap-2 mt-2 pt-2 border-t border-amber-300/40 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={saveTasteProfile}
-                    onChange={(e) => setSaveTasteProfile(e.target.checked)}
-                    className="w-3.5 h-3.5 accent-[#8a1e14] rounded"
-                  />
-                  <span className="text-[11px] text-stone-700 font-medium">
-                    Tự động ghi nhớ Gu Ăn Phở của tôi cho lần gọi sau
-                  </span>
+                  <input type="checkbox" checked={saveTasteProfile} onChange={(e) => setSaveTasteProfile(e.target.checked)} className="w-3.5 h-3.5 accent-[#8a1e14] rounded" />
+                  <span className="text-[11px] text-stone-700 font-medium">Tự động ghi nhớ Gu Ăn Phở của tôi cho lần gọi sau</span>
                 </label>
               </div>
             )}
 
             {/* Nút Submit Chính */}
-            <button
-              type="submit"
-              disabled={isLoading || lockoutSeconds > 0}
-              className="w-full py-3 px-4 rounded-xl bg-[#8a1e14] hover:bg-[#731910] active:scale-[0.99] text-amber-100 font-serif font-bold text-sm tracking-wider uppercase transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 border border-amber-400/30 disabled:opacity-75 disabled:cursor-not-allowed cursor-pointer mt-3"
-            >
-              {lockoutSeconds > 0 ? (
-                <>
-                  <Clock className="w-4 h-4 animate-pulse text-amber-300" />
-                  <span>TẠM KHÓA THỬ LẠI ({lockoutSeconds}S)</span>
-                </>
-              ) : isLoading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-amber-200 border-t-transparent rounded-full animate-spin"></div>
-                  <span>Đang xử lý...</span>
-                </>
-              ) : (
-                <>
-                  <span>{authTab === 'login' ? 'ĐĂNG NHẬP VÀO QUÁN' : 'GIA NHẬP BÁT PHỞ TRI KỶ'}</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
+            {isPermanentLocked ? (
+              <button
+                type="button"
+                onClick={handleChangePhone}
+                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-700 via-amber-600 to-red-700 hover:brightness-110 active:scale-[0.99] text-amber-100 font-serif font-bold text-xs sm:text-sm tracking-wider uppercase transition-all shadow-md flex items-center justify-center gap-2 border border-amber-400/40 cursor-pointer mt-3"
+              >
+                <RotateCcw className="w-4 h-4 text-amber-200" />
+                <span>SỐ NÀY ĐÃ BỊ KHÓA • BẤM ĐỂ ĐỔI SỐ KHÁC</span>
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={isLoading || lockoutSeconds > 0}
+                className="w-full py-3 px-4 rounded-xl bg-[#8a1e14] hover:bg-[#731910] active:scale-[0.99] text-amber-100 font-serif font-bold text-sm tracking-wider uppercase transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 border border-amber-400/30 disabled:opacity-75 disabled:cursor-not-allowed cursor-pointer mt-3"
+              >
+                {lockoutSeconds > 0 ? (
+                  <>
+                    <Clock className="w-4 h-4 animate-pulse text-amber-300" />
+                    <span>TẠM KHÓA THỬ LẠI ({lockoutSeconds}S)</span>
+                  </>
+                ) : isLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-amber-200 border-t-transparent rounded-full animate-spin"></div>
+                    <span>Đang xử lý...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>{authTab === 'login' ? 'ĐĂNG NHẬP VÀO QUÁN' : 'GIA NHẬP BÁT PHỞ TRI KỶ'}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            )}
           </form>
 
           {/* Quick Demo Test Buttons */}
           <div className="mt-4 pt-3 border-t border-[#e8ddc9]">
-            <div className="text-[10px] text-stone-500 font-serif uppercase tracking-widest text-center mb-2">
-              Hoặc trải nghiệm nhanh:
-            </div>
+            <div className="text-[10px] text-stone-500 font-serif uppercase tracking-widest text-center mb-2">Hoặc trải nghiệm nhanh:</div>
             <div className="flex gap-2">
               <button
                 type="button"
@@ -477,16 +474,14 @@ function AuthModal({ onToast }) {
             </div>
           </div>
 
-          {/* Cam kết thương hiệu bảo mật */}
           <div className="mt-3 text-center flex items-center justify-center gap-1.5 text-[10px] text-stone-500">
             <ShieldCheck className="w-3.5 h-3.5 text-stone-400" />
             <span>Thông tin được bảo mật tuyệt đối theo chuẩn Phở Gia Truyền 1986</span>
           </div>
-
         </div>
       </div>
     </div>
   );
 }
 
-export default React.memo(AuthModal);
+export default memo(AuthModal);

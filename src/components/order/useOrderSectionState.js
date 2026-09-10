@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { paymentApi } from '../../services/paymentApi';
 import { submitSePayCheckout } from '../../utils/submitSePayCheckout';
+import { useOrderLockoutGuard } from './useOrderLockoutGuard';
 import {
   BRANCH_LABELS,
   INITIAL_FORM_DATA,
@@ -42,7 +43,34 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
   const copyTimerRef = useRef(null);
   const hasAutoFilledRef = useRef(Boolean(user?.fullName || user?.phone));
 
-  const todayDateStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+  // [SENTINEL & RAVEN] Chốt chặn tài khoản bị khóa trong luồng đặt bàn & thanh toán
+  const {
+    isOrderLocked,
+    lockoutReason,
+    setIsOrderLocked,
+    setLockoutReason,
+    checkOrderEligibility,
+    handleResetLockout
+  } = useOrderLockoutGuard({
+    onResetToStep1: () => {
+      setDirection('backward');
+      setStep(1);
+      scrollToOrderSection();
+    },
+    onAccountLocked: () => {
+      setFormData((prev) => ({ ...prev, customerName: '', phone: '' }));
+      hasAutoFilledRef.current = false;
+    }
+  });
+
+  const todayDateStr = useMemo(() => {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(new Date());
+  }, []);
 
   const calculatedAmount = useMemo(() => {
     if (cartItems && cartItems.length > 0) {
@@ -71,9 +99,10 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
 
   const handleInputChange = useCallback((e) => {
     const { name, value } = e.target;
+    if (name === 'phone' && isOrderLocked) { setIsOrderLocked(false); setLockoutReason(''); }
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (name === 'branch') setSelectedTable(null);
-  }, []);
+  }, [isOrderLocked, setIsOrderLocked, setLockoutReason]);
 
   const handleSetOrderType = useCallback((type) => {
     setFormData((prev) => ({ ...prev, orderType: type }));
@@ -325,23 +354,23 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
     };
   }, [step, paymentData?.paymentCode, paymentData?.status, isVietQrConfirmed, onClearCart]);
 
-  const handleSubmit = useCallback((e) => {
+  const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
     if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
       document.activeElement.blur();
     }
     setIsLoading(true);
-    if (submitTimerRef.current) clearTimeout(submitTimerRef.current);
-    submitTimerRef.current = setTimeout(() => {
-      setIsLoading(false);
-      const branchPrefix = formData.branch?.startsWith('hcm') ? 'SG' : 'HN';
-      const randomSalt = Math.floor(1000 + Math.random() * 9000);
-      setBookingCode(`PHO1986-${branchPrefix}-${randomSalt}`);
-      setDirection('forward');
-      setStep(2);
-      scrollToOrderSection();
-    }, 450);
-  }, [formData.branch, scrollToOrderSection]);
+    const eligible = await checkOrderEligibility(formData.phone);
+    setIsLoading(false);
+    if (!eligible) return;
+
+    const branchPrefix = formData.branch?.startsWith('hcm') ? 'SG' : 'HN';
+    const randomSalt = Math.floor(1000 + Math.random() * 9000);
+    setBookingCode(`PHO1986-${branchPrefix}-${randomSalt}`);
+    setDirection('forward');
+    setStep(2);
+    scrollToOrderSection();
+  }, [formData.branch, formData.phone, checkOrderEligibility, scrollToOrderSection]);
 
   const handleConfirmOrder = useCallback(async () => {
     setIsProcessingPayment(true);
@@ -364,58 +393,42 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
       setPaymentData(paymentRes);
 
       saveOrderSession(bookingCode, {
-        bookingCode,
-        formData,
-        selectedPaymentMethod,
-        paymentData: paymentRes,
-        amount: orderAmount,
-        selectedTable,
-        createdAt: Date.now()
+        bookingCode, formData, selectedPaymentMethod, paymentData: paymentRes,
+        amount: orderAmount, selectedTable, createdAt: Date.now()
       });
 
       saveCustomerHistoryOrder({
-        bookingCode,
-        formData,
-        selectedPaymentMethod,
-        orderAmount,
-        selectedTable,
-        targetAddress,
-        cartItems
+        bookingCode, formData, selectedPaymentMethod, orderAmount,
+        selectedTable, targetAddress, cartItems
       });
 
       if (onClearCart) onClearCart();
 
       if (selectedPaymentMethod === 'SEPAY' && paymentRes?.checkoutUrl && paymentRes?.checkoutFields) {
-        setDirection('forward');
-        setStep(3);
-        scrollToOrderSection();
-        const submitted = submitSePayCheckout({
-          checkoutUrl: paymentRes.checkoutUrl,
-          checkoutFields: paymentRes.checkoutFields
-        });
+        setDirection('forward'); setStep(3); scrollToOrderSection();
+        const submitted = submitSePayCheckout({ checkoutUrl: paymentRes.checkoutUrl, checkoutFields: paymentRes.checkoutFields });
         if (submitted) return;
       }
 
       if (selectedPaymentMethod === 'MOMO' && paymentRes?.payUrl) {
-        setDirection('forward');
-        setStep(3);
-        scrollToOrderSection();
+        setDirection('forward'); setStep(3); scrollToOrderSection();
         window.location.assign(paymentRes.payUrl);
         return;
       }
 
-      setDirection('forward');
-      setStep(3);
-      scrollToOrderSection();
+      setDirection('forward'); setStep(3); scrollToOrderSection();
     } catch (err) {
       console.warn('[OrderSection] Payment API creation error:', err);
-      setPaymentError(
-        'Không thể khởi tạo phiên thanh toán lúc này. Quý khách vui lòng thử lại hoặc chọn hình thức "Thanh toán sau tại quán".'
-      );
+      if (err.isLocked || err.status === 423) {
+        setIsOrderLocked(true);
+        setLockoutReason(err.message || 'Số điện thoại này hiện đang bị tạm khóa dịch vụ.');
+      } else {
+        setPaymentError('Không thể khởi tạo phiên thanh toán lúc này. Quý khách vui lòng thử lại hoặc chọn hình thức "Thanh toán sau tại quán".');
+      }
     } finally {
       setIsProcessingPayment(false);
     }
-  }, [calculatedAmount, formData, bookingCode, selectedPaymentMethod, selectedTable, cartItems, onClearCart, scrollToOrderSection]);
+  }, [calculatedAmount, formData, bookingCode, selectedPaymentMethod, selectedTable, cartItems, onClearCart, scrollToOrderSection, setIsOrderLocked, setLockoutReason]);
 
   const handleBackToStep1 = useCallback(() => { setDirection('backward'); setStep(1); scrollToOrderSection(); }, [scrollToOrderSection]);
   const handleBackToStep2 = useCallback(() => { setDirection('backward'); setStep(2); scrollToOrderSection(); }, [scrollToOrderSection]);
@@ -430,60 +443,28 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
   }, []);
 
   const handleReset = useCallback(() => {
-    setDirection('backward');
-    setStep(1);
-    scrollToOrderSection();
-    setPaymentData(null);
-    setIsVietQrConfirmed(false);
-    setPaymentNotice(null);
-    setPaymentError(null);
-    setSelectedTable(null);
-    setIsSeatMapOpen(false);
+    setDirection('backward'); setStep(1); scrollToOrderSection();
+    setPaymentData(null); setIsVietQrConfirmed(false); setPaymentNotice(null);
+    setPaymentError(null); setSelectedTable(null); setIsSeatMapOpen(false);
+    setIsOrderLocked(false); setLockoutReason('');
     try { sessionStorage.removeItem(SESSION_LATEST_KEY); } catch (e) {}
-    setFormData({
-      ...INITIAL_FORM_DATA,
-      customerName: user?.fullName || '',
-      phone: user?.phone || ''
-    });
-    setSelectedPaymentMethod('POST_PAID_AT_STORE');
-    setIsMoreMethodsOpen(false);
-  }, [user?.fullName, user?.phone, scrollToOrderSection]);
+    setFormData({ ...INITIAL_FORM_DATA, customerName: user?.fullName || '', phone: user?.phone || '' });
+    setSelectedPaymentMethod('POST_PAID_AT_STORE'); setIsMoreMethodsOpen(false);
+  }, [user?.fullName, user?.phone, scrollToOrderSection, setIsOrderLocked, setLockoutReason]);
 
   return {
-    formData,
-    step,
-    direction,
-    selectedPaymentMethod,
-    setSelectedPaymentMethod,
-    isMoreMethodsOpen,
-    setIsMoreMethodsOpen,
-    paymentData,
-    bookingCode,
-    isCopied,
-    isProcessingPayment,
-    isVietQrConfirmed,
-    setIsVietQrConfirmed,
-    isLoading,
-    paymentNotice,
-    paymentError,
-    selectedTable,
-    isSeatMapOpen,
-    setIsSeatMapOpen,
-    todayDateStr,
-    calculatedAmount,
-    selectedTasteSet,
-    handleInputChange,
-    handleSetOrderType,
-    handleSetGuestCount,
-    handleToggleTaste,
-    scrollToOrderSection,
-    handleCloseSeatMap,
-    handleConfirmTable,
-    handleSubmit,
-    handleConfirmOrder,
-    handleBackToStep1,
-    handleBackToStep2,
-    handleCopyCode,
-    handleReset
+    formData, step, direction,
+    selectedPaymentMethod, setSelectedPaymentMethod,
+    isMoreMethodsOpen, setIsMoreMethodsOpen,
+    paymentData, bookingCode, isCopied, isProcessingPayment,
+    isVietQrConfirmed, setIsVietQrConfirmed, isLoading,
+    paymentNotice, paymentError, selectedTable,
+    isSeatMapOpen, setIsSeatMapOpen,
+    todayDateStr, calculatedAmount, selectedTasteSet,
+    isOrderLocked, lockoutReason, handleResetLockout,
+    handleInputChange, handleSetOrderType, handleSetGuestCount, handleToggleTaste,
+    scrollToOrderSection, handleCloseSeatMap, handleConfirmTable,
+    handleSubmit, handleConfirmOrder, handleBackToStep1, handleBackToStep2,
+    handleCopyCode, handleReset
   };
 }

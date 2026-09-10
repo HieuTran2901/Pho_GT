@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { authApi } from '../services/authApi';
+import AccountLockedNoticeModal from '../components/auth/AccountLockedNoticeModal';
 
 const AuthContext = createContext(null);
 
@@ -30,6 +31,41 @@ export function AuthProvider({ children }) {
   const [isInitialized, setIsInitialized] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authTab, setAuthTab] = useState('login'); // 'login' | 'register'
+  const [lockedNotice, setLockedNotice] = useState({ isOpen: false, reason: '' });
+  const authModalOpenRef = useRef(authModalOpen);
+
+  useEffect(() => {
+    authModalOpenRef.current = authModalOpen;
+  }, [authModalOpen]);
+
+  const userRef = useRef(user);
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+
+  // [SENTINEL & RAVEN] Lắng nghe sự kiện tài khoản bị khóa toàn cục (Session Termination)
+  useEffect(() => {
+    const handleAccountLocked = (e) => {
+      const reason = e?.detail?.reason || 'Tài khoản của quý khách hiện đang bị khóa bởi Quản trị viên.';
+      const hadActiveSession = Boolean(userRef.current || localStorage.getItem(AUTH_STORAGE_KEY));
+      setUser(null);
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+
+      // [SENTINEL & RAVEN] Ép dọn sạch Cookie HttpOnly ở phía Backend ngay lập tức
+      authApi.logout().catch(() => {});
+
+      // Chỉ bật modal thông báo toàn cục khi người dùng thực sự có phiên đăng nhập VÀ KHÔNG đang ở màn hình AuthModal
+      if (hadActiveSession && !authModalOpenRef.current) {
+        setLockedNotice({ isOpen: true, reason });
+      }
+    };
+
+    window.addEventListener('pho1986:account-locked', handleAccountLocked);
+    return () => {
+      window.removeEventListener('pho1986:account-locked', handleAccountLocked);
+    };
+  }, []);
 
   // Đồng bộ session user vào localStorage (Chỉ lưu profile hiển thị, KHÔNG lưu secret token)
   useEffect(() => {
@@ -44,25 +80,30 @@ export function AuthProvider({ children }) {
   // Kiểm tra và làm mới dữ liệu người dùng qua HttpOnly Cookie khi mở app (Silent Refresh liền mạch)
   useEffect(() => {
     let isMounted = true;
-    // Đảm bảo không còn token trần trong localStorage
     localStorage.removeItem(AUTH_TOKEN_KEY);
 
-    // Gọi getMe() với credentials: 'include' (trình duyệt tự gửi HttpOnly Cookie)
     authApi.getMe().then((profile) => {
       if (!isMounted) return;
       if (profile) {
         setUser(profile);
       } else {
-        // Token hoặc Cookie không còn hợp lệ trên hệ thống backend thực tế
         setUser(null);
         localStorage.removeItem(AUTH_STORAGE_KEY);
       }
     }).catch((err) => {
       if (!isMounted) return;
-      // Nếu là lỗi xác thực (401/403), hủy bỏ phiên ngay
-      if (err?.status === 401 || err?.status === 403) {
+      if (err?.status === 401 || err?.status === 403 || err?.status === 423) {
+        const hadActiveSession = Boolean(localStorage.getItem(AUTH_STORAGE_KEY));
         setUser(null);
         localStorage.removeItem(AUTH_STORAGE_KEY);
+        authApi.logout().catch(() => {});
+
+        if (hadActiveSession && (err?.status === 423 || err?.data?.code === 'ACCOUNT_LOCKED')) {
+          setLockedNotice({
+            isOpen: true,
+            reason: err?.data?.message || err?.message || 'Tài khoản của quý khách hiện đang bị tạm khóa.'
+          });
+        }
       }
     }).finally(() => {
       if (isMounted) {
@@ -92,7 +133,16 @@ export function AuthProvider({ children }) {
         localStorage.removeItem(AUTH_TOKEN_KEY);
         return null;
       }
-    } catch {
+    } catch (err) {
+      if (err?.status === 423 || err?.data?.code === 'ACCOUNT_LOCKED') {
+        setUser(null);
+        localStorage.removeItem(AUTH_STORAGE_KEY);
+        localStorage.removeItem(AUTH_TOKEN_KEY);
+        setLockedNotice({
+          isOpen: true,
+          reason: err?.data?.message || err?.message || 'Tài khoản của quý khách hiện đang bị tạm khóa.'
+        });
+      }
       // Giữ phiên làm việc nếu chỉ là lỗi mạng tạm thời
       return null;
     }
@@ -229,6 +279,11 @@ export function AuthProvider({ children }) {
   return (
     <AuthContext.Provider value={contextValue}>
       {children}
+      <AccountLockedNoticeModal
+        isOpen={lockedNotice.isOpen}
+        reason={lockedNotice.reason}
+        onClose={() => setLockedNotice({ isOpen: false, reason: '' })}
+      />
     </AuthContext.Provider>
   );
 }

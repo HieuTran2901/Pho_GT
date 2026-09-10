@@ -43,14 +43,12 @@ export function useMenuSectionState(onAddToCart) {
 
   // Live Database Dishes State with Fallback
   const [dishes, setDishes] = useState(() => MENU_ITEMS);
-  const [isLoadingDishes, setIsLoadingDishes] = useState(false);
   const [dishSyncTime, setDishSyncTime] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
     const loadDishes = async () => {
       try {
-        setIsLoadingDishes(true);
         const liveDishes = await dishApi.getDishes();
         if (isMounted && Array.isArray(liveDishes) && liveDishes.length > 0) {
           const normalized = liveDishes.map(normalizeBackendDish);
@@ -59,8 +57,6 @@ export function useMenuSectionState(onAddToCart) {
         }
       } catch (err) {
         console.warn('[MenuSection] Không thể đồng bộ API thực đơn, sử dụng dữ liệu dự phòng:', err);
-      } finally {
-        if (isMounted) setIsLoadingDishes(false);
       }
     };
 

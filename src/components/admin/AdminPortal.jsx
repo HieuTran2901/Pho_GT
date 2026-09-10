@@ -13,6 +13,8 @@ import AdminOrdersTab from './tabs/AdminOrdersTab';
 import AdminDishesTab from './tabs/AdminDishesTab';
 import AdminAddDishTab from './tabs/AdminAddDishTab';
 import AdminTablesTab from './tabs/AdminTablesTab';
+import AdminPaymentHubTab from './tabs/AdminPaymentHubTab';
+import AdminCustomersTab from './tabs/AdminCustomersTab';
 import AdminDishModal from './modals/AdminDishModal';
 
 export default function AdminPortal({ onBackToHome }) {
@@ -197,7 +199,22 @@ export default function AdminPortal({ onBackToHome }) {
                   setOrderFilter={s.setOrderFilter}
                 />
               )}
+
+              {/* TAB 6: CỔNG THANH TOÁN (M5.4 PAYMENT HUB) */}
+              {s.activeTab === 'payments' && (
+                <AdminPaymentHubTab
+                  notify={s.notify}
+                />
+              )}
+
+              {/* TAB 7: QUẢN LÝ KHÁCH HÀNG */}
+              {s.activeTab === 'customers' && (
+                <AdminCustomersTab
+                  notify={s.notify}
+                />
+              )}
             </motion.div>
+
           </AnimatePresence>
         </main>
       </div>

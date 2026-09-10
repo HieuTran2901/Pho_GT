@@ -1,4 +1,4 @@
-import React from 'react';
+import { useState, useCallback, memo } from 'react';
 import {
   ShieldCheck,
   QrCode,
@@ -7,57 +7,27 @@ import {
   Check,
   Sparkles,
   ArrowLeft,
-  AlertTriangle
+  Wrench,
+  RotateCcw
 } from 'lucide-react';
 import {
-  BRANCH_LABELS,
   EXTENDED_PAYMENT_METHODS,
   PAYMENT_GUIDANCE,
-  PAYMENT_CTA_LABELS
+  PAYMENT_CTA_LABELS,
+  BRAND_STYLES
 } from './orderConstants';
+import PaymentMaintenancePopover from './PaymentMaintenancePopover';
+import PaymentSummaryHeader from './PaymentSummaryHeader';
+import PaymentPrimaryOptionCard from './PaymentPrimaryOptionCard';
+import OrderLockoutBanner from './OrderLockoutBanner';
 
-const BRAND_STYLES = {
-  MOMO: {
-    activeBorder: 'border-[#d82d8b]',
-    activeBg: 'bg-[#d82d8b]/15',
-    activeGlow: 'shadow-[0_0_14px_rgba(216,45,139,0.4)] ring-1 ring-[#d82d8b]',
-    activeText: 'text-[#ff66b2]',
-    badgeBg: 'bg-[#a50064]/35 border-[#a50064]/60 text-pink-200',
-    bannerStyle: 'bg-[#a50064]/15 border-[#a50064]/30 text-pink-200'
-  },
-  VNPAY: {
-    activeBorder: 'border-[#005baa]',
-    activeBg: 'bg-[#005baa]/15',
-    activeGlow: 'shadow-[0_0_14px_rgba(0,91,170,0.4)] ring-1 ring-[#005baa]',
-    activeText: 'text-[#4ea8de]',
-    badgeBg: 'bg-[#005baa]/35 border-[#005baa]/60 text-blue-200',
-    bannerStyle: 'bg-[#005baa]/15 border-[#005baa]/30 text-blue-200'
-  },
-  ZALOPAY: {
-    activeBorder: 'border-[#008fe5]',
-    activeBg: 'bg-[#008fe5]/15',
-    activeGlow: 'shadow-[0_0_14px_rgba(0,143,229,0.4)] ring-1 ring-[#008fe5]',
-    activeText: 'text-[#38bdf8]',
-    badgeBg: 'bg-[#0068ff]/35 border-[#0068ff]/60 text-cyan-200',
-    bannerStyle: 'bg-[#0068ff]/15 border-[#0068ff]/30 text-cyan-200'
-  },
-  CREDIT_CARD: {
-    activeBorder: 'border-amber-400',
-    activeBg: 'bg-amber-500/15',
-    activeGlow: 'shadow-[0_0_14px_rgba(251,191,36,0.4)] ring-1 ring-amber-400',
-    activeText: 'text-amber-300',
-    badgeBg: 'bg-amber-500/30 border-amber-500/60 text-amber-200',
-    bannerStyle: 'bg-amber-500/15 border-amber-500/30 text-amber-200'
-  },
-  SEPAY: {
-    activeBorder: 'border-sky-400',
-    activeBg: 'bg-sky-500/15',
-    activeGlow: 'shadow-[0_0_14px_rgba(56,189,248,0.4)] ring-1 ring-sky-400',
-    activeText: 'text-sky-300',
-    badgeBg: 'bg-[#003c71]/40 border-sky-400/50 text-sky-200',
-    bannerStyle: 'bg-sky-500/15 border-sky-500/30 text-sky-200'
-  }
-};
+const EXTENDED_ARROW_POSITIONS = [
+  'left-[8%] sm:left-[10%]',
+  'left-[28%] sm:left-[30%]',
+  'left-[48%] sm:left-[50%]',
+  'left-[68%] sm:left-[70%]',
+  'left-[88%] sm:left-[90%]'
+];
 
 function OrderStep2Payment({
   formData,
@@ -72,72 +42,60 @@ function OrderStep2Payment({
   handleConfirmOrder,
   isProcessingPayment,
   calculatedAmount,
-  direction
+  direction,
+  isMaintenance,
+  isDisabled,
+  getMaintenanceMessage,
+  isOrderLocked,
+  lockoutReason,
+  handleResetLockout
 }) {
-  const isExtendedSelected = EXTENDED_PAYMENT_METHODS.some(
+  const [maintenancePopover, setMaintenancePopover] = useState(null);
+
+  const handleShowMaintenancePopover = useCallback((methodId, name, fallbackMsg, targetType, arrowPosition) => {
+    const msg = (typeof getMaintenanceMessage === 'function' ? getMaintenanceMessage(methodId) : '') || fallbackMsg;
+    setMaintenancePopover({
+      id: methodId,
+      name: name,
+      message: msg,
+      targetType: targetType || methodId,
+      arrowPosition: arrowPosition || 'left-8 sm:left-12'
+    });
+  }, [getMaintenanceMessage]);
+
+  const handleCloseMaintenancePopover = useCallback(() => {
+    setMaintenancePopover(null);
+  }, []);
+
+  // [URBAN & RAVEN - Cách 1]: Ẩn hoàn toàn các cổng bị Tắt (DISABLED)
+  const visibleExtendedMethods = EXTENDED_PAYMENT_METHODS.filter(
+    (method) => !(typeof isDisabled === 'function' && isDisabled(method.id))
+  );
+
+  const isExtendedSelected = visibleExtendedMethods.some(
     (method) => method.id === selectedPaymentMethod
   );
 
+  const isCurrentMaintenance = typeof isMaintenance === 'function' && isMaintenance(selectedPaymentMethod);
+  const currentMaintenanceMsg = typeof getMaintenanceMessage === 'function' ? getMaintenanceMessage(selectedPaymentMethod) : '';
+  const isVietQrMaint = typeof isMaintenance === 'function' && isMaintenance('VIETQR');
+  const isPostPaidMaint = typeof isMaintenance === 'function' && isMaintenance('POST_PAID_AT_STORE');
+  const isCodMaint = typeof isMaintenance === 'function' && isMaintenance('COD');
+
+  const isVietQrDisabled = typeof isDisabled === 'function' && isDisabled('VIETQR');
+  const isPostPaidDisabled = typeof isDisabled === 'function' && isDisabled('POST_PAID_AT_STORE');
+  const isCodDisabled = typeof isDisabled === 'function' && isDisabled('COD');
+
   return (
     <div className={`space-y-2.5 sm:space-y-3.5 pb-20 sm:pb-0 ${direction === 'forward' ? 'animate-step-forward' : 'animate-step-backward'}`}>
-      {/* Quick Summary Bar */}
-      <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-black/40 border border-amber-900/30 flex items-start justify-between">
-        <div className="space-y-0.5">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-amber-300">{formData.customerName || 'Quý khách'}</span>
-            <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded text-stone-300">{formData.phone}</span>
-          </div>
-          <p className="text-[11px] sm:text-xs text-stone-300 leading-snug">
-            {formData.orderType === 'dine-in' ? (
-              <>
-                Đặt bàn {formData.guestCount} người • {formData.time || '19:00'} ngày {formData.date || 'Hôm nay'} • {BRANCH_LABELS[formData.branch] || 'Hàng Bạc'}
-                {selectedTable ? ` • Bàn: ${selectedTable.name} (${selectedTable.zoneName})` : ''}
-              </>
-            ) : (
-              <>
-                Giao phở tận nơi • {formData.address || 'Địa chỉ quý khách'}
-              </>
-            )}
-          </p>
-          {formData.note && (
-            <div className="text-[10px] sm:text-[11px] text-amber-400/90 italic">
-              Khẩu vị riêng: {formData.note}
-            </div>
-          )}
-        </div>
-        <button
-          type="button"
-          onClick={handleBackToStep1}
-          className="text-[11px] text-amber-400 hover:text-amber-300 underline font-semibold shrink-0 cursor-pointer pt-0.5 ml-2"
-        >
-          Sửa lại
-        </button>
-      </div>
-
-      {/* Payment Notice / Cancel / Error Banner */}
-      {paymentNotice && (
-        <div className={`p-3 rounded-xl border text-xs flex items-start gap-2.5 animate-fadeIn ${
-          paymentNotice.type === 'cancel'
-            ? 'bg-amber-500/15 border-amber-500/35 text-amber-200'
-            : paymentNotice.type === 'error'
-            ? 'bg-red-500/15 border-red-500/35 text-red-200'
-            : 'bg-emerald-500/15 border-emerald-500/35 text-emerald-200'
-        }`}>
-          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" />
-          <div className="flex-1">
-            <p className="font-semibold leading-relaxed">{paymentNotice.message}</p>
-          </div>
-        </div>
-      )}
-
-      {paymentError && (
-        <div className="p-3 rounded-xl border border-red-500/35 bg-red-500/15 text-red-200 text-xs flex items-start gap-2.5 animate-fadeIn">
-          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-red-400" />
-          <div className="flex-1">
-            <p className="font-semibold leading-relaxed">{paymentError}</p>
-          </div>
-        </div>
-      )}
+      {/* Quick Summary Bar & Payment Notices */}
+      <PaymentSummaryHeader
+        formData={formData}
+        selectedTable={selectedTable}
+        handleBackToStep1={handleBackToStep1}
+        paymentNotice={paymentNotice}
+        paymentError={paymentError}
+      />
 
       <div>
         <div className="flex items-center justify-between mb-2.5">
@@ -153,217 +111,286 @@ function OrderStep2Payment({
         {/* 2 Main Recommended Payment Options */}
         {formData.orderType === 'dine-in' ? (
           <div className="space-y-2">
-            {/* Option 1: VietQR (Recommended) */}
-            <label className={`flex items-start gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border cursor-pointer transition-all ${
-              selectedPaymentMethod === 'VIETQR'
-                ? 'bg-amber-950/40 border-amber-400 shadow-md ring-1 ring-amber-400/30'
-                : 'bg-white/5 border-white/10 hover:border-amber-400/50'
-            }`}>
-              <input
-                type="radio"
-                name="payment_method"
-                value="VIETQR"
-                checked={selectedPaymentMethod === 'VIETQR'}
-                onChange={() => setSelectedPaymentMethod('VIETQR')}
-                className="mt-1 accent-amber-500"
+            {!isVietQrDisabled && (
+              <PaymentPrimaryOptionCard
+                title="Quét mã VietQR Napas 247"
+                description="Quét mã qua app ngân hàng bất kỳ. Quán chuẩn bị sẵn bàn đẹp kèm ưu tiên tặng quẩy nóng giòn & trà sen."
+                maintDescription="Cổng thanh toán đang bảo trì nâng cấp đường truyền. Quý khách chạm để xem thông tin chi tiết."
+                tagText="Khuyên Dùng • Tặng Quẩy"
+                tagType="gold"
+                icon={QrCode}
+                iconColor="text-amber-400"
+                methodKey="VIETQR"
+                isSelected={selectedPaymentMethod === 'VIETQR'}
+                isMaintenance={isVietQrMaint}
+                onClick={() => {
+                  if (isVietQrMaint) {
+                    handleShowMaintenancePopover(
+                      'VIETQR',
+                      'VietQR Napas 247',
+                      'Cổng thanh toán VietQR đang bảo trì nâng cấp đường truyền. Quý khách vui lòng chọn phương thức khác.',
+                      'dinein_vietqr',
+                      'left-8 sm:left-12'
+                    );
+                  } else {
+                    setSelectedPaymentMethod('VIETQR');
+                    setMaintenancePopover(null);
+                  }
+                }}
+                popoverNode={maintenancePopover?.targetType === 'dinein_vietqr' && (
+                  <PaymentMaintenancePopover
+                    popoverData={maintenancePopover}
+                    onClose={handleCloseMaintenancePopover}
+                  />
+                )}
               />
-              <div className="flex-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5">
-                    <QrCode className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
-                    Quét mã VietQR Napas 247
-                  </span>
-                  <span className="text-[9px] sm:text-[10px] bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 px-2 py-0.5 rounded-full font-extrabold shadow-xs">
-                    Khuyên Dùng • Tặng Quẩy
-                  </span>
-                </div>
-                <p className="text-[11px] sm:text-xs text-stone-400 mt-0.5 leading-snug">
-                  Quét mã qua app ngân hàng bất kỳ. Quán chuẩn bị sẵn bàn đẹp kèm ưu tiên tặng quẩy nóng giòn & trà sen.
-                </p>
-              </div>
-            </label>
+            )}
 
-            {/* Option 2: Post Paid */}
-            <label className={`flex items-start gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border cursor-pointer transition-all ${
-              selectedPaymentMethod === 'POST_PAID_AT_STORE'
-                ? 'bg-amber-950/40 border-amber-400 shadow-md ring-1 ring-amber-400/30'
-                : 'bg-white/5 border-white/10 hover:border-amber-400/50'
-            }`}>
-              <input
-                type="radio"
-                name="payment_method"
-                value="POST_PAID_AT_STORE"
-                checked={selectedPaymentMethod === 'POST_PAID_AT_STORE'}
-                onChange={() => setSelectedPaymentMethod('POST_PAID_AT_STORE')}
-                className="mt-1 accent-amber-500"
+            {!isPostPaidDisabled && (
+              <PaymentPrimaryOptionCard
+                title="Thanh toán sau tại quán"
+                description="Bàn được giữ miễn phí. Quý khách tới quán đọc số điện thoại để nhận bàn và thanh toán tại quầy sau bữa ăn."
+                maintDescription="Hình thức giữ bàn thanh toán sau tạm thời đang bảo trì."
+                tagText="Giữ bàn 30 phút"
+                tagType="emerald"
+                icon={Banknote}
+                iconColor="text-emerald-400"
+                methodKey="POST_PAID_AT_STORE"
+                isSelected={selectedPaymentMethod === 'POST_PAID_AT_STORE'}
+                isMaintenance={isPostPaidMaint}
+                onClick={() => {
+                  if (isPostPaidMaint) {
+                    handleShowMaintenancePopover(
+                      'POST_PAID_AT_STORE',
+                      'Thanh toán tại quán',
+                      'Hình thức giữ bàn thanh toán sau tạm thời đang bảo trì.',
+                      'dinein_postpaid',
+                      'left-8 sm:left-12'
+                    );
+                  } else {
+                    setSelectedPaymentMethod('POST_PAID_AT_STORE');
+                    setMaintenancePopover(null);
+                  }
+                }}
+                popoverNode={maintenancePopover?.targetType === 'dinein_postpaid' && (
+                  <PaymentMaintenancePopover
+                    popoverData={maintenancePopover}
+                    onClose={handleCloseMaintenancePopover}
+                  />
+                )}
               />
-              <div className="flex-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5">
-                    <Banknote className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
-                    Thanh toán sau tại quán
-                  </span>
-                  <span className="text-[9px] sm:text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-bold border border-emerald-500/30">
-                    Giữ bàn 30 phút
-                  </span>
-                </div>
-                <p className="text-[11px] sm:text-xs text-stone-400 mt-0.5 leading-snug">
-                  Bàn được giữ miễn phí. Quý khách tới quán đọc số điện thoại để nhận bàn và thanh toán tại quầy sau bữa ăn.
-                </p>
-              </div>
-            </label>
+            )}
           </div>
         ) : (
           <div className="space-y-2">
-            {/* Delivery Option 1: COD */}
-            <label className={`flex items-start gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border cursor-pointer transition-all ${
-              selectedPaymentMethod === 'COD'
-                ? 'bg-amber-950/40 border-amber-400 shadow-md ring-1 ring-amber-400/30'
-                : 'bg-white/5 border-white/10 hover:border-amber-400/50'
-            }`}>
-              <input
-                type="radio"
-                name="payment_method"
-                value="COD"
-                checked={selectedPaymentMethod === 'COD'}
-                onChange={() => setSelectedPaymentMethod('COD')}
-                className="mt-1 accent-amber-500"
+            {!isCodDisabled && (
+              <PaymentPrimaryOptionCard
+                title="Tiền mặt khi nhận phở (COD)"
+                description="Nhân viên giao bát phở nóng 90°C tới tận nơi. Quý khách kiểm tra bát phở và thanh toán tiền mặt trực tiếp."
+                maintDescription="Hình thức tiền mặt khi nhận phở tạm thời đang bảo trì."
+                tagText="An tâm 100%"
+                tagType="emerald"
+                icon={Banknote}
+                iconColor="text-emerald-400"
+                methodKey="COD"
+                isSelected={selectedPaymentMethod === 'COD'}
+                isMaintenance={isCodMaint}
+                onClick={() => {
+                  if (isCodMaint) {
+                    handleShowMaintenancePopover(
+                      'COD',
+                      'Tiền mặt khi nhận phở (COD)',
+                      'Hình thức tiền mặt khi nhận phở tạm thời đang bảo trì.',
+                      'delivery_cod',
+                      'left-8 sm:left-12'
+                    );
+                  } else {
+                    setSelectedPaymentMethod('COD');
+                    setMaintenancePopover(null);
+                  }
+                }}
+                popoverNode={maintenancePopover?.targetType === 'delivery_cod' && (
+                  <PaymentMaintenancePopover
+                    popoverData={maintenancePopover}
+                    onClose={handleCloseMaintenancePopover}
+                  />
+                )}
               />
-              <div className="flex-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5">
-                    <Banknote className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
-                    Tiền mặt khi nhận phở (COD)
-                  </span>
-                  <span className="text-[9px] sm:text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-bold border border-emerald-500/30">
-                    An tâm 100%
-                  </span>
-                </div>
-                <p className="text-[11px] sm:text-xs text-stone-400 mt-0.5 leading-snug">
-                  Nhân viên giao bát phở nóng 90°C tới tận nơi. Quý khách kiểm tra bát phở và thanh toán tiền mặt trực tiếp.
-                </p>
-              </div>
-            </label>
+            )}
 
-            {/* Delivery Option 2: VietQR */}
-            <label className={`flex items-start gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border cursor-pointer transition-all ${
-              selectedPaymentMethod === 'VIETQR'
-                ? 'bg-amber-950/40 border-amber-400 shadow-md ring-1 ring-amber-400/30'
-                : 'bg-white/5 border-white/10 hover:border-amber-400/50'
-            }`}>
-              <input
-                type="radio"
-                name="payment_method"
-                value="VIETQR"
-                checked={selectedPaymentMethod === 'VIETQR'}
-                onChange={() => setSelectedPaymentMethod('VIETQR')}
-                className="mt-1 accent-amber-500"
+            {!isVietQrDisabled && (
+              <PaymentPrimaryOptionCard
+                title="Chuyển khoản VietQR tiện lợi"
+                description="Quét mã thanh toán trước nhanh gọn, tài xế có thể treo phở trước cửa nếu bạn bận họp."
+                maintDescription="Cổng thanh toán VietQR đang bảo trì nâng cấp đường truyền."
+                tagText="Không cần tiền lẻ"
+                tagType="emerald"
+                icon={QrCode}
+                iconColor="text-amber-400"
+                methodKey="VIETQR"
+                isSelected={selectedPaymentMethod === 'VIETQR'}
+                isMaintenance={isVietQrMaint}
+                onClick={() => {
+                  if (isVietQrMaint) {
+                    handleShowMaintenancePopover(
+                      'VIETQR',
+                      'VietQR Napas 247',
+                      'Cổng thanh toán VietQR đang bảo trì nâng cấp đường truyền.',
+                      'delivery_vietqr',
+                      'left-8 sm:left-12'
+                    );
+                  } else {
+                    setSelectedPaymentMethod('VIETQR');
+                    setMaintenancePopover(null);
+                  }
+                }}
+                popoverNode={maintenancePopover?.targetType === 'delivery_vietqr' && (
+                  <PaymentMaintenancePopover
+                    popoverData={maintenancePopover}
+                    onClose={handleCloseMaintenancePopover}
+                  />
+                )}
               />
-              <div className="flex-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5">
-                    <QrCode className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
-                    Chuyển khoản VietQR tiện lợi
-                  </span>
-                  <span className="text-[9px] sm:text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-bold border border-amber-500/30">
-                    Không cần tiền lẻ
-                  </span>
-                </div>
-                <p className="text-[11px] sm:text-xs text-stone-400 mt-0.5 leading-snug">
-                  Quét mã thanh toán trước nhanh gọn, tài xế có thể treo phở trước cửa nếu bạn bận họp.
-                </p>
-              </div>
-            </label>
+            )}
           </div>
         )}
 
         {/* Extended Payment Methods: Mini-Pills with Brand Accent Glow (Proposal #3) */}
-        <div className="pt-2 sm:pt-2.5">
-          <div className="flex items-center justify-between mb-1.5 px-0.5">
-            <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider">
-              Ví điện tử & Thẻ quốc tế
-            </span>
-            {isExtendedSelected ? (
-              <span className="text-[10px] text-amber-400 font-semibold flex items-center gap-1 animate-fadeIn">
-                <Sparkles className="w-3 h-3 text-amber-400" />
-                <span>Đã kích hoạt</span>
+        {visibleExtendedMethods.length > 0 && (
+          <div className="pt-2 sm:pt-2.5">
+            <div className="flex items-center justify-between mb-1.5 px-0.5">
+              <span className="text-[11px] font-bold text-stone-300 uppercase tracking-wider">
+                Ví điện tử & Thẻ quốc tế
               </span>
-            ) : (
-              <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/10 text-stone-300 font-normal">
-                Chạm để chọn
-              </span>
+              {isExtendedSelected ? (
+                <span className="text-[10px] text-amber-300 font-bold flex items-center gap-1 animate-fadeIn">
+                  <Sparkles className="w-3 h-3 text-amber-400" />
+                  <span>Đã kích hoạt</span>
+                </span>
+              ) : (
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/15 text-stone-200 font-medium">
+                  Chạm để chọn
+                </span>
+              )}
+            </div>
+
+            <div
+              className="grid gap-1.5 sm:gap-2"
+              style={{
+                gridTemplateColumns: `repeat(${Math.min(visibleExtendedMethods.length, 5)}, minmax(0, 1fr))`
+              }}
+            >
+              {visibleExtendedMethods.map((method, index) => {
+                const isSelected = selectedPaymentMethod === method.id;
+                const isMethodMaint = typeof isMaintenance === 'function' && isMaintenance(method.id);
+                const brandStyle = BRAND_STYLES[method.id] || {
+                  activeBorder: 'border-amber-400',
+                  activeBg: 'bg-amber-500/15',
+                  activeGlow: 'shadow-[0_0_14px_rgba(251,191,36,0.4)] ring-1 ring-amber-400',
+                  activeText: 'text-amber-300',
+                  badgeBg: 'bg-white/10 text-stone-200 border-white/20'
+                };
+
+                const arrowPercent = Math.round(((index + 0.5) / visibleExtendedMethods.length) * 100);
+
+                return (
+                  <button
+                    key={method.id}
+                    type="button"
+                    onClick={() => {
+                      if (isMethodMaint) {
+                        handleShowMaintenancePopover(
+                          method.id,
+                          method.shortName || method.name,
+                          'Cổng thanh toán này đang bảo trì nâng cấp đường truyền.',
+                          'extended',
+                          `left-[${arrowPercent}%]`
+                        );
+                      } else {
+                        setSelectedPaymentMethod(method.id);
+                        setMaintenancePopover(null);
+                      }
+                    }}
+                    aria-pressed={isSelected}
+                    className={`relative py-1.5 px-1 sm:py-2.5 sm:px-2 rounded-xl border text-center cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-1 active:scale-95 group ${
+                      isMethodMaint ? 'opacity-70 grayscale-[25%] border-dashed border-amber-400/60 bg-amber-950/20' : ''
+                    } ${
+                      isSelected
+                        ? `${brandStyle.activeBorder} ${brandStyle.activeBg} ${brandStyle.activeGlow}`
+                        : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/[0.08]'
+                    }`}
+                  >
+                    {/* High-Contrast Maintenance Indicator Pip */}
+                    {isMethodMaint && (
+                      <div className="absolute -top-1.5 -left-1 px-1.5 py-0.5 rounded-full bg-amber-400 text-stone-950 text-[8px] font-black tracking-tight flex items-center gap-0.5 shadow-md border border-amber-200">
+                        <Wrench className="w-2.5 h-2.5" />
+                        <span className="hidden sm:inline">BẢO TRÌ</span>
+                      </div>
+                    )}
+
+                    {/* Brand Badge Icon */}
+                    <div
+                      className={`w-6 h-6 sm:w-8 sm:h-8 rounded-lg border flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${
+                        isSelected ? brandStyle.badgeBg : method.badgeBg
+                      }`}
+                    >
+                      {method.isCard ? (
+                        <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-300" />
+                      ) : (
+                        <span className="text-[9px] sm:text-[10px] font-black tracking-tight">{method.badge}</span>
+                      )}
+                    </div>
+
+                    {/* Short Name */}
+                    <span
+                      className={`text-[10px] sm:text-xs font-bold leading-tight truncate w-full transition-colors ${
+                        isSelected ? brandStyle.activeText : 'text-stone-300 group-hover:text-white'
+                      }`}
+                    >
+                      {method.shortName || method.badge || method.name}
+                    </span>
+
+                    {/* Active Indicator Pip */}
+                    {isSelected && (
+                      <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-amber-400 text-stone-950 flex items-center justify-center shadow-xs">
+                        <Check className="w-2.5 h-2.5 stroke-[3]" />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Bảng Thông Báo Popover Di Sản Nhỏ Gọn Khi Chạm Vào Cổng Bảo Trì (Phương Án B) */}
+            {maintenancePopover?.targetType === 'extended' && (
+              <PaymentMaintenancePopover
+                popoverData={maintenancePopover}
+                onClose={handleCloseMaintenancePopover}
+              />
+            )}
+
+            {/* Dynamic Micro-Guidance Banner */}
+            {isExtendedSelected && !isCurrentMaintenance && (
+              <div className={`mt-1.5 p-2 sm:p-2.5 rounded-xl border text-[11px] sm:text-xs flex items-center gap-2 animate-fadeIn ${
+                BRAND_STYLES[selectedPaymentMethod]?.bannerStyle || 'bg-amber-500/10 border-amber-500/20 text-amber-200'
+              }`}>
+                <Sparkles className="w-3.5 h-3.5 shrink-0 text-amber-400" />
+                <span className="leading-snug">
+                  {PAYMENT_GUIDANCE[selectedPaymentMethod]}
+                </span>
+              </div>
             )}
           </div>
-
-          <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
-            {EXTENDED_PAYMENT_METHODS.map((method) => {
-              const isSelected = selectedPaymentMethod === method.id;
-              const brandStyle = BRAND_STYLES[method.id] || {
-                activeBorder: 'border-amber-400',
-                activeBg: 'bg-amber-500/15',
-                activeGlow: 'shadow-[0_0_14px_rgba(251,191,36,0.4)] ring-1 ring-amber-400',
-                activeText: 'text-amber-300',
-                badgeBg: 'bg-white/10 text-stone-200 border-white/20'
-              };
-
-              return (
-                <button
-                  key={method.id}
-                  type="button"
-                  onClick={() => setSelectedPaymentMethod(method.id)}
-                  aria-pressed={isSelected}
-                  className={`relative py-1.5 px-1 sm:py-2.5 sm:px-2 rounded-xl border text-center cursor-pointer transition-all duration-200 flex flex-col items-center justify-center gap-1 active:scale-95 group ${
-                    isSelected
-                      ? `${brandStyle.activeBorder} ${brandStyle.activeBg} ${brandStyle.activeGlow}`
-                      : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/[0.08]'
-                  }`}
-                >
-                  {/* Brand Badge Icon */}
-                  <div
-                    className={`w-6 h-6 sm:w-8 sm:h-8 rounded-lg border flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${
-                      isSelected ? brandStyle.badgeBg : method.badgeBg
-                    }`}
-                  >
-                    {method.isCard ? (
-                      <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-300" />
-                    ) : (
-                      <span className="text-[9px] sm:text-[10px] font-black tracking-tight">{method.badge}</span>
-                    )}
-                  </div>
-
-                  {/* Short Name */}
-                  <span
-                    className={`text-[10px] sm:text-xs font-bold leading-tight truncate w-full transition-colors ${
-                      isSelected ? brandStyle.activeText : 'text-stone-300 group-hover:text-white'
-                    }`}
-                  >
-                    {method.shortName || method.badge || method.name}
-                  </span>
-
-                  {/* Active Indicator Pip */}
-                  {isSelected && (
-                    <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-amber-400 text-stone-950 flex items-center justify-center shadow-xs">
-                      <Check className="w-2.5 h-2.5 stroke-[3]" />
-                    </div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Dynamic Micro-Guidance Banner */}
-          {isExtendedSelected && (
-            <div className={`mt-1.5 p-2 sm:p-2.5 rounded-xl border text-[11px] sm:text-xs flex items-center gap-2 animate-fadeIn ${
-              BRAND_STYLES[selectedPaymentMethod]?.bannerStyle || 'bg-amber-500/10 border-amber-500/20 text-amber-200'
-            }`}>
-              <Sparkles className="w-3.5 h-3.5 shrink-0 text-amber-400" />
-              <span className="leading-snug">
-                {PAYMENT_GUIDANCE[selectedPaymentMethod]}
-              </span>
-            </div>
-          )}
-        </div>
+        )}
       </div>
+
+      {/* [URBAN & RAVEN] Banner Niêm Phong Đặt Bàn khi SĐT hoặc tài khoản bị khóa */}
+      {isOrderLocked && (
+        <OrderLockoutBanner
+          reason={lockoutReason}
+          onChangePhone={handleResetLockout}
+        />
+      )}
 
       {/* Action Buttons for Step 2 (Unified Responsive Inline with Mobile Safe-Zone Clearance) */}
       <div className="pt-2 pb-20 sm:pb-0 flex items-center gap-2.5 sm:gap-3">
@@ -375,27 +402,47 @@ function OrderStep2Payment({
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Quay Lại</span>
         </button>
-        <button
-          type="button"
-          onClick={handleConfirmOrder}
-          disabled={isProcessingPayment}
-          className="flex-1 min-w-0 py-3 sm:py-3.5 px-3 rounded-xl bg-gradient-to-r from-brand-red to-amber-600 hover:from-brand-redhover hover:to-amber-700 active:scale-98 text-white font-bold text-xs sm:text-sm shadow-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
-        >
-          {isProcessingPayment ? (
-            <span className="flex items-center gap-2">
-              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-              <span>Đang Xác Nhận...</span>
-            </span>
-          ) : (
-            <span className="truncate">
-              {PAYMENT_CTA_LABELS[selectedPaymentMethod] || 'Xác Nhận Giữ Chỗ Ngay →'}
-            </span>
-          )}
-        </button>
+        {isOrderLocked ? (
+          <button
+            type="button"
+            onClick={handleResetLockout}
+            className="flex-1 min-w-0 py-3 sm:py-3.5 px-3 rounded-xl font-bold text-xs sm:text-sm shadow-lg transition-all flex items-center justify-center gap-1.5 bg-gradient-to-r from-amber-700 via-amber-600 to-red-800 text-amber-100 cursor-pointer border border-amber-400/40 hover:brightness-110"
+          >
+            <RotateCcw className="w-4 h-4 text-amber-200" />
+            <span className="truncate">SỐ ĐÃ BỊ KHÓA • BẤM ĐỂ ĐỔI SỐ KHÁC</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={handleConfirmOrder}
+            disabled={isProcessingPayment || isCurrentMaintenance}
+            className={`flex-1 min-w-0 py-3 sm:py-3.5 px-3 rounded-xl font-bold text-xs sm:text-sm shadow-lg transition-all flex items-center justify-center gap-1.5 ${
+              isCurrentMaintenance
+                ? 'bg-zinc-800 text-amber-300 border-2 border-amber-400 cursor-not-allowed shadow-inner'
+                : 'bg-gradient-to-r from-brand-red to-amber-600 hover:from-brand-redhover hover:to-amber-700 active:scale-98 text-white cursor-pointer disabled:opacity-50'
+            }`}
+          >
+            {isProcessingPayment ? (
+              <span className="flex items-center gap-2">
+                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                <span>Đang Xác Nhận...</span>
+              </span>
+            ) : isCurrentMaintenance ? (
+              <span className="flex items-center gap-1.5 font-black truncate text-amber-300">
+                <Wrench className="w-4 h-4 text-amber-400 animate-pulse" />
+                Cổng Đang Bảo Trì — Vui Lòng Đổi Cổng Khác
+              </span>
+            ) : (
+              <span className="truncate">
+                {PAYMENT_CTA_LABELS[selectedPaymentMethod] || 'Xác Nhận Giữ Chỗ Ngay →'}
+              </span>
+            )}
+          </button>
+        )}
       </div>
     </div>
   );
 }
 
-export default React.memo(OrderStep2Payment);
+export default memo(OrderStep2Payment);
 
