@@ -7,7 +7,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "users")
+@Table(name = "users", indexes = {
+    @Index(name = "idx_users_status", columnList = "status")
+})
 public class User {
 
     @Id
@@ -29,6 +31,31 @@ public class User {
 
     @Column(nullable = false, length = 20)
     private String role = "CUSTOMER"; // CUSTOMER | ADMIN | STAFF
+
+    @Column(nullable = false, length = 20)
+    private String status = "ACTIVE"; // ACTIVE | LOCKED
+
+    @Column(nullable = false)
+    private int failedLoginAttempts = 0; // Đếm số lần sai trong vòng hiện tại (0 - 5)
+
+    @Column(nullable = false)
+    private int lockoutRounds = 0; // Đếm số vòng thử đã bị tạm dừng (0 - 5)
+
+    private LocalDateTime lockedUntil; // Thời hạn hết tạm khóa vòng hiện tại
+
+    private LocalDateTime lockedAt; // Thời điểm bị khóa cứng tài khoản
+
+    @Column(length = 100)
+    private String lockReason; // Lý do khóa (ví dụ: BRUTE_FORCE_EXCEEDED)
+
+    @Column(length = 30)
+    private String lockType; // PASSWORD_FAILED | ADMIN_MANUAL | null
+
+    @Column(length = 45)
+    private String lastLoginIp; // Địa chỉ IP thực tế ghi nhận gần nhất
+
+    @Column(length = 100)
+    private String lastDeviceId; // Dấu vân tay thiết bị (Device UUID)
 
     private String avatarUrl;
 
@@ -97,4 +124,64 @@ public class User {
     public void setAddresses(List<Address> addresses) { this.addresses = addresses; }
     public List<Order> getOrders() { return orders; }
     public void setOrders(List<Order> orders) { this.orders = orders; }
+
+    // Lockout Getters & Setters
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+    public int getFailedLoginAttempts() { return failedLoginAttempts; }
+    public void setFailedLoginAttempts(int failedLoginAttempts) { this.failedLoginAttempts = failedLoginAttempts; }
+    public int getLockoutRounds() { return lockoutRounds; }
+    public void setLockoutRounds(int lockoutRounds) { this.lockoutRounds = lockoutRounds; }
+    public LocalDateTime getLockedUntil() { return lockedUntil; }
+    public void setLockedUntil(LocalDateTime lockedUntil) { this.lockedUntil = lockedUntil; }
+    public LocalDateTime getLockedAt() { return lockedAt; }
+    public void setLockedAt(LocalDateTime lockedAt) { this.lockedAt = lockedAt; }
+    public String getLockReason() { return lockReason; }
+    public void setLockReason(String lockReason) { this.lockReason = lockReason; }
+    public String getLockType() { return lockType; }
+    public void setLockType(String lockType) { this.lockType = lockType; }
+
+    // Business Security Helpers
+    public boolean isAccountLocked() {
+        return "LOCKED".equalsIgnoreCase(this.status);
+    }
+
+    public boolean isTemporarilyBlocked() {
+        return this.lockedUntil != null && this.lockedUntil.isAfter(LocalDateTime.now());
+    }
+
+    public boolean isPasswordLocked() {
+        if ("ADMIN_MANUAL".equalsIgnoreCase(this.lockType)) {
+            return false;
+        }
+        return "PASSWORD_FAILED".equalsIgnoreCase(this.lockType)
+                || "BRUTE_FORCE_EXCEEDED".equalsIgnoreCase(this.lockReason)
+                || (this.lockedUntil != null && this.lockedUntil.isAfter(LocalDateTime.now()))
+                || this.lockoutRounds > 0;
+    }
+
+    public long getRemainingTemporaryLockSeconds() {
+        if (!isTemporarilyBlocked()) return 0;
+        return java.time.Duration.between(LocalDateTime.now(), this.lockedUntil).getSeconds();
+    }
+
+    public void resetLoginFailures() {
+        this.failedLoginAttempts = 0;
+        this.lockoutRounds = 0;
+        this.lockedUntil = null;
+        this.lockedAt = null;
+        this.lockReason = null;
+        this.lockType = null;
+    }
+
+    public String getLastLoginIp() { return lastLoginIp; }
+    public void setLastLoginIp(String lastLoginIp) { this.lastLoginIp = lastLoginIp; }
+
+    public String getLastDeviceId() { return lastDeviceId; }
+    public void setLastDeviceId(String lastDeviceId) { this.lastDeviceId = lastDeviceId; }
+
+    public void unlockAccount() {
+        this.status = "ACTIVE";
+        resetLoginFailures();
+    }
 }

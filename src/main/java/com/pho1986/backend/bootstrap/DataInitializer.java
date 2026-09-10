@@ -25,6 +25,7 @@ public class DataInitializer implements CommandLineRunner {
     private final TasteProfileRepository tasteProfileRepository;
     private final LoyaltyAccountRepository loyaltyAccountRepository;
     private final LoyaltyTransactionRepository loyaltyTransactionRepository;
+    private final PaymentGatewayConfigRepository paymentGatewayConfigRepository;
     private final PasswordEncoder passwordEncoder;
     private final Environment environment;
 
@@ -54,6 +55,7 @@ public class DataInitializer implements CommandLineRunner {
             TasteProfileRepository tasteProfileRepository,
             LoyaltyAccountRepository loyaltyAccountRepository,
             LoyaltyTransactionRepository loyaltyTransactionRepository,
+            PaymentGatewayConfigRepository paymentGatewayConfigRepository,
             PasswordEncoder passwordEncoder,
             Environment environment) {
         this.categoryRepository = categoryRepository;
@@ -63,6 +65,7 @@ public class DataInitializer implements CommandLineRunner {
         this.tasteProfileRepository = tasteProfileRepository;
         this.loyaltyAccountRepository = loyaltyAccountRepository;
         this.loyaltyTransactionRepository = loyaltyTransactionRepository;
+        this.paymentGatewayConfigRepository = paymentGatewayConfigRepository;
         this.passwordEncoder = passwordEncoder;
         this.environment = environment;
     }
@@ -71,6 +74,12 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) {
         // Gieo tài khoản Quản trị viên ADMIN theo chuẩn an ninh SENTINEL
         seedAdminUser();
+
+        // Gieo tài khoản thực khách thân thiết mẫu (Chỉ gieo trên môi trường dev/non-prod)
+        seedDemoMember();
+
+        // Gieo cấu hình các Cổng Thanh Toán (M5.4 - Payment Maintenance Control Hub)
+        seedPaymentGateways();
 
         long catCount = categoryRepository.count();
 
@@ -91,9 +100,6 @@ public class DataInitializer implements CommandLineRunner {
             );
             loyaltyRewardRepository.saveAll(rewards);
         }
-
-        // 3. Khởi tạo tài khoản thực khách thân thiết mẫu (Chỉ gieo trên môi trường dev/non-prod)
-        seedDemoMember();
 
         System.out.println("✅ [Spring Boot] Đồng bộ dữ liệu hạt giống thành công!");
     }
@@ -133,7 +139,7 @@ public class DataInitializer implements CommandLineRunner {
                     passwordEncoder.encode("123456"),
                     "hieu.nguyen@pho1986.vn"
             );
-            demoUser = userRepository.save(demoUser);
+            userRepository.save(demoUser);
 
             TasteProfile taste = new TasteProfile();
             taste.setUser(demoUser);
@@ -222,6 +228,21 @@ public class DataInitializer implements CommandLineRunner {
             userRepository.save(adminUser);
             // Tuân thủ CWE-532: Tuyệt đối không log password ra console/log
             System.out.println("🛡️ [SENTINEL] Khởi tạo tài khoản quản trị viên ADMIN [" + phone + "] thành công!");
+        }
+    }
+
+    private void seedPaymentGateways() {
+        if (paymentGatewayConfigRepository.count() == 0) {
+            List<PaymentGatewayConfig> defaultGateways = List.of(
+                    new PaymentGatewayConfig("SEPAY", "Quét mã SePay QR (MBBank/Napas)", "ACTIVE", "", "SYSTEM"),
+                    new PaymentGatewayConfig("MOMO", "Ví điện tử MoMo", "ACTIVE", "", "SYSTEM"),
+                    new PaymentGatewayConfig("VNPAY", "Cổng thanh toán VNPAY-QR", "ACTIVE", "", "SYSTEM"),
+                    new PaymentGatewayConfig("ZALOPAY", "Ví điện tử ZaloPay", "ACTIVE", "", "SYSTEM"),
+                    new PaymentGatewayConfig("CREDIT_CARD", "Thẻ quốc tế (Visa / Mastercard)", "ACTIVE", "", "SYSTEM"),
+                    new PaymentGatewayConfig("CASH", "Tiền mặt tại quán", "ACTIVE", "", "SYSTEM")
+            );
+            paymentGatewayConfigRepository.saveAll(defaultGateways);
+            System.out.println("💳 [DRAGON & BLADE] Đã khởi tạo 6 cổng thanh toán mặc định (M5.4 Payment Hub) thành công!");
         }
     }
 }

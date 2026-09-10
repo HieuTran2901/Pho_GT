@@ -4,6 +4,7 @@ import com.pho1986.backend.common.ApiResponse;
 import com.pho1986.backend.model.dto.AuthDtos.*;
 import com.pho1986.backend.model.entity.User;
 import com.pho1986.backend.security.LoginRateLimiter;
+import com.pho1986.backend.security.ThreatDefenseFilter;
 import com.pho1986.backend.service.AuthService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -33,13 +34,14 @@ public class AuthController {
             @Valid @RequestBody RegisterRequest request,
             HttpServletRequest httpRequest) {
         String clientIp = loginRateLimiter.extractClientIp(httpRequest);
+        String deviceId = ThreatDefenseFilter.extractDeviceId(httpRequest);
         if (loginRateLimiter.isRegistrationBlocked(clientIp)) {
             long waitSec = loginRateLimiter.getRemainingRegistrationBlockSeconds(clientIp);
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                     .body(ApiResponse.error("Quý khách đã đăng ký quá nhiều lần từ thiết bị này. Vui lòng thử lại sau " + waitSec + " giây."));
         }
 
-        AuthResponse response = authService.register(request);
+        AuthResponse response = authService.register(request, clientIp, deviceId);
         loginRateLimiter.recordRegistration(clientIp);
         boolean isSecure = httpRequest.isSecure();
 
@@ -57,7 +59,8 @@ public class AuthController {
             @Valid @RequestBody LoginRequest request,
             HttpServletRequest httpRequest) {
         String clientIp = loginRateLimiter.extractClientIp(httpRequest);
-        AuthResponse response = authService.login(request, clientIp);
+        String deviceId = ThreatDefenseFilter.extractDeviceId(httpRequest);
+        AuthResponse response = authService.login(request, clientIp, deviceId);
         boolean isSecure = httpRequest.isSecure();
 
         ResponseCookie accessCookie = createAccessCookie(response.getAccessToken(), isSecure);

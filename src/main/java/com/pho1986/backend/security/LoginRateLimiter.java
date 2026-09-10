@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class LoginRateLimiter {
 
     private static final int MAX_LOGIN_ATTEMPTS = 5;
+    private static final int MAX_IP_LOGIN_ATTEMPTS = 30; // Chống DDoS/Password Spray diện rộng mà không cản trở 5 vòng thử (25 lần) của người dùng hợp lệ
     private static final long LOGIN_BLOCK_DURATION_MS = 60 * 1000L; // 1 phút
 
     private static final int MAX_REGISTRATIONS_PER_WINDOW = 5;
@@ -168,7 +169,8 @@ public class LoginRateLimiter {
             tracker.failedAttempts++;
             tracker.lastFailedTime = now;
 
-            if (tracker.failedAttempts >= MAX_LOGIN_ATTEMPTS) {
+            int maxAttempts = key.startsWith("ip:") ? MAX_IP_LOGIN_ATTEMPTS : MAX_LOGIN_ATTEMPTS;
+            if (tracker.failedAttempts >= maxAttempts) {
                 tracker.blockedUntil = now + LOGIN_BLOCK_DURATION_MS;
             }
             return tracker;

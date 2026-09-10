@@ -1,10 +1,12 @@
 package com.pho1986.backend.service;
 
+import com.pho1986.backend.common.AccountLockedException;
 import com.pho1986.backend.model.dto.OrderDtos.*;
 import com.pho1986.backend.model.entity.*;
 import com.pho1986.backend.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.security.SecureRandom;
 import java.util.List;
@@ -55,6 +57,8 @@ public class OrderService {
     @Transactional
     public Order createOrder(String userId, CreateOrderRequest request) {
         User user = (userId != null) ? userRepository.findById(userId).orElse(null) : null;
+        String phoneToCheck = (user != null) ? user.getPhone() : request.getGuestPhone();
+        checkEligibility(userId, phoneToCheck);
 
         if (user == null && (request.getGuestName() == null || request.getGuestPhone() == null)) {
             throw new IllegalArgumentException("Quý khách vui lòng cung cấp tên và số điện thoại nhận hàng");
@@ -141,4 +145,30 @@ public class OrderService {
         return orderRepository.findByOrderCode(orderCode)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng #" + orderCode));
     }
+
+    /**
+     * [SENTINEL & BLADE] Pre-flight check kiểm tra tính hợp lệ của tài khoản / SĐT trước khi đặt bàn
+     */
+     public void checkEligibility(String userId, String phone) {
+         if (userId != null) {
+             User user = userRepository.findById(userId).orElse(null);
+             if (user != null && (user.isAccountLocked() || "LOCKED".equalsIgnoreCase(user.getStatus()))) {
+                 throw new AccountLockedException(
+                         user.getPhone(),
+                         "Tài khoản của quý khách hiện đang bị tạm khóa. Không thể thực hiện đặt bàn."
+                 );
+             }
+         }
+         if (StringUtils.hasText(phone)) {
+             String cleanPhone = phone.replaceAll("[\\s.-]+", "");
+             userRepository.findByPhone(cleanPhone).ifPresent(u -> {
+                 if (u.isAccountLocked() || "LOCKED".equalsIgnoreCase(u.getStatus())) {
+                     throw new AccountLockedException(
+                             cleanPhone,
+                             "Số điện thoại này hiện đang bị tạm khóa dịch vụ. Vui lòng liên hệ Hotline quán để được hỗ trợ."
+                     );
+                 }
+             });
+         }
+     }
 }

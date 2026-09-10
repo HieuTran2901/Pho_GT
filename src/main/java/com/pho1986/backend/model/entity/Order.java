@@ -6,7 +6,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "orders")
+@Table(name = "orders", indexes = {
+    @Index(name = "idx_orders_status_created", columnList = "status, created_at DESC"),
+    @Index(name = "idx_orders_user_created", columnList = "user_id, created_at DESC"),
+    @Index(name = "idx_orders_created_at", columnList = "created_at DESC"),
+    @Index(name = "idx_orders_guest_phone", columnList = "guest_phone"),
+    @Index(name = "idx_orders_payment_status", columnList = "payment_status")
+})
 public class Order {
 
     @Id
@@ -56,7 +62,7 @@ public class Order {
     @Column(nullable = false)
     private LocalDateTime updatedAt = LocalDateTime.now();
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<OrderItem> items = new ArrayList<>();
 
     @PreUpdate

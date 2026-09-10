@@ -68,4 +68,18 @@ public class OrderController {
         PublicOrderResponse response = PublicOrderResponse.fromOrder(order, isOwner);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
+
+    /**
+     * [SENTINEL & BLADE] Pre-flight check tính hợp lệ của tài khoản / SĐT trước khi đặt bàn
+     */
+    @GetMapping("/eligibility")
+    public ResponseEntity<ApiResponse<Boolean>> checkEligibility(
+            Authentication authentication,
+            @RequestParam(required = false) String phone) {
+        String userId = (authentication != null && !"anonymousUser".equals(authentication.getPrincipal()))
+                ? (String) authentication.getPrincipal()
+                : null;
+        orderService.checkEligibility(userId, phone);
+        return ResponseEntity.ok(ApiResponse.ok(true, "Tài khoản đủ điều kiện đặt bàn."));
+    }
 }

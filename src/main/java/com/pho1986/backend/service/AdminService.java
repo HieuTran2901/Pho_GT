@@ -41,24 +41,18 @@ public class AdminService {
     }
 
     public AdminStatsResponse getDashboardStats() {
-        List<Order> allOrders = orderRepository.findAll();
+        // [DRAGON & BLADE] Tối ưu hóa truy vấn CSDL:
+        // Thay vì kéo toàn bộ hàng chục ngàn Order vào RAM JVM (gây lag & nguy cơ OutOfMemory),
+        // thực thi các câu lệnh Aggregate siêu tốc trực tiếp trên Index của MySQL.
+        long totalOrders = orderRepository.count();
+        long pendingOrders = orderRepository.countByStatus("PENDING");
+        long confirmedOrders = orderRepository.countByStatusIn(List.of("CONFIRMED", "COOKING"));
+        long completedOrders = orderRepository.countByStatus("COMPLETED");
 
-        long totalOrders = allOrders.size();
-        long pendingOrders = allOrders.stream().filter(o -> "PENDING".equalsIgnoreCase(o.getStatus())).count();
-        long confirmedOrders = allOrders.stream().filter(o -> "CONFIRMED".equalsIgnoreCase(o.getStatus()) || "COOKING".equalsIgnoreCase(o.getStatus())).count();
-        long completedOrders = allOrders.stream().filter(o -> "COMPLETED".equalsIgnoreCase(o.getStatus())).count();
-
-        double totalRevenue = allOrders.stream()
-                .filter(o -> "PAID".equalsIgnoreCase(o.getPaymentStatus()) || "COMPLETED".equalsIgnoreCase(o.getStatus()))
-                .mapToDouble(Order::getFinalAmount)
-                .sum();
+        double totalRevenue = orderRepository.sumTotalRevenue();
 
         LocalDateTime startOfToday = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
-        double todayRevenue = allOrders.stream()
-                .filter(o -> o.getCreatedAt().isAfter(startOfToday))
-                .filter(o -> "PAID".equalsIgnoreCase(o.getPaymentStatus()) || "COMPLETED".equalsIgnoreCase(o.getStatus()))
-                .mapToDouble(Order::getFinalAmount)
-                .sum();
+        double todayRevenue = orderRepository.sumRevenueSince(startOfToday);
 
         long totalDishes = dishRepository.count();
         long totalUsers = userRepository.count();

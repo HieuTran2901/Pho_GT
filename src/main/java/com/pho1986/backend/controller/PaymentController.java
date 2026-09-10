@@ -2,6 +2,8 @@ package com.pho1986.backend.controller;
 
 import com.pho1986.backend.common.ApiResponse;
 import com.pho1986.backend.model.dto.PaymentDtos.*;
+import com.pho1986.backend.model.dto.PaymentGatewayDtos.PaymentGatewayResponse;
+import com.pho1986.backend.service.PaymentGatewayService;
 import com.pho1986.backend.service.PaymentService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -11,15 +13,27 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/payments")
 public class PaymentController {
 
     private final PaymentService paymentService;
+    private final PaymentGatewayService paymentGatewayService;
 
-    public PaymentController(PaymentService paymentService) {
+    public PaymentController(PaymentService paymentService, PaymentGatewayService paymentGatewayService) {
         this.paymentService = paymentService;
+        this.paymentGatewayService = paymentGatewayService;
+    }
+
+    /**
+     * Endpoint công khai lấy trạng thái các cổng thanh toán (M5.4 Payment Maintenance Hub)
+     */
+    @GetMapping("/gateways")
+    public ResponseEntity<ApiResponse<List<PaymentGatewayResponse>>> getPaymentGateways() {
+        List<PaymentGatewayResponse> gateways = paymentGatewayService.getAllGateways();
+        return ResponseEntity.ok(ApiResponse.ok(gateways));
     }
 
     @PostMapping

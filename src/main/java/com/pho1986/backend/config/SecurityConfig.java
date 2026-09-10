@@ -27,12 +27,15 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final com.pho1986.backend.security.ThreatDefenseFilter threatDefenseFilter;
 
     @Value("${app.cors.allowed-origins}")
     private String allowedOrigins;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
+                          com.pho1986.backend.security.ThreatDefenseFilter threatDefenseFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.threatDefenseFilter = threatDefenseFilter;
     }
 
     @Bean
@@ -54,6 +57,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN") // [SENTINEL] Bảo vệ tuyệt đối phân khu Admin
                         .anyRequest().authenticated()
                 )
+                .addFilterBefore(threatDefenseFilter, org.springframework.security.web.authentication.logout.LogoutFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -65,7 +69,7 @@ public class SecurityConfig {
         List<String> origins = Arrays.asList(allowedOrigins.split(","));
         configuration.setAllowedOrigins(origins);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "X-Secret-Key"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "X-Secret-Key", "X-Device-Id"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 

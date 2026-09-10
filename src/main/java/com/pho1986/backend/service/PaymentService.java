@@ -17,9 +17,11 @@ import com.pho1986.backend.service.payment.VietQrHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -43,6 +45,7 @@ public class PaymentService {
     private final VietQrHelper vietQrHelper;
     private final SepayIpnHandler sepayIpnHandler;
     private final MomoIpnHandler momoIpnHandler;
+    private final PaymentGatewayService paymentGatewayService;
 
     @Value("${app.payment.webhook-secret:pho1986_webhook_secret_key_prod_auth_2026}")
     private String webhookSecret;
@@ -70,7 +73,8 @@ public class PaymentService {
             ObjectMapper objectMapper,
             VietQrHelper vietQrHelper,
             SepayIpnHandler sepayIpnHandler,
-            MomoIpnHandler momoIpnHandler) {
+            MomoIpnHandler momoIpnHandler,
+            PaymentGatewayService paymentGatewayService) {
         this.paymentTransactionRepository = paymentTransactionRepository;
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
@@ -82,10 +86,32 @@ public class PaymentService {
         this.vietQrHelper = vietQrHelper;
         this.sepayIpnHandler = sepayIpnHandler;
         this.momoIpnHandler = momoIpnHandler;
+        this.paymentGatewayService = paymentGatewayService;
     }
 
     @Transactional
     public PaymentResponse createPayment(String userId, CreatePaymentRequest request) {
+        // [SENTINEL & BLADE] Chốt chặn tài khoản bị khóa (Account Lockout Guard)
+        if (userId != null) {
+            User user = userRepository.findById(userId).orElse(null);
+            if (user != null && (user.isAccountLocked() || "LOCKED".equalsIgnoreCase(user.getStatus()))) {
+                throw new com.pho1986.backend.common.AccountLockedException(user.getPhone(),
+                        "Tài khoản của quý khách hiện đang bị tạm khóa. Không thể thực hiện thanh toán trực tuyến.");
+            }
+        }
+        if (StringUtils.hasText(request.getPhone())) {
+            String cleanPhone = request.getPhone().replaceAll("[\\s.-]+", "");
+            userRepository.findByPhone(cleanPhone).ifPresent(u -> {
+                if (u.isAccountLocked() || "LOCKED".equalsIgnoreCase(u.getStatus())) {
+                    throw new com.pho1986.backend.common.AccountLockedException(cleanPhone,
+                            "Số điện thoại này hiện đang bị tạm khóa dịch vụ. Vui lòng liên hệ Hotline quán để được hỗ trợ.");
+                }
+            });
+        }
+
+        // M5.4 Chốt chặn bảo trì cổng thanh toán (HTTP 503 Service Unavailable)
+        paymentGatewayService.assertGatewayAvailable(request.getPaymentMethod());
+
         String rateLimitKey = (userId != null) ? "user_" + userId : "order_" + request.getOrderCode();
         if (!paymentRateLimiter.isAllowed(rateLimitKey)) {
             long remaining = paymentRateLimiter.getRemainingBlockSeconds(rateLimitKey);

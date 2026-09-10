@@ -5,7 +5,10 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "loyalty_transactions")
+@Table(name = "loyalty_transactions", indexes = {
+    @Index(name = "idx_loyalty_tx_account_created", columnList = "loyalty_account_id, created_at DESC"),
+    @Index(name = "idx_loyalty_tx_order", columnList = "order_id")
+})
 public class LoyaltyTransaction {
 
     @Id
