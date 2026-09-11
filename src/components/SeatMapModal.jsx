@@ -11,6 +11,7 @@ import {
 import { MOCK_TABLES } from './seatmap/mockTables';
 import SeatMapFloorView from './seatmap/SeatMapFloorView';
 import SeatMapInspectorDock from './seatmap/SeatMapInspectorDock';
+import { tableApi } from '../services/tableApi';
 
 export { MOCK_TABLES };
 
@@ -24,6 +25,8 @@ function SeatMapModal({
   time = '',
   guestCount = '2'
 }) {
+  const [tables, setTables] = useState(MOCK_TABLES);
+  const [isLoadingTables, setIsLoadingTables] = useState(false);
   const [isRendered, setIsRendered] = useState(isOpen);
   const [isClosing, setIsClosing] = useState(false);
   const [tempTable, setTempTable] = useState(selectedTable);
@@ -63,6 +66,27 @@ function SeatMapModal({
       if (timer) clearTimeout(timer);
     };
   }, [isOpen, isRendered, selectedTable]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    let isMounted = true;
+    setIsLoadingTables(true);
+    tableApi.getTables()
+      .then((data) => {
+        if (isMounted && data && Array.isArray(data)) {
+          setTables(data);
+        }
+      })
+      .catch((err) => {
+        console.warn('[SeatMapModal] Không thể tải trạng thái bàn realtime:', err);
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingTables(false);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen && typeof window !== 'undefined' && window.location.hash === '#seatmap') {
@@ -120,8 +144,8 @@ function SeatMapModal({
   }, []);
 
   const currentFloorTables = useMemo(() => {
-    return MOCK_TABLES.filter((t) => String(t.floor) === String(seatMapFloor));
-  }, [seatMapFloor]);
+    return tables.filter((t) => String(t.floor) === String(seatMapFloor));
+  }, [tables, seatMapFloor]);
 
   if (!isRendered || typeof document === 'undefined') {
     return null;

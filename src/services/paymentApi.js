@@ -18,7 +18,8 @@ export const paymentApi = {
     customerName = '',
     phone = '',
     address = '',
-    amount = 150000
+    amount = 150000,
+    tableNumber = null
   }) {
     try {
       const token = typeof localStorage !== 'undefined' ? localStorage.getItem('accessToken') : null;
@@ -38,7 +39,8 @@ export const paymentApi = {
           customerName,
           phone,
           address,
-          amount
+          amount,
+          tableNumber
         })
       });
 

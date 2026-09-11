@@ -388,7 +388,8 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
         customerName: formData.customerName,
         phone: formData.phone,
         address: targetAddress,
-        amount: orderAmount
+        amount: orderAmount,
+        tableNumber: selectedTable ? (selectedTable.name || selectedTable.id) : null
       });
       setPaymentData(paymentRes);
 
