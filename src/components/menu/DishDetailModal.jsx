@@ -4,7 +4,8 @@ import {
   Heart,
   Sparkles,
   CheckCircle2,
-  Plus
+  Plus,
+  Clock
 } from 'lucide-react';
 import { FeatureIcon, TagBadgeIcon, formatPrice } from './menuConstants';
 
@@ -73,20 +74,29 @@ export default function DishDetailModal({
             <img
               src={selectedDetailItem.image}
               alt={selectedDetailItem.name}
-              className="w-full h-full object-cover"
+              className={`w-full h-full object-cover ${
+                selectedDetailItem.isAvailable === false ? 'grayscale-[35%] opacity-85' : ''
+              }`}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
 
             {/* Top-left tag badge */}
             <div className="absolute top-3 left-3 z-10">
-              <span
-                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider text-white shadow-md backdrop-blur-xs ${
-                  selectedDetailItem.theme === 'green' ? 'bg-[#1b3425]/95' : 'bg-[#96281b]/95'
-                }`}
-              >
-                {selectedDetailItem.tagIcon && <TagBadgeIcon icon={selectedDetailItem.tagIcon} />}
-                <span>{selectedDetailItem.tag}</span>
-              </span>
+              {selectedDetailItem.isAvailable === false ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-[#26160d]/95 text-amber-300 border border-amber-400/40 shadow-md backdrop-blur-xs">
+                  <Clock className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+                  <span>Bếp Tạm Hết Món</span>
+                </span>
+              ) : (
+                <span
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider text-white shadow-md backdrop-blur-xs ${
+                    selectedDetailItem.theme === 'green' ? 'bg-[#1b3425]/95' : 'bg-[#96281b]/95'
+                  }`}
+                >
+                  {selectedDetailItem.tagIcon && <TagBadgeIcon icon={selectedDetailItem.tagIcon} />}
+                  <span>{selectedDetailItem.tag}</span>
+                </span>
+              )}
             </div>
 
             {/* Top-right Heart */}
@@ -182,16 +192,27 @@ export default function DishDetailModal({
 
           {/* Bottom Action Button */}
           <div className="pt-2">
-            <button
-              onClick={(e) => {
-                onAdd(selectedDetailItem, e);
-                onClose();
-              }}
-              className="w-full py-3.5 px-4 rounded-2xl bg-[#96281b] hover:bg-[#802216] text-white font-serif font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-red-950/25 active:scale-[0.98] transition-all cursor-pointer"
-            >
-              <Plus className="w-4 h-4 text-amber-300" />
-              <span>Thêm Vào Bàn — {formatPrice(selectedDetailItem.price)}</span>
-            </button>
+            {selectedDetailItem.isAvailable === false ? (
+              <button
+                type="button"
+                disabled
+                className="w-full py-3.5 px-4 rounded-2xl bg-stone-200 text-stone-500 font-serif font-bold text-sm flex items-center justify-center gap-2 border border-stone-300 cursor-not-allowed select-none shadow-xs"
+              >
+                <Clock className="w-4 h-4 text-stone-400" />
+                <span>Bếp Tạm Hết Món — Hẹn Thực Khách Bữa Sau</span>
+              </button>
+            ) : (
+              <button
+                onClick={(e) => {
+                  onAdd(selectedDetailItem, e);
+                  onClose();
+                }}
+                className="w-full py-3.5 px-4 rounded-2xl bg-[#96281b] hover:bg-[#802216] text-white font-serif font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-red-950/25 active:scale-[0.98] transition-all cursor-pointer"
+              >
+                <Plus className="w-4 h-4 text-amber-300" />
+                <span>Thêm Vào Bàn — {formatPrice(selectedDetailItem.price)}</span>
+              </button>
+            )}
           </div>
 
         </div>

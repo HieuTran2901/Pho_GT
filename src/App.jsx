@@ -186,6 +186,16 @@ export default function App() {
   }, []);
 
   const handleAddToCart = useCallback((item, coords) => {
+    if (item.isAvailable === false) {
+      showToast({
+        type: 'warning',
+        name: item.name,
+        image: item.image,
+        msg: `Món "${item.name}" hiện đang tạm hết hàng tại bếp quán.`
+      });
+      return;
+    }
+
     // 1. Add item to cart state
     setCartItems((prev) => {
       const existing = prev.find((i) => i.id === item.id);

@@ -4,7 +4,8 @@ import {
   Check,
   Sparkles,
   CheckCircle2,
-  Heart
+  Heart,
+  Clock
 } from 'lucide-react';
 import useScrollReveal from '../../hooks/useScrollReveal';
 import LazyDishImage from './LazyDishImage';
@@ -41,6 +42,7 @@ const MenuCard = React.memo(function MenuCard({
   const staggerDelay = (index % 3) * 120;
 
   const handleCardClick = (e) => {
+    if (item.isAvailable === false) return;
     setFloatingPlusOne(true);
     if (plusOneTimerRef.current) clearTimeout(plusOneTimerRef.current);
     plusOneTimerRef.current = setTimeout(() => setFloatingPlusOne(false), 950);
@@ -89,14 +91,21 @@ const MenuCard = React.memo(function MenuCard({
           <div>
             {/* Top row: Tag & Portion */}
             <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-              <span
-                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider text-white shadow-2xs ${
-                  isGreenTheme ? 'bg-[#1b3425]' : 'bg-[#96281b]'
-                }`}
-              >
-                {item.tagIcon && <TagBadgeIcon icon={item.tagIcon} />}
-                <span>{item.tag}</span>
-              </span>
+              {item.isAvailable === false ? (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-stone-800 text-amber-200 border border-amber-400/30 shadow-2xs">
+                  <Clock className="w-2.5 h-2.5 text-amber-300" />
+                  <span>Tạm hết món</span>
+                </span>
+              ) : (
+                <span
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider text-white shadow-2xs ${
+                    isGreenTheme ? 'bg-[#1b3425]' : 'bg-[#96281b]'
+                  }`}
+                >
+                  {item.tagIcon && <TagBadgeIcon icon={item.tagIcon} />}
+                  <span>{item.tag}</span>
+                </span>
+              )}
               <span className="text-[10px] text-stone-500 font-medium">
                 {item.portion || 'Tô thường'}
               </span>
@@ -130,7 +139,9 @@ const MenuCard = React.memo(function MenuCard({
           <LazyDishImage
             src={item.image}
             alt={item.name}
-            className="w-full h-full object-cover"
+            className={`w-full h-full object-cover transition-all ${
+              item.isAvailable === false ? 'grayscale-[45%] opacity-80' : ''
+            }`}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
 
@@ -165,27 +176,37 @@ const MenuCard = React.memo(function MenuCard({
           )}
 
           {/* Mini Fast Add Button */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleCardClick(e);
-            }}
-            aria-label={`Thêm ${item.name} vào bàn`}
-            className={`absolute bottom-1.5 right-1.5 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all duration-200 active:scale-90 ${
-              isAdded
-                ? 'bg-emerald-600 text-white'
-                : isGreenTheme
-                ? 'bg-[#1b3425] text-white hover:bg-[#14281c]'
-                : 'bg-[#96281b] text-white hover:bg-[#802216]'
-            }`}
-          >
-            {isAdded ? (
-              <Check className="w-4 h-4 text-white" />
-            ) : (
-              <Plus className="w-4 h-4 text-amber-300" />
-            )}
-          </button>
+          {item.isAvailable === false ? (
+            <div
+              className="absolute bottom-1.5 right-1.5 px-2 py-0.5 rounded-full flex items-center gap-1 bg-stone-900/90 text-amber-200/90 text-[9px] font-bold font-serif border border-amber-400/30 shadow-sm pointer-events-none select-none"
+              title="Tạm hết món"
+            >
+              <Clock className="w-2.5 h-2.5 text-amber-300" />
+              <span>Hết món</span>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleCardClick(e);
+              }}
+              aria-label={`Thêm ${item.name} vào bàn`}
+              className={`absolute bottom-1.5 right-1.5 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all duration-200 active:scale-90 ${
+                isAdded
+                  ? 'bg-emerald-600 text-white'
+                  : isGreenTheme
+                  ? 'bg-[#1b3425] text-white hover:bg-[#14281c]'
+                  : 'bg-[#96281b] text-white hover:bg-[#802216]'
+              }`}
+            >
+              {isAdded ? (
+                <Check className="w-4 h-4 text-white" />
+              ) : (
+                <Plus className="w-4 h-4 text-amber-300" />
+              )}
+            </button>
+          )}
         </div>
       </div>
 
@@ -196,20 +217,29 @@ const MenuCard = React.memo(function MenuCard({
           <LazyDishImage
             src={item.image}
             alt={item.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+            className={`w-full h-full object-cover transition-transform duration-500 ease-out ${
+              item.isAvailable === false ? 'grayscale-[35%] opacity-90' : 'group-hover:scale-105'
+            }`}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-300 pointer-events-none" />
 
           {/* Top-left Tag Badge */}
           <div className="absolute top-3.5 left-3.5 z-10">
-            <span
-              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider text-white shadow-md backdrop-blur-xs ${
-                isGreenTheme ? 'bg-[#1b3425]/95' : 'bg-[#96281b]/95'
-              }`}
-            >
-              {item.tagIcon && <TagBadgeIcon icon={item.tagIcon} />}
-              <span>{item.tag}</span>
-            </span>
+            {item.isAvailable === false ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-[#26160d]/95 text-amber-300 border border-amber-400/40 shadow-md backdrop-blur-xs">
+                <Clock className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+                <span>Bếp Tạm Hết Món</span>
+              </span>
+            ) : (
+              <span
+                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider text-white shadow-md backdrop-blur-xs ${
+                  isGreenTheme ? 'bg-[#1b3425]/95' : 'bg-[#96281b]/95'
+                }`}
+              >
+                {item.tagIcon && <TagBadgeIcon icon={item.tagIcon} />}
+                <span>{item.tag}</span>
+              </span>
+            )}
           </div>
 
           {/* Top-right Floating Glass Heart Badge with Pop & Confetti Sparks */}
@@ -342,30 +372,42 @@ const MenuCard = React.memo(function MenuCard({
               </span>
             )}
 
-            <button
-              onClick={handleCardClick}
-              className={`relative overflow-hidden w-full py-3.5 px-5 rounded-2xl font-bold text-xs sm:text-sm tracking-wide transition-all duration-300 flex items-center justify-center gap-2 group/btn shadow-sm active:scale-[0.98] ${
-                isAdded
-                  ? 'bg-emerald-600 text-white shadow-[0_0_20px_rgba(16,185,129,0.5)]'
-                  : isGreenTheme
-                  ? 'bg-[#1b3425] text-white hover:bg-[#14281c] hover:shadow-[0_4px_18px_rgba(27,52,37,0.35)]'
-                  : 'bg-[#96281b] text-white hover:bg-[#802216] hover:shadow-[0_4px_18px_rgba(150,40,27,0.35)]'
-              }`}
-            >
-              <span className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover/btn:translate-x-[300%] transition-transform duration-700 ease-in-out pointer-events-none" />
+            {item.isAvailable === false ? (
+              <button
+                type="button"
+                disabled
+                className="w-full py-3.5 px-5 rounded-2xl font-serif font-bold text-xs sm:text-sm tracking-wide bg-gradient-to-r from-stone-100 to-amber-50/80 text-stone-500 border border-stone-300 cursor-not-allowed flex items-center justify-center gap-2 select-none shadow-2xs"
+              >
+                <Clock className="w-4 h-4 text-stone-400" />
+                <span>Bếp Tạm Hết Món — Hẹn Bữa Sau</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleCardClick}
+                className={`relative overflow-hidden w-full py-3.5 px-5 rounded-2xl font-bold text-xs sm:text-sm tracking-wide transition-all duration-300 flex items-center justify-center gap-2 group/btn shadow-sm active:scale-[0.98] ${
+                  isAdded
+                    ? 'bg-emerald-600 text-white shadow-[0_0_20px_rgba(16,185,129,0.5)]'
+                    : isGreenTheme
+                    ? 'bg-[#1b3425] text-white hover:bg-[#14281c] hover:shadow-[0_4px_18px_rgba(27,52,37,0.35)]'
+                    : 'bg-[#96281b] text-white hover:bg-[#802216] hover:shadow-[0_4px_18px_rgba(150,40,27,0.35)]'
+                }`}
+              >
+                <span className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover/btn:translate-x-[300%] transition-transform duration-700 ease-in-out pointer-events-none" />
 
-              {isAdded ? (
-                <>
-                  <Check className="w-4 h-4 text-white" />
-                  <span>Đã Thêm Vào Bàn!</span>
-                </>
-              ) : (
-                <>
-                  <Plus className="w-4 h-4 text-amber-300 group-hover/btn:rotate-90 transition-transform duration-300" />
-                  <span>Thêm vào bàn</span>
-                </>
-              )}
-            </button>
+                {isAdded ? (
+                  <>
+                    <Check className="w-4 h-4 text-white" />
+                    <span>Đã Thêm Vào Bàn!</span>
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4 text-amber-300 group-hover/btn:rotate-90 transition-transform duration-300" />
+                    <span>Thêm vào bàn</span>
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>
