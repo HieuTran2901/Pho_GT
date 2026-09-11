@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Users, RefreshCw, Quote } from 'lucide-react';
+import { Users, RefreshCw } from 'lucide-react';
 import DioramaFloorTray from '../tables/DioramaFloorTray';
 import TableDetailModal from '../tables/TableDetailModal';
 import { tableApi } from '../../../services/tableApi';
@@ -156,83 +156,73 @@ function AdminTablesTab({
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto pb-10">
-      {/* 1. HEADER DI SẢN: BIỂN HIỆU KHẮC GỖ + TRÍCH DẪN + BẢNG CHÚ GIẢI */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+      {/* 1. HEADER DI SẢN: BIỂN HIỆU KHẮC GỖ + BẢNG CHÚ GIẢI THOÁNG ĐÃNG */}
+      <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-4">
         {/* Biển Hiệu Thư Pháp "Sơ đồ bàn" với viền hoa văn mạ đồng */}
-        <div className="lg:col-span-4 xl:col-span-4">
-          <div className="relative p-3.5 sm:p-4 rounded-2xl bg-gradient-to-br from-[#2a170d] via-[#1a0e07] to-[#100804] border-2 border-[#d4af37]/60 shadow-[0_10px_25px_rgba(0,0,0,0.6)] flex items-center justify-between">
-            {/* 4 Góc hoa văn mạ đồng cổ điển */}
-            <span className="absolute -top-1 -left-1 w-3 h-3 border-t-2 border-l-2 border-[#d4af37]" />
-            <span className="absolute -top-1 -right-1 w-3 h-3 border-t-2 border-r-2 border-[#d4af37]" />
-            <span className="absolute -bottom-1 -left-1 w-3 h-3 border-b-2 border-l-2 border-[#d4af37]" />
-            <span className="absolute -bottom-1 -right-1 w-3 h-3 border-b-2 border-r-2 border-[#d4af37]" />
+        <div className="relative p-3.5 sm:p-4 rounded-2xl bg-gradient-to-br from-[#2a170d] via-[#1a0e07] to-[#100804] border-2 border-[#d4af37]/60 shadow-[0_10px_25px_rgba(0,0,0,0.6)] flex items-center justify-between gap-4 shrink-0">
+          {/* 4 Góc hoa văn mạ đồng cổ điển */}
+          <span className="absolute -top-1 -left-1 w-3 h-3 border-t-2 border-l-2 border-[#d4af37]" />
+          <span className="absolute -top-1 -right-1 w-3 h-3 border-t-2 border-r-2 border-[#d4af37]" />
+          <span className="absolute -bottom-1 -left-1 w-3 h-3 border-b-2 border-l-2 border-[#d4af37]" />
+          <span className="absolute -bottom-1 -right-1 w-3 h-3 border-b-2 border-r-2 border-[#d4af37]" />
 
-            <div className="space-y-0.5">
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2.5">
               <h1 className="font-serif italic font-extrabold text-2xl sm:text-3xl text-[#fcedc7] tracking-wider leading-none drop-shadow-md">
                 Sơ đồ bàn
               </h1>
-              <p className="text-[10px] font-mono tracking-widest text-[#d4af37] uppercase font-bold">
-                — Khám Phá Không Gian Nhà Hàng —
-              </p>
-              <p className="text-[10px] font-serif text-stone-400 italic">
-                Phở Gia Truyền 1986
-              </p>
+              <span className="text-[10px] font-mono tracking-widest text-[#d4af37] uppercase font-bold px-2 py-0.5 rounded-full bg-[#d4af37]/15 border border-[#d4af37]/30">
+                2 Tầng Di Sản
+              </span>
             </div>
-
-            <button
-              onClick={() => fetchLiveTables(true)}
-              disabled={isLoading}
-              className="p-2 rounded-xl bg-black/40 border border-[#d4af37]/30 text-amber-300 hover:text-amber-200 hover:bg-black/60 transition-all disabled:opacity-50"
-              title="Đồng bộ lại CSDL"
-            >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-            </button>
-          </div>
-        </div>
-
-        {/* Trích Dẫn Tri Kỷ Ở Giữa */}
-        <div className="lg:col-span-4 xl:col-span-4 hidden md:flex flex-col items-center text-center px-2">
-          <div className="relative">
-            <Quote className="w-5 h-5 text-amber-800/40 absolute -top-2.5 -left-4 pointer-events-none" />
-            <p className="font-serif italic text-xs sm:text-sm font-bold text-[#3d2417] leading-relaxed max-w-sm">
+            <p className="text-[11px] font-serif text-[#fcedc7]/75 italic">
               “Một bát phở ngon, bắt đầu từ một không gian ấm cúng.”
             </p>
-            <span className="block text-[11px] font-serif font-bold text-[#8a1e14] mt-1 tracking-wider">
-              — Phở Gia Truyền 1986 —
-            </span>
           </div>
+
+          <button
+            onClick={() => fetchLiveTables(true)}
+            disabled={isLoading}
+            className="p-2.5 rounded-xl bg-black/40 hover:bg-black/60 border border-[#d4af37]/30 text-amber-300 hover:text-amber-200 transition-all disabled:opacity-50 cursor-pointer shadow-xs shrink-0"
+            title="Đồng bộ lại CSDL thời gian thực"
+          >
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+          </button>
         </div>
 
-        {/* Bộ Đếm Bàn & Bảng Chú Giải Trạng Thái 4 Màu */}
-        <div className="lg:col-span-4 xl:col-span-4 flex flex-wrap sm:flex-nowrap items-center justify-end gap-3">
+        {/* Bộ Đếm Bàn & Bảng Chú Giải Trạng Thái Đầy Đủ (Rộng rãi, không bị co gãy) */}
+        <div className="flex flex-wrap sm:flex-nowrap items-center justify-start xl:justify-end gap-3 flex-1">
           {/* Capsule Tổng Bàn: 22 */}
-          <div className="px-3.5 py-2 rounded-2xl bg-gradient-to-r from-[#24160e] to-[#140b06] border border-[#d4af37]/45 shadow-md flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-300">
+          <div className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-[#24160e] to-[#140b06] border border-[#d4af37]/45 shadow-md flex items-center gap-3 shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-300 shrink-0">
               <Users className="w-4 h-4" />
             </div>
-            <div>
-              <span className="text-[10px] text-stone-400 font-sans block leading-none">Tổng số bàn</span>
-              <span className="font-serif font-bold text-lg text-white leading-none">22</span>
+            <div className="whitespace-nowrap">
+              <span className="text-[10px] text-stone-400 font-sans block leading-tight">Tổng số bàn</span>
+              <span className="font-serif font-bold text-lg text-white leading-none">{tables.length || 22}</span>
             </div>
           </div>
 
-          {/* Bảng chú giải 4 màu (Trống, Đang dùng, Đặt trước, Khóa) */}
-          <div className="px-3.5 py-2 rounded-2xl bg-gradient-to-r from-[#24160e] to-[#140b06] border border-[#d4af37]/45 shadow-md flex items-center gap-3 text-xs font-serif font-medium">
-            <div className="flex items-center gap-1.5 text-emerald-300">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_6px_#10b981]" />
-              <span className="text-[11px] font-bold">Trống</span>
+          {/* Bảng chú giải 4 màu (Trống, Đang dùng, Đặt trước, Tạm khóa) */}
+          <div className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-[#24160e] to-[#140b06] border border-[#d4af37]/45 shadow-md flex items-center gap-4 text-xs font-serif font-medium overflow-x-auto">
+            <div className="flex items-center gap-1.5 text-emerald-300 whitespace-nowrap">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981] shrink-0" />
+              <span className="text-xs font-bold">Trống</span>
             </div>
-            <div className="flex items-center gap-1.5 text-red-300">
-              <span className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_6px_#ef4444]" />
-              <span className="text-[11px] font-bold">Đang dùng</span>
+            <div className="flex items-center gap-1.5 text-red-300 whitespace-nowrap">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_#ef4444] shrink-0" />
+              <span className="text-xs font-bold">Đang dùng</span>
             </div>
-            <div className="flex items-center gap-1.5 text-amber-300">
-              <span className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_6px_#f59e0b]" />
-              <span className="text-[11px] font-bold">Đặt trước</span>
+            <div className="flex items-center gap-1.5 text-amber-300 whitespace-nowrap">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_#f59e0b] shrink-0" />
+              <span className="text-xs font-bold">Đặt trước</span>
             </div>
-            <div className="flex items-center gap-1.5 text-amber-400">
-              <span className="w-2 h-2 rounded-full bg-amber-500 border border-amber-400 shadow-[0_0_6px_#d97706]" />
-              <span className="text-[11px] font-bold">Tạm khóa 🔒</span>
+            <div className="flex items-center gap-1.5 text-amber-400 whitespace-nowrap">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 border border-amber-400 shadow-[0_0_8px_#d97706] shrink-0" />
+              <span className="text-xs font-bold flex items-center gap-1">
+                <span>Tạm khóa</span>
+                <span className="text-[11px]">🔒</span>
+              </span>
             </div>
           </div>
         </div>
