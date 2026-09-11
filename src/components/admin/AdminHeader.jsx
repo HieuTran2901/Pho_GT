@@ -155,12 +155,12 @@ function AdminHeader({
             </span>
           </button>
 
-          {/* Admin Profile & Logout (Desktop duy nhất - Mobile đặt trong Sidebar Drawer an toàn) */}
-          <div className="hidden sm:flex items-center gap-2 pl-3 border-l border-stone-300/80">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#8a1e14] to-[#c0392b] text-white flex items-center justify-center font-bold text-xs shadow-2xs">
+          {/* Admin Profile & Logout (Giữ duy nhất tại Header phía trên) */}
+          <div className="flex items-center gap-1.5 sm:gap-2 pl-2 sm:pl-3 border-l border-stone-300/80">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-tr from-[#8a1e14] to-[#c0392b] text-white flex items-center justify-center font-bold text-xs shadow-2xs shrink-0">
               {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'A'}
             </div>
-            <div className="text-left">
+            <div className="text-left hidden md:block">
               <div className="text-xs font-bold text-stone-800 leading-tight">
                 {user?.fullName || 'Quản Trị Viên 1986'}
               </div>
@@ -171,7 +171,7 @@ function AdminHeader({
             <button
               type="button"
               onClick={logout}
-              className="p-1.5 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors ml-1"
+              className="p-1.5 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors ml-0.5 sm:ml-1 cursor-pointer"
               title="Đăng xuất khỏi hệ thống"
               aria-label="Đăng xuất khỏi hệ thống"
             >

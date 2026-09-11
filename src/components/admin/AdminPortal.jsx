@@ -73,8 +73,6 @@ export default function AdminPortal({ onBackToHome }) {
         onBackToHome={onBackToHome}
         mobileDrawerOpen={s.mobileDrawerOpen}
         setMobileDrawerOpen={s.setMobileDrawerOpen}
-        user={user}
-        logout={logout}
       />
 
       {/* KHÔNG GIAN LÀM VIỆC CHÍNH */}

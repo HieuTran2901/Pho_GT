@@ -13,8 +13,7 @@ import {
   Settings,
   Store,
   ArrowLeft,
-  X,
-  LogOut
+  X
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -30,9 +29,7 @@ function AdminSidebar({
   notify,
   storeOpen,
   setStoreOpen,
-  onBackToHome,
-  user,
-  logout
+  onBackToHome
 }) {
   return (
     <>
@@ -317,37 +314,6 @@ function AdminSidebar({
                 </span>
               </button>
             </div>
-          </div>
-
-          {/* Thẻ Tài Khoản Admin & Đăng Xuất An Toàn */}
-          <div className="p-2.5 mx-3 rounded-xl bg-[#1a0c06] border border-[#d4af37]/30 flex items-center justify-between gap-2 shadow-sm">
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#8a1e14] to-[#c0392b] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs border border-amber-500/30">
-                {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'A'}
-              </div>
-              <div className="min-w-0 text-left">
-                <div className="text-xs font-bold text-[#fcedc7] truncate font-serif">
-                  {user?.fullName || 'Quản Trị Viên'}
-                </div>
-                <div className="text-[10px] text-stone-400 truncate">
-                  {user?.role === 'ADMIN' || user?.role === 'ROLE_ADMIN' ? 'Chủ quán (Admin)' : 'Nhân viên trực'}
-                </div>
-              </div>
-            </div>
-            {logout && (
-              <button
-                type="button"
-                onClick={() => {
-                  setMobileDrawerOpen(false);
-                  logout();
-                }}
-                className="p-1.5 text-stone-400 hover:text-rose-400 hover:bg-rose-950/40 rounded-lg transition-colors shrink-0"
-                title="Đăng xuất khỏi hệ thống"
-                aria-label="Đăng xuất"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
-            )}
           </div>
 
           {onBackToHome && (
