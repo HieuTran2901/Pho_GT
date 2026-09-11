@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { paymentApi } from '../../services/paymentApi';
 import { submitSePayCheckout } from '../../utils/submitSePayCheckout';
-import { fetchAndPickRandomTable } from '../../utils/randomTableHelper';
+import { fetchAndPickRandomTable, checkTableStillAvailable } from '../../utils/randomTableHelper';
 import { useOrderLockoutGuard } from './useOrderLockoutGuard';
 import {
   BRANCH_LABELS,
@@ -257,40 +257,22 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
         setBookingCode(orderCode);
       }
 
+      const cleanHistoryTimer = () => {
+        scrollTimersRef.current.push(setTimeout(() => {
+          if (typeof window !== 'undefined') window.history.replaceState(null, '', window.location.pathname);
+        }, 3500));
+      };
+
       if (isSuccess) {
-        setIsVietQrConfirmed(true);
-        setStep(3);
-        setDirection('forward');
-        if (onClearCart) onClearCart();
-        setPaymentNotice({
-          type: 'success',
-          message: 'Thanh toán trực tuyến thành công! Thẻ bàn di sản của quý khách đã được xác nhận.'
-        });
-
+        setIsVietQrConfirmed(true); setStep(3); setDirection('forward'); if (onClearCart) onClearCart();
+        setPaymentNotice({ type: 'success', message: 'Thanh toán trực tuyến thành công! Thẻ bàn di sản của quý khách đã được xác nhận.' });
         scrollToOrderSection('card', true);
-
-        const cleanTimer = setTimeout(() => {
-          if (typeof window !== 'undefined') {
-            window.history.replaceState(null, '', window.location.pathname);
-          }
-        }, 3500);
-        scrollTimersRef.current.push(cleanTimer);
+        cleanHistoryTimer();
       } else if (isCancelled) {
-        setStep(2);
-        setDirection('backward');
-        setPaymentNotice({
-          type: 'cancel',
-          message: 'Giao dịch thanh toán chưa hoàn tất hoặc đã bị hủy. Quý khách vui lòng chọn lại phương thức thanh toán phù hợp.'
-        });
-
+        setStep(2); setDirection('backward');
+        setPaymentNotice({ type: 'cancel', message: 'Giao dịch thanh toán chưa hoàn tất hoặc đã bị hủy. Quý khách vui lòng chọn lại phương thức thanh toán phù hợp.' });
         scrollToOrderSection('card', true);
-
-        const cleanTimer = setTimeout(() => {
-          if (typeof window !== 'undefined') {
-            window.history.replaceState(null, '', window.location.pathname);
-          }
-        }, 3500);
-        scrollTimersRef.current.push(cleanTimer);
+        cleanHistoryTimer();
       }
     };
 
@@ -378,11 +360,21 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
       return;
     }
 
-    // Dine-in: Ensure a table is assigned (auto-assign random table if customer skipped choosing)
-    if (formData.orderType === 'dine-in' && !selectedTable) {
-      const table = await fetchAndPickRandomTable(formData.guestCount, null);
-      if (table) {
-        setSelectedTable(table);
+    // Dine-in: Ensure table is assigned and still available in realtime (not locked by Admin)
+    if (formData.orderType === 'dine-in') {
+      const activeTable = selectedTable;
+      const isLocked = activeTable && !(await checkTableStillAvailable(activeTable.id || activeTable.name));
+      if (!activeTable || isLocked) {
+        const freshTable = await fetchAndPickRandomTable(formData.guestCount, activeTable?.id);
+        if (freshTable) {
+          setSelectedTable(freshTable);
+          if (isLocked) {
+            setPaymentNotice({
+              type: 'warning',
+              message: `Bàn ${activeTable.name} vừa được quán tạm khóa để bảo trì. Hệ thống đã tự động chuyển sang ${freshTable.name} cho quý khách!`
+            });
+          }
+        }
       }
     }
     setIsLoading(false);

@@ -51,3 +51,25 @@ export async function fetchAndPickRandomTable(guestCount = 2, currentTableId = n
     return pickRandomAvailableTable(MOCK_TABLES, guestCount, currentTableId);
   }
 }
+
+/**
+ * [RAVEN & BLADE] Checks whether a given table is still available (not maintenance/occupied)
+ */
+export async function checkTableStillAvailable(tableIdOrName) {
+  if (!tableIdOrName) return true;
+  try {
+    const liveTables = await tableApi.getTables();
+    if (!Array.isArray(liveTables) || liveTables.length === 0) return true;
+    const target = String(tableIdOrName).trim().toLowerCase();
+    const found = liveTables.find((t) => {
+      const tid = (t.id || '').toLowerCase();
+      const tname = (t.name || '').toLowerCase();
+      return tid === target || tname === target;
+    });
+    if (!found) return true;
+    const status = (found.status || 'available').toLowerCase();
+    return status === 'available';
+  } catch {
+    return true;
+  }
+}
