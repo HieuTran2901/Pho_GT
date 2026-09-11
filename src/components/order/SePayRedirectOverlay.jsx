@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ShieldCheck, ExternalLink, QrCode, X, Clock, AlertCircle } from 'lucide-react';
+import { ShieldCheck, QrCode, X, Clock, AlertCircle } from 'lucide-react';
 
 /**
  * [URBAN & RAVEN] SePay Redirect Overlay Component

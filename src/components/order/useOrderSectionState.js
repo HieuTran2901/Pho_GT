@@ -91,11 +91,13 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart, 
   }, [isOrderLocked, setIsOrderLocked, setLockoutReason]);
 
   const handleSetOrderType = useCallback((type) => {
+    setTableLockWarning(null);
     setFormData((prev) => ({ ...prev, orderType: type }));
     setSelectedPaymentMethod(type === 'dine-in' ? 'POST_PAID_AT_STORE' : 'COD');
   }, []);
 
   const handleSetGuestCount = useCallback((count) => {
+    setTableLockWarning(null);
     setFormData((prev) => ({ ...prev, guestCount: count }));
     const partySize = parseInt(count, 10) || 2;
     setSelectedTable((prevTable) => {
