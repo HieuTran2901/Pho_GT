@@ -21,7 +21,7 @@ export default function AdminOrdersTableMobile({
 }) {
   if (filteredOrders.length === 0) {
     return (
-      <div className="bg-[#fffdf9] border-2 border-amber-900/25 rounded-2xl p-8 text-center text-stone-600 font-serif shadow-md">
+      <div className="sm:hidden bg-[#fffdf9] border-2 border-amber-900/25 rounded-2xl p-8 text-center text-stone-600 font-serif shadow-md">
         <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center mx-auto mb-2 border border-amber-200">
           <ClipboardList className="w-6 h-6" />
         </div>
@@ -31,7 +31,7 @@ export default function AdminOrdersTableMobile({
   }
 
   return (
-    <div className="bg-[#fffdf9] border-2 border-amber-900/25 rounded-2xl overflow-hidden shadow-lg divide-y divide-amber-900/10">
+    <div className="sm:hidden bg-[#fffdf9] border-2 border-amber-900/25 rounded-2xl overflow-hidden shadow-lg divide-y divide-amber-900/10">
       {/* Tiêu đề Bảng Kê Mobile */}
       <div className="bg-gradient-to-r from-[#2a160d] via-[#381e13] to-[#2a160d] px-3.5 py-2.5 text-[#f5e6c8] font-serif uppercase tracking-wider text-[10px] font-black flex items-center justify-between border-b-2 border-[#d4af37]/40 shadow-xs">
         <span className="w-[28%]">Đơn & Kênh</span>

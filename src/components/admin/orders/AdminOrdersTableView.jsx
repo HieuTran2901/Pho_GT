@@ -18,14 +18,16 @@ export default function AdminOrdersTableView({
   return (
     <div className="space-y-4">
       {/* 2A. TRÊN MOBILE: BẢNG KÊ TỐI ƯU VỪA KHÍT 100% (ZERO HORIZONTAL SCROLL) */}
-      <AdminOrdersTableMobile
-        filteredOrders={filteredOrders}
-        tableExpandedOrderId={tableExpandedOrderId}
-        setTableExpandedOrderId={setTableExpandedOrderId}
-        handleUpdateOrderStatus={handleUpdateOrderStatus}
-        notify={notify}
-        dishes={dishes}
-      />
+      <div className="sm:hidden">
+        <AdminOrdersTableMobile
+          filteredOrders={filteredOrders}
+          tableExpandedOrderId={tableExpandedOrderId}
+          setTableExpandedOrderId={setTableExpandedOrderId}
+          handleUpdateOrderStatus={handleUpdateOrderStatus}
+          notify={notify}
+          dishes={dishes}
+        />
+      </div>
 
       {/* 2B. TRÊN DESKTOP: BẢNG SỔ DÒNG KẾ TOÁN CAO CẤP */}
       <AdminOrdersTableDesktop
