@@ -112,32 +112,53 @@ public class TableService {
         return resp;
     }
 
-    private boolean isOrderForTable(Order order, DiningTable table) {
-        if (order.getTableNumber() == null || order.getTableNumber().isBlank()) {
+    /**
+     * [BLADE & RAVEN] Validate whether a requested table is available for new orders.
+     * Throws IllegalStateException if the table is locked (MAINTENANCE) by admin.
+     */
+    @Transactional(readOnly = true)
+    public void validateTableAvailable(String tableNumberOrId) {
+        if (tableNumberOrId == null || tableNumberOrId.isBlank()) {
+            return;
+        }
+
+        List<DiningTable> allTables = tableRepository.findAll();
+        Optional<DiningTable> matchedTable = allTables.stream()
+                .filter(t -> matchesTableIdentifier(tableNumberOrId, t))
+                .findFirst();
+
+        if (matchedTable.isPresent()) {
+            DiningTable table = matchedTable.get();
+            String dbStatus = table.getStatus() != null ? table.getStatus().toUpperCase(Locale.ROOT) : "AVAILABLE";
+            if ("MAINTENANCE".equals(dbStatus)) {
+                throw new IllegalStateException("Bàn \"" + table.getName() + "\" hiện đang tạm khóa để bảo trì. Quý khách vui lòng chọn bàn khác.");
+            }
+        }
+    }
+
+    public boolean matchesTableIdentifier(String identifier, DiningTable table) {
+        if (identifier == null || identifier.isBlank() || table == null) {
             return false;
         }
 
-        String orderTable = order.getTableNumber().trim().toLowerCase(Locale.ROOT);
+        String raw = identifier.trim().toLowerCase(Locale.ROOT);
         String tableId = table.getId().toLowerCase(Locale.ROOT);
         String tableName = table.getName().toLowerCase(Locale.ROOT);
 
-        // 1. Khớp chính xác theo ID (vd: "t1-03") hoặc Name (vd: "bàn 03", "ban công 03")
-        if (orderTable.equals(tableId) || orderTable.equals(tableName)) {
+        if (raw.equals(tableId) || raw.equals(tableName)) {
             return true;
         }
 
-        // 2. Chuẩn hóa khoảng trắng & tiền tố
-        String compactOrder = orderTable.replace("-", "").replace(" ", "").replace("bàn", "ban");
+        String compactRaw = raw.replace("-", "").replace(" ", "").replace("bàn", "ban");
         String compactId = tableId.replace("-", "").replace(" ", "");
         String compactName = tableName.replace("-", "").replace(" ", "").replace("bàn", "ban");
 
-        if (compactOrder.equals(compactId) || compactOrder.equals(compactName)) {
+        if (compactRaw.equals(compactId) || compactRaw.equals(compactName)) {
             return true;
         }
 
-        // 3. Khớp số bàn tầng 1: vd thực khách chỉ nhập "3" hoặc "03" -> chỉ áp dụng cho bàn tầng 1 dạng Bàn 0X
         try {
-            String digitsOnly = orderTable.replaceAll("[^0-9]", "");
+            String digitsOnly = raw.replaceAll("[^0-9]", "");
             if (!digitsOnly.isEmpty() && table.getFloor() == 1 && tableName.startsWith("bàn")) {
                 int orderNum = Integer.parseInt(digitsOnly);
                 int tableNum = Integer.parseInt(tableName.replaceAll("[^0-9]", ""));
@@ -146,5 +167,12 @@ public class TableService {
         } catch (Exception ignored) {}
 
         return false;
+    }
+
+    private boolean isOrderForTable(Order order, DiningTable table) {
+        if (order.getTableNumber() == null || order.getTableNumber().isBlank()) {
+            return false;
+        }
+        return matchesTableIdentifier(order.getTableNumber(), table);
     }
 }

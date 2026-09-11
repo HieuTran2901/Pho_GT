@@ -46,6 +46,7 @@ public class PaymentService {
     private final SepayIpnHandler sepayIpnHandler;
     private final MomoIpnHandler momoIpnHandler;
     private final PaymentGatewayService paymentGatewayService;
+    private final TableService tableService;
 
     @Value("${app.payment.webhook-secret:pho1986_webhook_secret_key_prod_auth_2026}")
     private String webhookSecret;
@@ -74,7 +75,8 @@ public class PaymentService {
             VietQrHelper vietQrHelper,
             SepayIpnHandler sepayIpnHandler,
             MomoIpnHandler momoIpnHandler,
-            PaymentGatewayService paymentGatewayService) {
+            PaymentGatewayService paymentGatewayService,
+            TableService tableService) {
         this.paymentTransactionRepository = paymentTransactionRepository;
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
@@ -87,6 +89,7 @@ public class PaymentService {
         this.sepayIpnHandler = sepayIpnHandler;
         this.momoIpnHandler = momoIpnHandler;
         this.paymentGatewayService = paymentGatewayService;
+        this.tableService = tableService;
     }
 
     @Transactional
@@ -116,6 +119,11 @@ public class PaymentService {
         if (!paymentRateLimiter.isAllowed(rateLimitKey)) {
             long remaining = paymentRateLimiter.getRemainingBlockSeconds(rateLimitKey);
             throw new IllegalStateException("Quý khách đã gửi yêu cầu thanh toán quá nhiều lần. Vui lòng thử lại sau " + remaining + " giây!");
+        }
+
+        // [BLADE & RAVEN] Chốt chặn kiểm tra bàn bị khóa (Table Lockout Guard)
+        if (StringUtils.hasText(request.getTableNumber())) {
+            tableService.validateTableAvailable(request.getTableNumber());
         }
 
         String method = request.getPaymentMethod().toUpperCase();

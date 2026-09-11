@@ -24,6 +24,7 @@ public class OrderService {
     private final LoyaltyAccountRepository loyaltyAccountRepository;
     private final LoyaltyTransactionRepository loyaltyTransactionRepository;
     private final DishRepository dishRepository;
+    private final TableService tableService;
 
     public OrderService(
             OrderRepository orderRepository,
@@ -31,13 +32,15 @@ public class OrderService {
             TasteProfileRepository tasteProfileRepository,
             LoyaltyAccountRepository loyaltyAccountRepository,
             LoyaltyTransactionRepository loyaltyTransactionRepository,
-            DishRepository dishRepository) {
+            DishRepository dishRepository,
+            TableService tableService) {
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
         this.tasteProfileRepository = tasteProfileRepository;
         this.loyaltyAccountRepository = loyaltyAccountRepository;
         this.loyaltyTransactionRepository = loyaltyTransactionRepository;
         this.dishRepository = dishRepository;
+        this.tableService = tableService;
     }
 
     /**
@@ -86,6 +89,10 @@ public class OrderService {
         order.setFinalAmount(finalAmount);
         order.setNotes(request.getNotes());
         order.setTableNumber(request.getTableNumber());
+
+        if (StringUtils.hasText(request.getTableNumber())) {
+            tableService.validateTableAvailable(request.getTableNumber());
+        }
 
         for (CreateOrderItemRequest itemReq : request.getItems()) {
             if (StringUtils.hasText(itemReq.getDishId())) {
