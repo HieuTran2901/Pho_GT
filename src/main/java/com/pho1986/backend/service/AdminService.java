@@ -220,9 +220,10 @@ public class AdminService {
     public void deleteDish(String dishId) {
         Dish dish = dishRepository.findById(dishId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy món ăn với ID: " + dishId));
-        // Soft delete bằng cách đặt isAvailable = false
-        dish.setIsAvailable(false);
-        dishRepository.save(dish);
+        if (dish.getCategory() != null && dish.getCategory().getDishes() != null) {
+            dish.getCategory().getDishes().remove(dish);
+        }
+        dishRepository.delete(dish);
     }
 
     private String toSlug(String input) {
