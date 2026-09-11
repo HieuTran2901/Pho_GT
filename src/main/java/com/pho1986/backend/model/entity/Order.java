@@ -1,5 +1,6 @@
 package com.pho1986.backend.model.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -13,6 +14,7 @@ import java.util.List;
     @Index(name = "idx_orders_guest_phone", columnList = "guest_phone"),
     @Index(name = "idx_orders_payment_status", columnList = "payment_status")
 })
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Order {
 
     @Id
@@ -24,6 +26,7 @@ public class Order {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "passwordHash", "addresses", "orders", "tasteProfile", "loyaltyAccount", "failedLoginAttempts", "lockoutRounds", "lockedUntil", "lockedAt", "lockReason", "lockType", "lastLoginIp", "lastDeviceId"})
     private User user; // Null nếu là Guest checkout
 
     @Column(length = 20)

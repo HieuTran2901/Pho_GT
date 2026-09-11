@@ -14,21 +14,21 @@ import java.util.Optional;
 @Repository
 public interface OrderRepository extends JpaRepository<Order, String> {
 
-    @EntityGraph(attributePaths = {"items"})
+    @EntityGraph(attributePaths = {"items", "user"})
     Optional<Order> findByOrderCode(String orderCode);
 
     boolean existsByOrderCode(String orderCode);
 
-    @EntityGraph(attributePaths = {"items"})
+    @EntityGraph(attributePaths = {"items", "user"})
     List<Order> findByUserIdOrderByCreatedAtDesc(String userId);
 
-    @EntityGraph(attributePaths = {"items"})
+    @EntityGraph(attributePaths = {"items", "user"})
     Optional<Order> findFirstByUserIdOrderByCreatedAtDesc(String userId);
 
-    @EntityGraph(attributePaths = {"items"})
+    @EntityGraph(attributePaths = {"items", "user"})
     List<Order> findAllByOrderByCreatedAtDesc();
 
-    @EntityGraph(attributePaths = {"items"})
+    @EntityGraph(attributePaths = {"items", "user"})
     List<Order> findByStatusOrderByCreatedAtDesc(String status);
 
     // --- CÁC TRUY VẤN TỔNG HỢP SIÊU TỐC TRÊN CSDL (DRAGON AGGREGATIONS) ---
