@@ -137,7 +137,7 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
         </div>
 
         {/* 2. Main Navigation Bar */}
-        <div className="bg-[#f7f4ed]/95 backdrop-blur-md border-b border-stone-300/80 px-2.5 sm:px-4 xl:px-5 3xl:px-8 py-2 sm:py-3 w-full max-w-full">
+        <div className="bg-[#f7f4ed]/95 backdrop-blur-md border-b border-stone-300/80 px-2.5 sm:px-4 xl:px-5 2xl:px-8 py-2 sm:py-3 w-full max-w-full">
           <div className="max-w-[1700px] mx-auto flex items-center justify-between gap-1.5 sm:gap-4 w-full">
             
             {/* Logo Section */}
@@ -151,14 +151,14 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
               </div>
 
               <div className="text-left shrink-0">
-                <div className="font-serif text-base sm:text-xl md:text-2xl 3xl:text-3xl font-black tracking-tight text-[#223326] leading-none whitespace-nowrap">
+                <div className="font-serif text-base sm:text-xl md:text-2xl 2xl:text-3xl font-black tracking-tight text-[#223326] leading-none whitespace-nowrap">
                   PHỞ GIA TRUYỀN
                 </div>
                 <div className="flex items-center gap-1 sm:gap-1.5 text-[8px] sm:text-[10px] md:text-[11px] font-serif text-[#9b2a1f] tracking-wide uppercase font-semibold mt-0.5 sm:mt-1 whitespace-nowrap">
-                  <span className="hidden 3xl:inline-block w-2.5 md:w-4 h-px bg-[#9b2a1f]/60" />
-                  <span className="3xl:hidden">TINH HOA TỪ 1986</span>
-                  <span className="hidden 3xl:inline">TINH HOA PHỞ VIỆT TỪ NĂM 1986</span>
-                  <span className="hidden 3xl:inline-block w-2.5 md:w-4 h-px bg-[#9b2a1f]/60" />
+                  <span className="hidden min-[1680px]:inline-block w-2.5 md:w-4 h-px bg-[#9b2a1f]/60" />
+                  <span className="min-[1680px]:hidden">TINH HOA TỪ 1986</span>
+                  <span className="hidden min-[1680px]:inline">TINH HOA PHỞ VIỆT TỪ NĂM 1986</span>
+                  <span className="hidden min-[1680px]:inline-block w-2.5 md:w-4 h-px bg-[#9b2a1f]/60" />
                 </div>
               </div>
             </a>
@@ -173,7 +173,7 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
                     <a
                       href={item.href}
                       onClick={() => setActiveTab(item.id)}
-                      className={`flex flex-col items-center justify-center px-2.5 3xl:px-4 py-1.5 rounded-xl transition-all ${
+                      className={`flex flex-col items-center justify-center px-2.5 min-[1680px]:px-4 py-1.5 rounded-xl transition-all ${
                         isActive
                           ? 'bg-white shadow-sm border border-stone-200 text-[#9b2a1f]'
                           : 'text-stone-700 hover:text-[#9b2a1f] hover:bg-stone-200/50'
@@ -181,15 +181,15 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
                     >
                       <Icon className={`w-4 h-4 mb-1 ${isActive ? 'text-[#9b2a1f]' : 'text-stone-500'}`} />
                       <span className="text-xs font-bold whitespace-nowrap tracking-wide">
-                        <span className="hidden 3xl:inline">{item.label}</span>
-                        <span className="3xl:hidden">{item.shortLabel || item.label}</span>
+                        <span className="hidden min-[1680px]:inline">{item.label}</span>
+                        <span className="min-[1680px]:hidden">{item.shortLabel || item.label}</span>
                       </span>
                       {isActive && (
                         <span className="w-6 h-0.5 bg-[#9b2a1f] rounded-full mt-0.5" />
                       )}
                     </a>
                     {idx < navItems.length - 1 && (
-                      <span className="w-px h-6 bg-stone-300/80 mx-0.5 3xl:mx-1" />
+                      <span className="w-px h-6 bg-stone-300/80 mx-0.5 min-[1680px]:mx-1" />
                     )}
                   </div>
                 );
@@ -197,7 +197,7 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
             </nav>
 
             {/* Right Actions: Login + Hotline + Cart */}
-            <div className="flex items-center gap-1.5 sm:gap-2 3xl:gap-3 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 2xl:gap-3 shrink-0">
               {/* Login / Member Profile Section */}
               {isAuthenticated && user ? (
                 <div className="relative hidden md:block" ref={dropdownRef}>
@@ -289,13 +289,13 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
                 href="tel:19008686"
                 title="Hotline đặt hàng: 1900 8686"
                 aria-label="Gọi hotline 1900 8686"
-                className="3xl:hidden w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#96281b] hover:bg-[#7e2015] text-white flex items-center justify-center shadow-md transition-all shrink-0 active:scale-95"
+                className="min-[1320px]:hidden w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#96281b] hover:bg-[#7e2015] text-white flex items-center justify-center shadow-md transition-all shrink-0 active:scale-95"
               >
                 <Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-200 animate-pulse" />
               </a>
               <a
                 href="tel:19008686"
-                className="hidden 3xl:flex items-center gap-2 px-3.5 3xl:px-5 py-2 rounded-full bg-[#96281b] hover:bg-[#7e2015] text-white shadow-md transition-all group shrink-0"
+                className="hidden min-[1320px]:flex items-center gap-2 px-3.5 2xl:px-5 py-2 rounded-full bg-[#96281b] hover:bg-[#7e2015] text-white shadow-md transition-all group shrink-0"
               >
                 <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center">
                   <Phone className="w-3.5 h-3.5 text-amber-200 animate-pulse" />
@@ -312,7 +312,7 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
                 onClick={onOpenCart}
                 aria-label="Giỏ hàng phở"
                 title="Xem giỏ hàng"
-                className={`hidden md:flex relative p-2 sm:p-2.5 rounded-full bg-stone-200/80 hover:bg-stone-300 text-stone-800 transition-all duration-200 border border-stone-300 hover:scale-105 active:scale-90 hover:shadow-md shrink-0 group cursor-pointer mr-2 sm:mr-3 xl:mr-7 3xl:mr-9 ${
+                className={`hidden md:flex relative p-1.5 sm:p-2 rounded-full bg-stone-200/80 hover:bg-stone-300 text-stone-800 transition-all duration-200 border border-stone-300 hover:scale-105 active:scale-90 hover:shadow-md shrink-0 group cursor-pointer mr-2 sm:mr-3 xl:mr-5 2xl:mr-7 ${
                   isCartJiggling ? 'animate-cart-jiggle ring-2 ring-amber-400/80' : ''
                 }`}
               >

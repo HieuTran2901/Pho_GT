@@ -22,9 +22,6 @@ export default {
       fontFamily: {
         serif: ['Merriweather', 'serif'],
         sans: ['Inter', 'sans-serif'],
-      },
-      screens: {
-        '3xl': '1680px',
       }
     },
   },
