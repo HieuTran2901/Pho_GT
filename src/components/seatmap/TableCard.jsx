@@ -1,5 +1,5 @@
 import React from 'react';
-import { Crown, Armchair, Check } from 'lucide-react';
+import { Crown, Armchair, Check, Lock } from 'lucide-react';
 
 const TableCard = React.memo(function TableCard({
   table,
@@ -10,6 +10,13 @@ const TableCard = React.memo(function TableCard({
   partySize,
   onSelect
 }) {
+  const isMaintenance = table.status === 'maintenance';
+  const isOccupied = !isAvailable && !isHolding && !isMaintenance;
+  const unavailableSurfaceClass = isMaintenance
+    ? 'bg-amber-950/50 border-amber-600/50 text-amber-300'
+    : 'bg-rose-950/40 border-rose-900/50 text-rose-300';
+  const unavailableChairClass = isMaintenance ? 'bg-amber-600/70' : 'bg-rose-800/70';
+
   const shortZone = (table.zoneName || '')
     .replace('Cạnh Bếp Nước Dùng 90°C', 'Cạnh Bếp 90°C')
     .replace('Cửa Vào Tầng 1', 'Lối Cửa Vào')
@@ -23,10 +30,8 @@ const TableCard = React.memo(function TableCard({
     .replace('Gian Tranh Cổ Tầng 2', 'Gian Tranh Cổ')
     .replace('Gian Tranh Phố Hà Nội', 'Gian Tranh Cổ')
     .replace('Phòng VIP Trúc Lâm', 'VIP Trúc Lâm')
-    .replace('Phòng VIP Hoàng Gia Tầng 2', 'VIP Hoàng Gia')
-    .replace('Gian Thư Họa Hà Thành', 'Gian Thư Họa')
-    .replace('Khu Thưởng Trà & Đọc Sách', 'Khu Thưởng Trà')
-    .replace('Ban Công Góc Phố', 'Ban Công Góc');
+    .replace('Phòng VIP Hoa Sen', 'VIP Hoa Sen')
+    .replace('Khu Gian Chính', 'Gian Chính');
 
   return (
     <>
@@ -41,8 +46,10 @@ const TableCard = React.memo(function TableCard({
               ? 'bg-gradient-to-r from-purple-950/30 via-stone-900 to-stone-900 border-purple-500/30 active:border-purple-400'
               : 'bg-white/5 border-white/10 active:border-amber-400/50 active:bg-white/10'
             : isHolding
-            ? 'bg-amber-500/5 border-amber-500/20 opacity-55 cursor-not-allowed'
-            : 'bg-white/[0.02] border-white/5 opacity-40 cursor-not-allowed'
+            ? 'bg-amber-500/5 border-amber-500/20 opacity-70 cursor-not-allowed'
+            : isMaintenance
+            ? 'bg-gradient-to-r from-amber-950/35 via-[#1c130b] to-black/80 border-amber-600/50 opacity-85 cursor-not-allowed shadow-inner'
+            : 'bg-gradient-to-r from-rose-950/25 via-stone-900/60 to-black/70 border-rose-900/40 opacity-75 cursor-not-allowed'
         }`}
       >
         {/* Left: 2D Spatial Geometry & Capacity Badge Box */}
@@ -55,13 +62,19 @@ const TableCard = React.memo(function TableCard({
                 ? table.isVip
                   ? 'bg-purple-950/50 border-purple-400/50 text-purple-200'
                   : 'bg-white/10 border-white/15 text-stone-200'
-                : 'bg-stone-800/80 border-stone-700 text-stone-500'
+                : isMaintenance
+                ? 'bg-amber-950/50 border-amber-600/50 text-amber-300'
+                : isHolding
+                ? 'bg-amber-500/20 border-amber-500/30 text-amber-300'
+                : 'bg-rose-950/40 border-rose-900/40 text-rose-300'
             }`}
           >
-            {table.isVip ? (
+            {isMaintenance ? (
+              <Lock className="w-4 h-4 text-amber-400 mb-0.5" />
+            ) : table.isVip ? (
               <Crown className="w-4 h-4 text-amber-400 mb-0.5" />
             ) : (
-              <Armchair className="w-4 h-4 text-amber-300/80 mb-0.5" />
+              <Armchair className={`w-4 h-4 mb-0.5 ${isOccupied ? 'text-rose-400/90' : 'text-amber-300/80'}`} />
             )}
             <span className="text-[9px] font-bold tracking-tight">
               {table.capacity} chỗ
@@ -115,13 +128,15 @@ const TableCard = React.memo(function TableCard({
             <span className="text-[9px] text-amber-400/90 font-semibold px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 whitespace-nowrap">
               Giữ chỗ
             </span>
-          ) : table.status === 'maintenance' ? (
-            <span className="text-[9px] text-stone-400 font-semibold px-1.5 py-0.5 rounded bg-stone-800 border border-stone-700 whitespace-nowrap">
-              Tạm khóa
+          ) : isMaintenance ? (
+            <span className="text-[9px] text-amber-300 font-bold px-1.5 py-0.5 rounded bg-amber-950/80 border border-amber-600/60 whitespace-nowrap flex items-center gap-1 shadow-xs">
+              <Lock className="w-2.5 h-2.5 text-amber-400" />
+              <span>Tạm khóa</span>
             </span>
           ) : (
-            <span className="text-[9px] text-stone-500 font-semibold px-1.5 py-0.5 rounded bg-white/5 whitespace-nowrap">
-              Đã kín
+            <span className="text-[9px] text-rose-300 font-semibold px-1.5 py-0.5 rounded bg-rose-950/70 border border-rose-800/50 whitespace-nowrap flex items-center gap-1 shadow-xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_5px_#f43f5e]" />
+              <span>Đã kín</span>
             </span>
           )}
         </div>
@@ -138,8 +153,10 @@ const TableCard = React.memo(function TableCard({
               ? 'bg-gradient-to-b from-purple-950/20 to-stone-900 border-purple-500/30 hover:border-purple-400/60 hover:bg-purple-950/30'
               : 'bg-white/5 border-white/10 hover:border-emerald-400/60 hover:bg-emerald-950/20'
             : isHolding
-            ? 'bg-amber-500/5 border-amber-500/20 opacity-55 cursor-not-allowed'
-            : 'bg-white/[0.02] border-white/5 opacity-40 cursor-not-allowed'
+            ? 'bg-amber-500/5 border-amber-500/20 opacity-70 cursor-not-allowed'
+            : isMaintenance
+            ? 'bg-gradient-to-b from-amber-950/40 via-[#1c1209] to-[#0c0704] border-amber-600/50 opacity-85 cursor-not-allowed shadow-inner'
+            : 'bg-gradient-to-b from-rose-950/30 via-stone-900/60 to-[#120707] border-rose-900/40 opacity-75 cursor-not-allowed'
         }`}
       >
         {/* Top Row: Table Name + LED Status Dot */}
@@ -161,10 +178,16 @@ const TableCard = React.memo(function TableCard({
               <span className="w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-emerald-500/30" title="Còn trống" />
             ) : isHolding ? (
               <span className="w-2 h-2 rounded-full bg-amber-400 ring-2 ring-amber-500/30" title="Đang giữ" />
-            ) : table.status === 'maintenance' ? (
-              <span className="text-[9px] text-stone-400 font-semibold px-1 py-0.2 rounded bg-stone-800 border border-stone-700" title="Tạm khóa">Khóa</span>
+            ) : isMaintenance ? (
+              <span className="text-[9px] text-amber-300 font-bold px-1.5 py-0.2 rounded bg-amber-950/80 border border-amber-600/60 flex items-center gap-0.5 shadow-xs" title="Tạm khóa">
+                <Lock className="w-2.5 h-2.5 text-amber-400" />
+                <span>Khóa</span>
+              </span>
             ) : (
-              <span className="text-[9px] text-stone-500 font-semibold" title="Đã có khách">Kín</span>
+              <span className="text-[9px] text-rose-300 font-semibold px-1.5 py-0.2 rounded bg-rose-950/70 border border-rose-800/50 flex items-center gap-1 shadow-xs" title="Đã có khách">
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_5px_#f43f5e]" />
+                <span>Kín</span>
+              </span>
             )}
           </div>
         </div>
@@ -180,7 +203,7 @@ const TableCard = React.memo(function TableCard({
                     ? 'bg-amber-400 shadow-sm shadow-amber-400/50'
                     : isAvailable
                     ? 'bg-emerald-500/60'
-                    : 'bg-stone-700'
+                    : unavailableChairClass
                 }`}
               />
               <div
@@ -189,7 +212,7 @@ const TableCard = React.memo(function TableCard({
                     ? 'bg-amber-500/30 border-amber-400 text-amber-200 ring-1 ring-amber-400/50'
                     : isAvailable
                     ? 'bg-white/10 border-white/20 text-stone-300 group-hover:border-emerald-400'
-                    : 'bg-stone-800 border-stone-700 text-stone-500'
+                    : unavailableSurfaceClass
                 }`}
               >
                 2 chỗ
@@ -200,7 +223,7 @@ const TableCard = React.memo(function TableCard({
                     ? 'bg-amber-400 shadow-sm shadow-amber-400/50'
                     : isAvailable
                     ? 'bg-emerald-500/60'
-                    : 'bg-stone-700'
+                    : unavailableChairClass
                 }`}
               />
             </div>
@@ -213,7 +236,7 @@ const TableCard = React.memo(function TableCard({
                     ? 'bg-amber-400 shadow-sm shadow-amber-400/50'
                     : isAvailable
                     ? 'bg-emerald-500/60'
-                    : 'bg-stone-700'
+                    : unavailableChairClass
                 }`}
               />
               <div
@@ -222,7 +245,7 @@ const TableCard = React.memo(function TableCard({
                     ? 'bg-amber-400 shadow-sm shadow-amber-400/50'
                     : isAvailable
                     ? 'bg-emerald-500/60'
-                    : 'bg-stone-700'
+                    : unavailableChairClass
                 }`}
               />
               <div
@@ -231,7 +254,7 @@ const TableCard = React.memo(function TableCard({
                     ? 'bg-amber-400 shadow-sm shadow-amber-400/50'
                     : isAvailable
                     ? 'bg-emerald-500/60'
-                    : 'bg-stone-700'
+                    : unavailableChairClass
                 }`}
               />
               <div
@@ -240,7 +263,7 @@ const TableCard = React.memo(function TableCard({
                     ? 'bg-amber-400 shadow-sm shadow-amber-400/50'
                     : isAvailable
                     ? 'bg-emerald-500/60'
-                    : 'bg-stone-700'
+                    : unavailableChairClass
                 }`}
               />
               <div
@@ -249,7 +272,7 @@ const TableCard = React.memo(function TableCard({
                     ? 'bg-amber-500/30 border-amber-400 text-amber-200 ring-1 ring-amber-400/50'
                     : isAvailable
                     ? 'bg-white/10 border-white/20 text-stone-300 group-hover:border-emerald-400'
-                    : 'bg-stone-800 border-stone-700 text-stone-500'
+                    : unavailableSurfaceClass
                 }`}
               >
                 4 chỗ
@@ -264,7 +287,7 @@ const TableCard = React.memo(function TableCard({
                     ? 'bg-amber-400 shadow-sm shadow-amber-400/50'
                     : isAvailable
                     ? 'bg-purple-400/80'
-                    : 'bg-stone-700'
+                    : unavailableChairClass
                 }`}
               />
               <div
@@ -273,7 +296,7 @@ const TableCard = React.memo(function TableCard({
                     ? 'bg-amber-400 shadow-sm shadow-amber-400/50'
                     : isAvailable
                     ? 'bg-purple-400/80'
-                    : 'bg-stone-700'
+                    : unavailableChairClass
                 }`}
               />
               <div
@@ -282,7 +305,7 @@ const TableCard = React.memo(function TableCard({
                     ? 'bg-amber-400 shadow-sm shadow-amber-400/50'
                     : isAvailable
                     ? 'bg-purple-400/80'
-                    : 'bg-stone-700'
+                    : unavailableChairClass
                 }`}
               />
               <div
@@ -291,7 +314,7 @@ const TableCard = React.memo(function TableCard({
                     ? 'bg-amber-400 shadow-sm shadow-amber-400/50'
                     : isAvailable
                     ? 'bg-purple-400/80'
-                    : 'bg-stone-700'
+                    : unavailableChairClass
                 }`}
               />
               <div
@@ -300,7 +323,7 @@ const TableCard = React.memo(function TableCard({
                     ? 'bg-amber-400 shadow-sm shadow-amber-400/50'
                     : isAvailable
                     ? 'bg-purple-400/80'
-                    : 'bg-stone-700'
+                    : unavailableChairClass
                 }`}
               />
               <div
@@ -309,7 +332,7 @@ const TableCard = React.memo(function TableCard({
                     ? 'bg-amber-400 shadow-sm shadow-amber-400/50'
                     : isAvailable
                     ? 'bg-purple-400/80'
-                    : 'bg-stone-700'
+                    : unavailableChairClass
                 }`}
               />
               <div
@@ -318,7 +341,7 @@ const TableCard = React.memo(function TableCard({
                     ? 'bg-amber-500/30 border-amber-400 text-amber-200 ring-1 ring-amber-400/50'
                     : isAvailable
                     ? 'bg-purple-950/40 border-purple-400/50 text-purple-200 group-hover:border-purple-300'
-                    : 'bg-stone-800 border-stone-700 text-stone-500'
+                    : unavailableSurfaceClass
                 }`}
               >
                 <Crown className="w-3 h-3 mr-1 text-amber-400" />

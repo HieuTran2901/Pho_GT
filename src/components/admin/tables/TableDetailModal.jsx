@@ -171,11 +171,11 @@ function TableDetailModal({
                 disabled={isUpdating || table.status === 'maintenance'}
                 className={`py-2 px-2 rounded-xl text-xs font-serif border transition-all ${
                   table.status === 'maintenance'
-                    ? 'border-stone-400 bg-stone-800 text-white ring-2 ring-stone-400/50 font-bold'
-                    : 'border-stone-600/40 bg-stone-900/50 hover:bg-stone-800/60 text-stone-400 disabled:opacity-40'
+                    ? 'border-amber-400 bg-amber-900/80 text-white ring-2 ring-amber-500/50 font-bold'
+                    : 'border-amber-600/40 bg-amber-950/40 hover:bg-amber-900/50 text-amber-300 disabled:opacity-40'
                 }`}
               >
-                Tạm khóa
+                Tạm khóa 🔒
               </button>
             </div>
           </div>

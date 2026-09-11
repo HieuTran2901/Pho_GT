@@ -230,9 +230,9 @@ function AdminTablesTab({
               <span className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_6px_#f59e0b]" />
               <span className="text-[11px] font-bold">Đặt trước</span>
             </div>
-            <div className="flex items-center gap-1.5 text-stone-400">
-              <span className="w-2 h-2 rounded-full bg-stone-400" />
-              <span className="text-[11px] font-bold">Khóa</span>
+            <div className="flex items-center gap-1.5 text-amber-400">
+              <span className="w-2 h-2 rounded-full bg-amber-500 border border-amber-400 shadow-[0_0_6px_#d97706]" />
+              <span className="text-[11px] font-bold">Tạm khóa 🔒</span>
             </div>
           </div>
         </div>

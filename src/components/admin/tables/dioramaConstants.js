@@ -43,13 +43,13 @@ export const DIORAMA_STATUS_CONFIG = {
   maintenance: {
     key: 'maintenance',
     label: 'Tạm khóa',
-    tagText: 'TẠM KHÓA',
-    dotColor: '#9ca3af', // gray
-    badgeClass: 'bg-stone-900/80 text-stone-400 border-stone-600/40',
-    dotClass: 'bg-stone-400 shadow-[0_0_6px_#9ca3af]',
-    pillClass: 'bg-stone-900/90 border-stone-700/60 text-stone-400',
-    podClass: 'bg-gradient-to-b from-[#181412] via-[#110e0c] to-[#0a0807] border border-stone-600/50 opacity-65',
-    tableSurfaceClass: 'bg-gradient-to-br from-[#2a2624] via-[#1f1c1a] to-[#141211] border border-stone-600/50',
+    tagText: 'TẠM KHÓA 🔒',
+    dotColor: '#d97706', // hazard amber/orange
+    badgeClass: 'bg-amber-950/90 text-amber-300 border-amber-600/60',
+    dotClass: 'bg-amber-500 shadow-[0_0_8px_#d97706]',
+    pillClass: 'bg-gradient-to-r from-amber-950/90 to-[#2c1505]/90 border-amber-600/70 text-amber-300',
+    podClass: 'bg-gradient-to-b from-[#25170a] via-[#190f05] to-[#0c0702] border-2 border-dashed border-amber-600/70 shadow-[0_0_12px_rgba(217,119,6,0.35)] opacity-90',
+    tableSurfaceClass: 'bg-gradient-to-br from-[#4d2d0e] via-[#331c07] to-[#1a0e03] border border-amber-600/60 shadow-[0_0_8px_rgba(217,119,6,0.3)]',
     glowClass: '',
   },
 };

@@ -46,7 +46,7 @@ function DioramaTablePod({
             : isVip
             ? 'bg-radial from-amber-400/15 via-transparent to-transparent opacity-80'
             : isMaintenance
-            ? 'bg-black/30 opacity-60'
+            ? 'bg-amber-950/20 opacity-70'
             : 'bg-radial from-white/5 to-transparent opacity-40 group-hover:opacity-80'
         }`}
       />
@@ -68,7 +68,11 @@ function DioramaTablePod({
           </div>
         )}
         {statusCfg.tagText && (
-          <span className="px-1.5 py-0.5 rounded-full text-[8px] font-mono font-bold tracking-tight bg-black/60 border border-white/10 text-stone-300 uppercase shadow-xs">
+          <span className={`px-1.5 py-0.5 rounded-full text-[8px] font-mono font-bold tracking-tight shadow-xs ${
+            isMaintenance
+              ? 'bg-amber-950/90 border border-amber-500/60 text-amber-300'
+              : 'bg-black/60 border border-white/10 text-stone-300'
+          }`}>
             {statusCfg.tagText}
           </span>
         )}
@@ -109,8 +113,8 @@ function DioramaTablePod({
               <Sparkles className="w-2 h-2 text-amber-300" />
             </div>
           ) : isMaintenance ? (
-            <div className="w-3.5 h-3.5 rounded-full bg-stone-800/80 border border-stone-600/60 flex items-center justify-center shadow-xs">
-              <Lock className="w-2 h-2 text-stone-300" />
+            <div className="w-3.5 h-3.5 rounded-full bg-amber-950/90 border border-amber-500/70 flex items-center justify-center shadow-xs">
+              <Lock className="w-2 h-2 text-amber-400" />
             </div>
           ) : isVip ? (
             <div className="w-3.5 h-3.5 rounded-full bg-amber-500/30 border border-amber-400/50 flex items-center justify-center">
