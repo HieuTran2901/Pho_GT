@@ -330,11 +330,15 @@ export function useAdminPortalState() {
     }
   }, [dishForm, categories, editingDish, notify, resetDishForm, fetchDishes, fetchStats]);
 
-  const handleDeleteDish = useCallback(async (dishId) => {
-    if (!window.confirm('Bạn có chắc chắn muốn chuyển món ăn này sang trạng thái Hết Hàng / Ngưng Phục Vụ?')) return;
+  const handleDeleteDish = useCallback(async (dishOrId) => {
+    const dishId = typeof dishOrId === 'object' ? dishOrId.id : dishOrId;
+    const targetDish = typeof dishOrId === 'object' ? dishOrId : dishes.find(d => d.id === dishId);
+    const dishName = targetDish ? `"${targetDish.name}"` : 'này';
+
+    if (!window.confirm(`Bạn có chắc chắn muốn XÓA VĨNH VIỄN món ăn ${dishName} khỏi thực đơn quán không?\n\nLưu ý: Món ăn sẽ bị xóa hoàn toàn khỏi cơ sở dữ liệu và không thể khôi phục.`)) return;
     try {
       await adminApi.deleteDish(dishId);
-      notify('Đã cập nhật trạng thái hết hàng cho món ăn!');
+      notify(`Đã xóa vĩnh viễn món ăn ${dishName} khỏi thực đơn thành công!`);
       fetchDishes();
       fetchStats();
       if (typeof window !== 'undefined') {
@@ -343,7 +347,7 @@ export function useAdminPortalState() {
     } catch (err) {
       notify(err.message, 'error');
     }
-  }, [notify, fetchDishes, fetchStats]);
+  }, [dishes, notify, fetchDishes, fetchStats]);
 
   const handleToggleDishAvailability = useCallback(async (dish) => {
     const newStatus = !dish.isAvailable;

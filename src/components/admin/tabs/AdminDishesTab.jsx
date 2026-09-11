@@ -368,9 +368,9 @@ function AdminDishesTab({
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleDeleteDish(dish.id)}
+                          onClick={() => handleDeleteDish(dish)}
                           className="p-2 text-stone-400 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-colors border border-stone-200 shadow-2xs"
-                          title="Xóa món"
+                          title="Xóa vĩnh viễn món"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -449,9 +449,9 @@ function AdminDishesTab({
                             </button>
                             <button
                               type="button"
-                              onClick={() => handleDeleteDish(dish.id)}
+                              onClick={() => handleDeleteDish(dish)}
                               className="p-1.5 text-stone-400 hover:text-rose-700 bg-white hover:bg-rose-50 rounded-lg border border-stone-200 transition-all shadow-2xs"
-                              title="Xóa món"
+                              title="Xóa vĩnh viễn món"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
