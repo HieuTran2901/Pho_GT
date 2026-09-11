@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ShoppingBag, Coins, CheckCircle2, Clock, XCircle, History } from 'lucide-react';
+import { ShoppingBag, Coins, History } from 'lucide-react';
 
 const STATUS_BADGES = {
   COMPLETED: { label: 'Hoàn thành', bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' },

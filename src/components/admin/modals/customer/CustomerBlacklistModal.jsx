@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Ban, X, ShieldAlert, Phone, Smartphone, Globe } from 'lucide-react';
+import { Ban, X, Phone, Smartphone, Globe } from 'lucide-react';
 
 export default function CustomerBlacklistModal({
   isOpen,

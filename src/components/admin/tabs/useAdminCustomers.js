@@ -18,7 +18,6 @@ export function useAdminCustomers(notify) {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [tierFilter, setTierFilter] = useState('ALL');
 
-  const [selectedCustomerId, setSelectedCustomerId] = useState(null);
   const [customerDetail, setCustomerDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -80,7 +79,6 @@ export function useAdminCustomers(notify) {
     const customerId = (typeof customerOrId === 'object' && customerOrId !== null)
       ? customerOrId.id
       : customerOrId;
-    setSelectedCustomerId(customerId);
     setDetailModalOpen(true);
     setDetailLoading(true);
     try {
@@ -96,7 +94,6 @@ export function useAdminCustomers(notify) {
 
   const closeDetail = useCallback(() => {
     setDetailModalOpen(false);
-    setSelectedCustomerId(null);
     setCustomerDetail(null);
   }, []);
 
@@ -204,7 +201,6 @@ export function useAdminCustomers(notify) {
     setViewMode,
     quickPointsTarget,
     setQuickPointsTarget,
-    selectedCustomerId,
     customerDetail,
     detailLoading,
     detailModalOpen,

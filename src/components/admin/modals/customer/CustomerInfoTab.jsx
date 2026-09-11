@@ -1,4 +1,4 @@
-import { User, Phone, Mail, Award, Calendar, ShoppingBag, Coins, Soup } from 'lucide-react';
+import { User, Phone, Mail, Calendar, Soup } from 'lucide-react';
 
 const TIER_TARGETS = {
   DONG: { name: 'Hạng Đồng', color: 'bg-amber-50 text-amber-800 border-amber-200' },

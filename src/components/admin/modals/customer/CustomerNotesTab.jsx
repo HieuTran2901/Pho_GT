@@ -1,4 +1,4 @@
-import { Tag, UtensilsCrossed, Flame, FileText, Sparkles } from 'lucide-react';
+import { Tag, FileText, Sparkles } from 'lucide-react';
 
 const BROTH_MAP = {
   THANH: 'Thanh tao ninh xương',
