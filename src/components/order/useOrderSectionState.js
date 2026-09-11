@@ -358,15 +358,10 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart, 
       if (isLocked) {
         setIsLoading(false);
         setSelectedTable(null);
-        const warningMsg = `Bàn ${activeTable.name || activeTable.id} vừa được quán tạm khóa để bảo trì. Quý khách vui lòng chọn lại bàn khác trên sơ đồ hoặc bấm "Chọn Bàn Ngẫu Nhiên"!`;
+        const rawName = activeTable.name || `Bàn ${activeTable.id}`;
+        const tableName = rawName.startsWith('Bàn') ? rawName : `Bàn ${rawName}`;
+        const warningMsg = `${tableName} vừa được quán tạm khóa để bảo trì. Quý khách vui lòng chọn lại bàn khác trên sơ đồ hoặc bấm "Chọn Bàn Ngẫu Nhiên"!`;
         setTableLockWarning(warningMsg);
-        if (onToast) {
-          onToast({
-            title: 'Bàn Đang Tạm Khóa',
-            message: warningMsg,
-            type: 'warning'
-          });
-        }
         return;
       }
 
@@ -389,7 +384,7 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart, 
     setDirection('forward');
     setStep(2);
     scrollToOrderSection();
-  }, [formData.branch, formData.phone, formData.orderType, formData.guestCount, selectedTable, checkOrderEligibility, scrollToOrderSection, onToast]);
+  }, [formData.branch, formData.phone, formData.orderType, formData.guestCount, selectedTable, checkOrderEligibility, scrollToOrderSection]);
 
   const handleConfirmOrder = useCallback(async () => {
     setIsProcessingPayment(true);
