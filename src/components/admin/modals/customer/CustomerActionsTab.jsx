@@ -80,11 +80,11 @@ export default function CustomerActionsTab({
   }
 
   return (
-    <div className="space-y-4 animate-fadeIn text-xs">
+    <div className="space-y-3 animate-fadeIn text-xs">
       {/* 1. KHỐI TRẠNG THÁI KHÓA TÀI KHOẢN (BANNER TRẠNG THÁI) */}
-      <div className="rounded-2xl border border-stone-200/80 bg-white p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
-        <div className="flex items-center gap-3.5 min-w-0">
-          <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-xs ${
+      <div className="rounded-2xl border border-stone-200/80 bg-white p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 shadow-xs ${
             isBlacklisted
               ? 'bg-stone-900 text-rose-500'
               : isLocked
@@ -92,11 +92,11 @@ export default function CustomerActionsTab({
               : 'bg-emerald-600 text-white'
           }`}>
             {isBlacklisted ? (
-              <Ban className="w-6 h-6" />
+              <Ban className="w-5 h-5" />
             ) : isLocked ? (
-              <Lock className="w-6 h-6" />
+              <Lock className="w-5 h-5" />
             ) : (
-              <ShieldCheck className="w-6 h-6" />
+              <ShieldCheck className="w-5 h-5" />
             )}
           </div>
           <div className="min-w-0">
@@ -130,7 +130,7 @@ export default function CustomerActionsTab({
             type="button"
             onClick={() => onUnlock(summary?.id)}
             disabled={actionLoading}
-            className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#0a5c43] hover:bg-[#084e37] active:scale-95 text-white text-xs font-medium flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer shrink-0"
+            className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#0a5c43] hover:bg-[#084e37] active:scale-95 text-white text-xs font-medium flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer shrink-0"
           >
             <Lock className="w-3.5 h-3.5" />
             <span>{isBlacklisted ? 'Gỡ cấm / Ân xá' : 'Mở khóa tài khoản'}</span>
@@ -139,7 +139,7 @@ export default function CustomerActionsTab({
           <button
             type="button"
             onClick={() => setShowLockForm(!showLockForm)}
-            className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 active:scale-95 text-xs font-medium flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0"
+            className="w-full sm:w-auto px-4 py-2 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 active:scale-95 text-xs font-medium flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0"
           >
             <Lock className="w-3.5 h-3.5" />
             <span>{showLockForm ? 'Đóng lại' : 'Tạm khóa tài khoản'}</span>
@@ -149,7 +149,7 @@ export default function CustomerActionsTab({
 
       {/* Form trượt chọn lý do khi bấm Tạm khóa tài khoản */}
       {!isLocked && showLockForm && (
-        <form onSubmit={handleConfirmLock} className="p-4 rounded-2xl bg-rose-50/50 border border-rose-200 space-y-3 animate-fadeIn">
+        <form onSubmit={handleConfirmLock} className="p-3.5 rounded-2xl bg-rose-50/60 border border-rose-200 space-y-2.5 animate-fadeIn">
           <div className="font-bold text-rose-900 text-xs">Chọn nhanh lý do khóa tài khoản:</div>
           <div className="flex flex-wrap gap-1.5">
             {QUICK_REASONS.map((r) => (
@@ -157,7 +157,7 @@ export default function CustomerActionsTab({
                 key={r}
                 type="button"
                 onClick={() => setLockReasonDraft(r)}
-                className={`px-3 py-1 rounded-xl text-xs font-medium border transition-all cursor-pointer ${
+                className={`px-2.5 py-1 rounded-xl text-xs font-medium border transition-all cursor-pointer ${
                   lockReasonDraft === r
                     ? 'bg-rose-700 text-white border-rose-700'
                     : 'bg-white text-stone-700 border-stone-200 hover:border-rose-300'
@@ -174,21 +174,21 @@ export default function CustomerActionsTab({
               placeholder="Hoặc nhập lý do khác..."
               value={lockReasonDraft}
               onChange={(e) => setLockReasonDraft(e.target.value)}
-              className="flex-1 px-3.5 py-2 rounded-xl border border-stone-200 bg-white text-stone-800 text-xs focus:outline-none focus:border-rose-400"
+              className="flex-1 px-3 py-1.5 rounded-xl border border-stone-200 bg-white text-stone-800 text-xs focus:outline-none focus:border-rose-400"
             />
             <button
               type="submit"
               disabled={actionLoading}
-              className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-medium text-xs shadow-xs shrink-0 cursor-pointer"
+              className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-medium text-xs shadow-xs shrink-0 cursor-pointer"
             >
-              Xác nhận khóa
+              Xác nhận
             </button>
           </div>
         </form>
       )}
 
-      {/* 2. KHỐI ĐIỀU CHỈNH ĐIỂM THƯỞNG */}
-      <form onSubmit={handleAdjustPointsSubmit} className="rounded-2xl border border-stone-200/80 bg-white p-5 space-y-4 shadow-2xs">
+      {/* 2. KHỐI ĐIỀU CHỈNH ĐIỂM THƯỞNG (TINH GỌN KHÔNG GIAN) */}
+      <form onSubmit={handleAdjustPointsSubmit} className="rounded-2xl border border-stone-200/80 bg-white p-4 space-y-2.5 shadow-2xs">
         {/* Header khối điểm */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm font-bold text-stone-900">
@@ -201,7 +201,7 @@ export default function CustomerActionsTab({
         </div>
 
         {/* Quick Points Preset Buttons */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
           {QUICK_POINTS.map((pts) => {
             const isSelected = pointsDraft === pts.toString();
             return (
@@ -209,7 +209,7 @@ export default function CustomerActionsTab({
                 key={pts}
                 type="button"
                 onClick={() => setPointsDraft(pts.toString())}
-                className={`px-4 py-2 rounded-xl text-xs font-medium transition-all cursor-pointer ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
                   isSelected
                     ? 'bg-[#0a5c43] text-white shadow-xs'
                     : 'bg-white border border-stone-200 text-stone-800 hover:bg-stone-50'
@@ -222,7 +222,7 @@ export default function CustomerActionsTab({
         </div>
 
         {/* Quick Reasons Chips */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
           {QUICK_POINT_REASONS.map((r) => {
             const isSelected = pointsReasonDraft === r.text;
             return (
@@ -230,7 +230,7 @@ export default function CustomerActionsTab({
                 key={r.label}
                 type="button"
                 onClick={() => setPointsReasonDraft(r.text)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-normal border transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-2.5 py-1 rounded-xl text-xs font-normal border transition-all cursor-pointer flex items-center gap-1 ${
                   isSelected
                     ? 'bg-amber-100 border-amber-300 text-amber-900 font-medium'
                     : 'bg-white border-stone-200 text-stone-700 hover:bg-stone-50'
@@ -242,17 +242,17 @@ export default function CustomerActionsTab({
           })}
         </div>
 
-        {/* Input Row: 2 Cột */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {/* Input Row: 2 Cột gọn gàng */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           <div className="relative flex items-center">
             <input
               type="number"
               placeholder="50"
               value={pointsDraft}
               onChange={(e) => setPointsDraft(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 bg-[#f9fafb] text-sm text-stone-900 font-mono focus:bg-white focus:outline-none focus:border-stone-400"
+              className="w-full px-3 py-2 rounded-xl border border-stone-200 bg-[#f9fafb] text-xs text-stone-900 font-mono focus:bg-white focus:outline-none focus:border-stone-400"
             />
-            <span className="absolute right-7 text-xs text-stone-400 pointer-events-none">
+            <span className="absolute right-6 text-[11px] text-stone-400 pointer-events-none">
               điểm ( + / - )
             </span>
           </div>
@@ -261,7 +261,7 @@ export default function CustomerActionsTab({
             placeholder="Ghi chú lý do..."
             value={pointsReasonDraft}
             onChange={(e) => setPointsReasonDraft(e.target.value)}
-            className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 bg-[#f9fafb] text-sm text-stone-900 placeholder:text-stone-400 focus:bg-white focus:outline-none focus:border-stone-400"
+            className="w-full px-3 py-2 rounded-xl border border-stone-200 bg-[#f9fafb] text-xs text-stone-900 placeholder:text-stone-400 focus:bg-white focus:outline-none focus:border-stone-400"
           />
         </div>
 
@@ -269,17 +269,17 @@ export default function CustomerActionsTab({
         <button
           type="submit"
           disabled={actionLoading}
-          className="w-full py-3 rounded-xl bg-[#eeb53c] hover:bg-[#dfa62f] active:scale-[0.99] text-stone-900 font-bold text-sm shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+          className="w-full py-2.5 rounded-xl bg-[#eeb53c] hover:bg-[#dfa62f] active:scale-[0.99] text-stone-900 font-bold text-xs shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
         >
-          <Gift className="w-4 h-4" />
+          <Gift className="w-3.5 h-3.5" />
           <span>Lưu điều thưởng</span>
         </button>
       </form>
 
-      {/* 3. KHỐI HỦY HỘI VIÊN & LƯU TRỮ HỒ SƠ (DANGER ZONE) */}
-      <div className="rounded-2xl border border-rose-100 bg-[#fff5f5] p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0" />
+      {/* 3. KHỐI HỦY HỘI VIÊN & TÍCH HỢP TÙY CHỌN DANH SÁCH CẤM */}
+      <div className="rounded-2xl border border-rose-100 bg-[#fff5f5] p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
+        <div className="flex items-center gap-2.5">
+          <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
           <div>
             <div className="text-xs font-bold text-rose-900">
               Hủy hội viên & Lưu trữ hồ sơ
@@ -289,34 +289,28 @@ export default function CustomerActionsTab({
             </p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowDangerConfirm(true)}
-          className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#e11d48] hover:bg-[#cc163e] active:scale-95 text-white text-xs font-medium flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer shrink-0"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-          <span>Xóa / Hủy</span>
-        </button>
-      </div>
 
-      {/* 4. TÙY CHỌN AN NINH MỞ RỘNG: DANH SÁCH CẤM (3 LỚP) */}
-      {!isBlacklisted && (
-        <div className="p-3 rounded-2xl border border-stone-200 bg-stone-50 flex items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2 text-stone-700">
-            <Ban className="w-4 h-4 text-stone-500 shrink-0" />
-            <span className="text-[11px] text-stone-600">
-              Chặn an ninh đa tầng (SĐT + Thiết bị + IP) nếu có hành vi quấy rối hoặc bom hàng.
-            </span>
-          </div>
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+          {!isBlacklisted && (
+            <button
+              type="button"
+              onClick={() => setShowBlacklistModal(true)}
+              className="px-3 py-1.5 rounded-xl border border-stone-300 hover:bg-stone-100 text-stone-700 text-xs font-medium transition-all cursor-pointer shrink-0"
+              title="Kích hoạt 3 lớp bảo vệ (SĐT + Thiết bị + IP)"
+            >
+              🚫 DS Cấm
+            </button>
+          )}
           <button
             type="button"
-            onClick={() => setShowBlacklistModal(true)}
-            className="px-3 py-1.5 rounded-xl border border-stone-300 hover:bg-stone-200 text-stone-800 text-[11px] font-medium transition-all shrink-0 cursor-pointer"
+            onClick={() => setShowDangerConfirm(true)}
+            className="px-3.5 py-1.5 rounded-xl bg-[#e11d48] hover:bg-[#cc163e] active:scale-95 text-white text-xs font-medium flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer shrink-0"
           >
-            Đưa vào DS Cấm
+            <Trash2 className="w-3 h-3" />
+            <span>Xóa / Hủy</span>
           </button>
         </div>
-      )}
+      </div>
 
       {/* MODAL XÁC NHẬN HỦY HỘI VIÊN */}
       {showDangerConfirm && (

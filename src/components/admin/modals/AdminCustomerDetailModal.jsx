@@ -78,9 +78,10 @@ export default function AdminCustomerDetailModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
-      <div className="relative w-full max-w-4xl bg-white rounded-[28px] border border-stone-200/80 shadow-2xl overflow-hidden flex flex-col max-h-[90vh] transition-all">
-        {/* 1. HEADER MODAL TRẮNG TINH TẾ */}
-        <div className="px-6 py-4 bg-white border-b border-stone-100 flex items-center justify-between">
+      {/* KHUNG MODAL CỐ ĐỊNH CHIỀU CAO (FIXED HEIGHT CONTAINER) */}
+      <div className="relative w-full max-w-4xl h-[650px] max-h-[92vh] bg-white rounded-[28px] border border-stone-200/80 shadow-2xl overflow-hidden flex flex-col transition-all">
+        {/* 1. HEADER CỐ ĐỊNH (72PX) */}
+        <div className="px-6 py-3.5 bg-white border-b border-stone-100 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3.5 min-w-0">
             {/* Avatar chữ cái đầu với nền đỏ sẫm */}
             <div className="w-12 h-12 rounded-full bg-[#8a1e14] flex items-center justify-center text-white text-lg font-serif font-bold shadow-xs shrink-0">
@@ -127,11 +128,11 @@ export default function AdminCustomerDetailModal({
           </button>
         </div>
 
-        {/* 2. BODY 2 CỘT: SIDEBAR TABS VÀ VÙNG NỘI DUNG */}
+        {/* 2. BODY 2 CỘT (FLEX-1 MIN-H-0) */}
         <div className="flex flex-col sm:flex-row flex-1 min-h-0 divide-y sm:divide-y-0 sm:divide-x divide-stone-100 overflow-hidden">
-          {/* Cột trái: 4 Tabs Dọc */}
-          <div className="w-full sm:w-60 shrink-0 p-4 space-y-1.5 bg-white overflow-x-auto sm:overflow-x-visible">
-            <div className="flex sm:flex-col gap-1.5">
+          {/* Cột trái: 4 Tabs Dọc Nổi Bật */}
+          <div className="w-full sm:w-60 shrink-0 p-4 space-y-2 bg-stone-50/50 overflow-y-auto">
+            <div className="flex sm:flex-col gap-2">
               {SIDEBAR_TABS.map((tab) => {
                 const IconComponent = tab.icon;
                 const isActive = activeTab === tab.id;
@@ -140,13 +141,17 @@ export default function AdminCustomerDetailModal({
                     key={tab.id}
                     type="button"
                     onClick={() => setActiveTab(tab.id)}
-                    className={`px-4 py-3 rounded-2xl text-sm transition-all flex items-center gap-3 cursor-pointer text-left whitespace-nowrap sm:whitespace-normal ${
+                    className={`px-4 py-3 rounded-2xl text-sm transition-all flex items-center gap-3 cursor-pointer text-left relative whitespace-nowrap sm:whitespace-normal ${
                       isActive
-                        ? 'bg-[#fff1f2] text-[#e11d48] font-medium'
-                        : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50 font-normal'
+                        ? 'bg-rose-50 text-[#e11d48] font-bold border-2 border-rose-300 shadow-xs pl-5'
+                        : 'bg-white/90 text-stone-700 font-medium hover:bg-white hover:text-stone-950 border border-stone-200/80 hover:border-stone-300 hover:shadow-2xs'
                     }`}
                   >
-                    <IconComponent className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#e11d48]' : 'text-stone-400'}`} />
+                    {/* Vạch chỉ báo Active Accent Bar */}
+                    {isActive && (
+                      <span className="absolute left-1.5 top-2.5 bottom-2.5 w-1.5 rounded-full bg-[#e11d48]" />
+                    )}
+                    <IconComponent className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#e11d48]' : 'text-stone-500'}`} />
                     <span>{tab.label}</span>
                   </button>
                 );
@@ -155,9 +160,9 @@ export default function AdminCustomerDetailModal({
           </div>
 
           {/* Cột phải: Vùng Nội Dung */}
-          <div className="flex-1 p-5 sm:p-6 overflow-y-auto bg-white max-h-[68vh]">
+          <div className="flex-1 p-5 sm:p-6 overflow-y-auto bg-white flex flex-col justify-start">
             {loading ? (
-              <div className="flex flex-col items-center justify-center py-16 text-stone-400">
+              <div className="flex flex-col items-center justify-center py-24 text-stone-400 my-auto">
                 <div className="w-8 h-8 border-3 border-[#0a5c43] border-t-transparent rounded-full animate-spin mb-3" />
                 <p className="text-xs font-medium text-stone-600">Đang nạp hồ sơ khách hàng...</p>
               </div>
@@ -188,8 +193,8 @@ export default function AdminCustomerDetailModal({
           </div>
         </div>
 
-        {/* 3. FOOTER MODAL */}
-        <div className="border-t border-stone-100 px-6 py-4 bg-white flex items-center justify-end gap-3 shrink-0">
+        {/* 3. FOOTER CỐ ĐỊNH (64PX) */}
+        <div className="border-t border-stone-100 px-6 py-3.5 bg-white flex items-center justify-end gap-3 shrink-0">
           <button
             type="button"
             onClick={onClose}
