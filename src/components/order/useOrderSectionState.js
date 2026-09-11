@@ -4,16 +4,9 @@ import { paymentApi } from '../../services/paymentApi';
 import { submitSePayCheckout } from '../../utils/submitSePayCheckout';
 import { fetchAndPickRandomTable, checkTableStillAvailable } from '../../utils/randomTableHelper';
 import { useOrderLockoutGuard } from './useOrderLockoutGuard';
-import {
-  BRANCH_LABELS,
-  INITIAL_FORM_DATA,
-  saveOrderSession,
-  saveCustomerHistoryOrder,
-  getOrderSession,
-  SESSION_LATEST_KEY
-} from './orderConstants';
+import { BRANCH_LABELS, INITIAL_FORM_DATA, saveOrderSession, saveCustomerHistoryOrder, getOrderSession, SESSION_LATEST_KEY } from './orderConstants';
 
-export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart } = {}) {
+export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart, onToast } = {}) {
   const { user } = useAuth();
 
   // Lazy initialize form data with authenticated user info
@@ -37,6 +30,7 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
   const [paymentNotice, setPaymentNotice] = useState(null);
   const [paymentError, setPaymentError] = useState(null);
   const [selectedTable, setSelectedTable] = useState(null);
+  const [tableLockWarning, setTableLockWarning] = useState(null);
   const [isSeatMapOpen, setIsSeatMapOpen] = useState(false);
   const submitTimerRef = useRef(null), copyTimerRef = useRef(null);
   const hasAutoFilledRef = useRef(Boolean(user?.fullName || user?.phone));
@@ -62,12 +56,7 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
   });
 
   const todayDateStr = useMemo(() => {
-    return new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'Asia/Ho_Chi_Minh',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    }).format(new Date());
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
   }, []);
 
   const calculatedAmount = useMemo(() => {
@@ -199,6 +188,7 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
   }, []);
 
   const handleConfirmTable = useCallback((table) => {
+    setTableLockWarning(null);
     setSelectedTable(table);
   }, []);
 
@@ -341,6 +331,7 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
   }, [step, paymentData?.paymentCode, paymentData?.status, isVietQrConfirmed, onClearCart]);
 
   const handleSelectRandomTable = useCallback(async () => {
+    setTableLockWarning(null);
     const table = await fetchAndPickRandomTable(formData.guestCount, selectedTable?.id);
     if (table) {
       setSelectedTable(table);
@@ -364,16 +355,29 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
     if (formData.orderType === 'dine-in') {
       const activeTable = selectedTable;
       const isLocked = activeTable && !(await checkTableStillAvailable(activeTable.id || activeTable.name));
-      if (!activeTable || isLocked) {
-        const freshTable = await fetchAndPickRandomTable(formData.guestCount, activeTable?.id);
+      if (isLocked) {
+        setIsLoading(false);
+        setSelectedTable(null);
+        const warningMsg = `Bàn ${activeTable.name || activeTable.id} vừa được quán tạm khóa để bảo trì. Quý khách vui lòng chọn lại bàn khác trên sơ đồ hoặc bấm "Chọn Bàn Ngẫu Nhiên"!`;
+        setTableLockWarning(warningMsg);
+        if (onToast) {
+          onToast({
+            title: 'Bàn Đang Tạm Khóa',
+            message: warningMsg,
+            type: 'warning'
+          });
+        }
+        return;
+      }
+
+      if (!activeTable) {
+        const freshTable = await fetchAndPickRandomTable(formData.guestCount);
         if (freshTable) {
           setSelectedTable(freshTable);
-          if (isLocked) {
-            setPaymentNotice({
-              type: 'warning',
-              message: `Bàn ${activeTable.name} vừa được quán tạm khóa để bảo trì. Hệ thống đã tự động chuyển sang ${freshTable.name} cho quý khách!`
-            });
-          }
+        } else {
+          setIsLoading(false);
+          setTableLockWarning('Hiện tại quán đang hết bàn trống phù hợp với số lượng khách. Quý khách vui lòng liên hệ hotline hoặc thử lại sau!');
+          return;
         }
       }
     }
@@ -385,7 +389,7 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
     setDirection('forward');
     setStep(2);
     scrollToOrderSection();
-  }, [formData.branch, formData.phone, formData.orderType, formData.guestCount, selectedTable, checkOrderEligibility, scrollToOrderSection]);
+  }, [formData.branch, formData.phone, formData.orderType, formData.guestCount, selectedTable, checkOrderEligibility, scrollToOrderSection, onToast]);
 
   const handleConfirmOrder = useCallback(async () => {
     setIsProcessingPayment(true);
@@ -461,7 +465,7 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
   const handleReset = useCallback(() => {
     setDirection('backward'); setStep(1); scrollToOrderSection();
     setPaymentData(null); setIsVietQrConfirmed(false); setPaymentNotice(null);
-    setPaymentError(null); setSelectedTable(null); setIsSeatMapOpen(false);
+    setPaymentError(null); setSelectedTable(null); setTableLockWarning(null); setIsSeatMapOpen(false);
     setIsOrderLocked(false); setLockoutReason('');
     try { sessionStorage.removeItem(SESSION_LATEST_KEY); } catch (e) {}
     setFormData({ ...INITIAL_FORM_DATA, customerName: user?.fullName || '', phone: user?.phone || '' });
@@ -472,11 +476,11 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
     formData, step, direction, selectedPaymentMethod, setSelectedPaymentMethod,
     isMoreMethodsOpen, setIsMoreMethodsOpen, paymentData, bookingCode, isCopied,
     isProcessingPayment, isVietQrConfirmed, setIsVietQrConfirmed, isLoading,
-    paymentNotice, paymentError, selectedTable, isSeatMapOpen, setIsSeatMapOpen,
-    todayDateStr, calculatedAmount, selectedTasteSet, isOrderLocked, lockoutReason,
-    handleResetLockout, handleInputChange, handleSetOrderType, handleSetGuestCount,
-    handleToggleTaste, scrollToOrderSection, handleCloseSeatMap, handleConfirmTable,
-    handleSelectRandomTable, handleSubmit, handleConfirmOrder, handleBackToStep1,
-    handleBackToStep2, handleCopyCode, handleReset
+    paymentNotice, paymentError, selectedTable, tableLockWarning, setTableLockWarning,
+    isSeatMapOpen, setIsSeatMapOpen, todayDateStr, calculatedAmount, selectedTasteSet,
+    isOrderLocked, lockoutReason, handleResetLockout, handleInputChange,
+    handleSetOrderType, handleSetGuestCount, handleToggleTaste, scrollToOrderSection,
+    handleCloseSeatMap, handleConfirmTable, handleSelectRandomTable, handleSubmit,
+    handleConfirmOrder, handleBackToStep1, handleBackToStep2, handleCopyCode, handleReset
   };
 }

@@ -461,7 +461,7 @@ export default function App() {
           <MenuSection onAddToCart={handleAddToCart} />
           <StorySection />
           <Testimonials />
-          <OrderSection cartItems={cartItems} onClearCart={handleClearCart} />
+          <OrderSection cartItems={cartItems} onClearCart={handleClearCart} onToast={showToast} />
         </main>
 
         {/* Slide-out Cart Drawer */}

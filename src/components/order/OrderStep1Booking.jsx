@@ -1,5 +1,5 @@
 import { useState, useCallback, memo } from 'react';
-import { Send, Clock, ChevronDown, RotateCcw, Armchair, Shuffle, Compass, MapPin, Sparkles } from 'lucide-react';
+import { Send, Clock, ChevronDown, RotateCcw, Armchair, Shuffle, Compass, MapPin, Sparkles, AlertCircle } from 'lucide-react';
 import { TASTE_PREFERENCES, QUICK_TIME_SLOTS } from './orderConstants';
 import OrderLockoutBanner from './OrderLockoutBanner';
 
@@ -17,6 +17,7 @@ function OrderStep1Booking({
   isLoading,
   handleSubmit,
   direction,
+  tableLockWarning,
   isOrderLocked,
   lockoutReason,
   handleResetLockout
@@ -258,6 +259,17 @@ function OrderStep1Booking({
               </span>
             )}
           </div>
+
+          {/* Cảnh báo Bàn bị khóa trong thời gian thực */}
+          {tableLockWarning && (
+            <div className="p-2.5 rounded-xl bg-red-950/50 border border-red-500/60 text-red-200 text-xs flex items-start gap-2 shadow-inner animate-fadeIn">
+              <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+              <div className="flex-1 leading-snug">
+                <span className="font-bold text-amber-300">Thông báo điều phối bàn: </span>
+                <span className="text-[11px] text-red-100">{tableLockWarning}</span>
+              </div>
+            </div>
+          )}
 
           {/* Body Box: Đã chọn bàn vs Chưa chọn bàn */}
           {selectedTable ? (

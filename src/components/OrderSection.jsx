@@ -13,7 +13,7 @@ import { usePaymentGatewaysStatus } from './order/usePaymentGatewaysStatus';
 import { submitSePayCheckout } from '../utils/submitSePayCheckout';
 import SePayRedirectOverlay from './order/SePayRedirectOverlay';
 
-function OrderSection({ cartItems = [], onClearCart } = {}) {
+function OrderSection({ cartItems = [], onClearCart, onToast } = {}) {
   const [sectionRef, isVisible] = useScrollReveal({ threshold: 0.12 });
   const {
     formData,
@@ -33,6 +33,7 @@ function OrderSection({ cartItems = [], onClearCart } = {}) {
     paymentNotice,
     paymentError,
     selectedTable,
+    tableLockWarning,
     isSeatMapOpen,
     setIsSeatMapOpen,
     todayDateStr,
@@ -54,7 +55,7 @@ function OrderSection({ cartItems = [], onClearCart } = {}) {
     handleBackToStep2,
     handleCopyCode,
     handleReset
-  } = useOrderSectionState(sectionRef, { cartItems, onClearCart });
+  } = useOrderSectionState(sectionRef, { cartItems, onClearCart, onToast });
 
   const { isMaintenance, isDisabled, getMaintenanceMessage } = usePaymentGatewaysStatus(
     selectedPaymentMethod,
@@ -106,6 +107,7 @@ function OrderSection({ cartItems = [], onClearCart } = {}) {
                   isLoading={isLoading}
                   handleSubmit={handleSubmit}
                   direction={direction}
+                  tableLockWarning={tableLockWarning}
                   isOrderLocked={isOrderLocked}
                   lockoutReason={lockoutReason}
                   handleResetLockout={handleResetLockout}
