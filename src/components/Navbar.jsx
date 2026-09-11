@@ -137,11 +137,11 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
         </div>
 
         {/* 2. Main Navigation Bar */}
-        <div className="bg-[#f7f4ed]/95 backdrop-blur-md border-b border-stone-300/80 px-2.5 sm:px-6 lg:px-8 py-2 sm:py-3 w-full max-w-full">
+        <div className="bg-[#f7f4ed]/95 backdrop-blur-md border-b border-stone-300/80 px-2.5 sm:px-4 xl:px-5 2xl:px-8 py-2 sm:py-3 w-full max-w-full">
           <div className="max-w-[1700px] mx-auto flex items-center justify-between gap-1.5 sm:gap-4 w-full">
             
             {/* Logo Section */}
-            <a href="#hero" className="flex items-center gap-1.5 sm:gap-2.5 md:gap-3 min-w-0 group">
+            <a href="#hero" className="flex items-center gap-1.5 sm:gap-2.5 md:gap-3 shrink-0 group">
               <div className="w-9 h-9 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full border border-[#9b2a1f] sm:border-2 p-0.5 flex items-center justify-center bg-white shadow-sm group-hover:scale-105 transition-transform shrink-0">
                 <div className="w-full h-full rounded-full border border-dashed border-[#9b2a1f] flex flex-col items-center justify-center text-[#9b2a1f] leading-none py-0.5 sm:py-1">
                   <span className="text-[6px] sm:text-[7px] md:text-[8px] font-bold uppercase tracking-tighter">SINCE</span>
@@ -150,15 +150,15 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
                 </div>
               </div>
 
-              <div className="text-left min-w-0">
-                <div className="font-serif text-base sm:text-2xl md:text-3xl font-black tracking-tight text-[#223326] leading-none whitespace-nowrap truncate">
+              <div className="text-left shrink-0">
+                <div className="font-serif text-base sm:text-xl md:text-2xl 2xl:text-3xl font-black tracking-tight text-[#223326] leading-none whitespace-nowrap">
                   PHỞ GIA TRUYỀN
                 </div>
                 <div className="flex items-center gap-1 sm:gap-1.5 text-[8px] sm:text-[10px] md:text-[11px] font-serif text-[#9b2a1f] tracking-wide uppercase font-semibold mt-0.5 sm:mt-1 whitespace-nowrap">
-                  <span className="hidden sm:inline-block w-2.5 md:w-4 h-px bg-[#9b2a1f]/60" />
-                  <span className="sm:hidden">TINH HOA TỪ 1986</span>
-                  <span className="hidden sm:inline">TINH HOA PHỞ VIỆT TỪ NĂM 1986</span>
-                  <span className="hidden sm:inline-block w-2.5 md:w-4 h-px bg-[#9b2a1f]/60" />
+                  <span className="hidden 2xl:inline-block w-2.5 md:w-4 h-px bg-[#9b2a1f]/60" />
+                  <span className="2xl:hidden">TINH HOA TỪ 1986</span>
+                  <span className="hidden 2xl:inline">TINH HOA PHỞ VIỆT TỪ NĂM 1986</span>
+                  <span className="hidden 2xl:inline-block w-2.5 md:w-4 h-px bg-[#9b2a1f]/60" />
                 </div>
               </div>
             </a>
@@ -173,7 +173,7 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
                     <a
                       href={item.href}
                       onClick={() => setActiveTab(item.id)}
-                      className={`flex flex-col items-center justify-center px-4 py-1.5 rounded-xl transition-all ${
+                      className={`flex flex-col items-center justify-center px-2.5 2xl:px-4 py-1.5 rounded-xl transition-all ${
                         isActive
                           ? 'bg-white shadow-sm border border-stone-200 text-[#9b2a1f]'
                           : 'text-stone-700 hover:text-[#9b2a1f] hover:bg-stone-200/50'
@@ -181,14 +181,15 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
                     >
                       <Icon className={`w-4 h-4 mb-1 ${isActive ? 'text-[#9b2a1f]' : 'text-stone-500'}`} />
                       <span className="text-xs font-bold whitespace-nowrap tracking-wide">
-                        {item.label}
+                        <span className="hidden 2xl:inline">{item.label}</span>
+                        <span className="2xl:hidden">{item.shortLabel || item.label}</span>
                       </span>
                       {isActive && (
                         <span className="w-6 h-0.5 bg-[#9b2a1f] rounded-full mt-0.5" />
                       )}
                     </a>
                     {idx < navItems.length - 1 && (
-                      <span className="w-px h-6 bg-stone-300/80 mx-1" />
+                      <span className="w-px h-6 bg-stone-300/80 mx-0.5 2xl:mx-1" />
                     )}
                   </div>
                 );
@@ -196,7 +197,7 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
             </nav>
 
             {/* Right Actions: Login + Hotline + Cart */}
-            <div className="flex items-center gap-1.5 sm:gap-2.5 md:gap-3 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 2xl:gap-3 shrink-0">
               {/* Login / Member Profile Section */}
               {isAuthenticated && user ? (
                 <div className="relative hidden md:block" ref={dropdownRef}>
@@ -255,7 +256,7 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
                   <button
                     onClick={onOpenGiftVault}
                     id="navbar-gift-vault-btn"
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-amber-500/50 hover:border-[#8a1e14] bg-gradient-to-r from-amber-50 to-orange-50/80 hover:bg-amber-100 text-[#8a1e14] text-xs font-serif font-bold tracking-wider transition-all shadow-xs cursor-pointer group"
+                    className="flex items-center gap-1.5 px-2 2xl:px-3 py-2 rounded-full border border-amber-500/50 hover:border-[#8a1e14] bg-gradient-to-r from-amber-50 to-orange-50/80 hover:bg-amber-100 text-[#8a1e14] text-xs font-serif font-bold tracking-wider transition-all shadow-xs cursor-pointer group whitespace-nowrap"
                     title="Khám phá kho quà tri ân"
                   >
                     <div className="relative">
@@ -267,7 +268,7 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
                   <button
                     onClick={onOpenOrderHistory}
                     id="navbar-order-history-btn"
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-stone-300 hover:border-[#8a1e14]/50 bg-white/90 hover:bg-amber-50/50 text-stone-700 hover:text-[#8a1e14] text-xs font-serif font-bold tracking-wider transition-all shadow-xs cursor-pointer group"
+                    className="flex items-center gap-1.5 px-2 2xl:px-3 py-2 rounded-full border border-stone-300 hover:border-[#8a1e14]/50 bg-white/90 hover:bg-amber-50/50 text-stone-700 hover:text-[#8a1e14] text-xs font-serif font-bold tracking-wider transition-all shadow-xs cursor-pointer group whitespace-nowrap"
                     title="Tra cứu lịch sử đơn hàng"
                   >
                     <FileText className="w-3.5 h-3.5 text-[#8a1e14] group-hover:scale-110 transition-transform" />
@@ -275,7 +276,7 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
                   </button>
                   <button
                     onClick={() => openAuthModal('login')}
-                    className="flex items-center gap-2 px-4 py-2 rounded-full border border-[#8a1e14]/40 bg-white hover:bg-amber-50/60 text-[#8a1e14] text-xs font-serif font-bold tracking-wider uppercase transition-all shadow-xs group cursor-pointer"
+                    className="flex items-center gap-1.5 sm:gap-2 px-3 2xl:px-4 py-2 rounded-full border border-[#8a1e14]/40 bg-white hover:bg-amber-50/60 text-[#8a1e14] text-xs font-serif font-bold tracking-wider uppercase transition-all shadow-xs group cursor-pointer whitespace-nowrap"
                   >
                     <User className="w-3.5 h-3.5 text-[#8a1e14]" />
                     <span>ĐĂNG NHẬP</span>
@@ -288,13 +289,13 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
                 href="tel:19008686"
                 title="Hotline đặt hàng: 1900 8686"
                 aria-label="Gọi hotline 1900 8686"
-                className="lg:hidden w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#96281b] hover:bg-[#7e2015] text-white flex items-center justify-center shadow-md transition-all shrink-0 active:scale-95"
+                className="2xl:hidden w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#96281b] hover:bg-[#7e2015] text-white flex items-center justify-center shadow-md transition-all shrink-0 active:scale-95"
               >
                 <Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-200 animate-pulse" />
               </a>
               <a
                 href="tel:19008686"
-                className="hidden lg:flex items-center gap-2 px-3.5 sm:px-5 py-2 rounded-full bg-[#96281b] hover:bg-[#7e2015] text-white shadow-md transition-all group shrink-0"
+                className="hidden 2xl:flex items-center gap-2 px-3.5 2xl:px-5 py-2 rounded-full bg-[#96281b] hover:bg-[#7e2015] text-white shadow-md transition-all group shrink-0"
               >
                 <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center">
                   <Phone className="w-3.5 h-3.5 text-amber-200 animate-pulse" />
