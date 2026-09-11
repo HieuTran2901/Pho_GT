@@ -7,7 +7,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 
-export default function AdminOrdersFilterBar({
+function AdminOrdersFilterBar({
   ordersShiftRevenue,
   orderCounts,
   orderViewMode,
@@ -167,3 +167,5 @@ export default function AdminOrdersFilterBar({
     </div>
   );
 }
+
+export default React.memo(AdminOrdersFilterBar);

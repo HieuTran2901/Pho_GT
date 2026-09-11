@@ -2,7 +2,7 @@ import React from 'react';
 import AdminOrdersCardsMobile from './AdminOrdersCardsMobile';
 import AdminOrdersCardsDesktop from './AdminOrdersCardsDesktop';
 
-export default function AdminOrdersCardsView({
+function AdminOrdersCardsView({
   filteredOrders,
   expandedOrderId,
   setExpandedOrderId,
@@ -31,3 +31,5 @@ export default function AdminOrdersCardsView({
     </>
   );
 }
+
+export default React.memo(AdminOrdersCardsView);

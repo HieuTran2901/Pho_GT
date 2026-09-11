@@ -1,4 +1,4 @@
-import { ShoppingBag, Calendar, CreditCard, CheckCircle2, Clock, XCircle } from 'lucide-react';
+import { ShoppingBag, CheckCircle2, Clock, XCircle } from 'lucide-react';
 
 const STATUS_BADGES = {
   COMPLETED: { label: 'Hoàn thành', bg: 'bg-emerald-100 text-emerald-800 border-emerald-300' },

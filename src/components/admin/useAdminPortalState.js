@@ -88,10 +88,10 @@ export function useAdminPortalState() {
     }
   }, [notify]);
 
-  const fetchOrders = useCallback(async (filter = 'ALL') => {
+  const fetchOrders = useCallback(async (_filter = 'ALL') => {
     setOrdersLoading(true);
     try {
-      const data = await adminApi.getOrders(filter || 'ALL');
+      const data = await adminApi.getOrders('ALL');
       setOrders(data || []);
     } catch (err) {
       notify(err.message, 'error');

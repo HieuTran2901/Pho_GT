@@ -2,7 +2,7 @@ import React from 'react';
 import AdminOrdersTableMobile from './AdminOrdersTableMobile';
 import AdminOrdersTableDesktop from './AdminOrdersTableDesktop';
 
-export default function AdminOrdersTableView({
+function AdminOrdersTableView({
   filteredOrders,
   tableExpandedOrderId,
   setTableExpandedOrderId,
@@ -44,3 +44,5 @@ export default function AdminOrdersTableView({
     </div>
   );
 }
+
+export default React.memo(AdminOrdersTableView);
