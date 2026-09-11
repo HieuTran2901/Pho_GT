@@ -47,6 +47,7 @@ function OrderSection({ cartItems = [], onClearCart } = {}) {
     handleToggleTaste,
     handleCloseSeatMap,
     handleConfirmTable,
+    handleSelectRandomTable,
     handleSubmit,
     handleConfirmOrder,
     handleBackToStep1,
@@ -99,6 +100,7 @@ function OrderSection({ cartItems = [], onClearCart } = {}) {
                   todayDateStr={todayDateStr}
                   selectedTable={selectedTable}
                   setIsSeatMapOpen={setIsSeatMapOpen}
+                  handleSelectRandomTable={handleSelectRandomTable}
                   selectedTasteSet={selectedTasteSet}
                   handleToggleTaste={handleToggleTaste}
                   isLoading={isLoading}

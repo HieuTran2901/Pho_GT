@@ -1,5 +1,5 @@
 import { useState, useCallback, memo } from 'react';
-import { Send, Clock, ChevronDown, RotateCcw } from 'lucide-react';
+import { Send, Clock, ChevronDown, RotateCcw, Armchair, Shuffle, Compass, MapPin, Sparkles } from 'lucide-react';
 import { TASTE_PREFERENCES, QUICK_TIME_SLOTS } from './orderConstants';
 import OrderLockoutBanner from './OrderLockoutBanner';
 
@@ -11,6 +11,7 @@ function OrderStep1Booking({
   todayDateStr,
   selectedTable,
   setIsSeatMapOpen,
+  handleSelectRandomTable,
   selectedTasteSet,
   handleToggleTaste,
   isLoading,
@@ -30,6 +31,18 @@ function OrderStep1Booking({
     }
     handleInputChange({ target: { name: 'time', value: timeVal } });
   }, [formData.date, todayDateStr, handleInputChange]);
+
+  const [isShuffling, setIsShuffling] = useState(false);
+
+  const onQuickRandomTable = useCallback(async (e) => {
+    if (e) e.stopPropagation();
+    if (isShuffling) return;
+    setIsShuffling(true);
+    if (handleSelectRandomTable) {
+      await handleSelectRandomTable();
+    }
+    setTimeout(() => setIsShuffling(false), 350);
+  }, [handleSelectRandomTable, isShuffling]);
 
   return (
     <form onSubmit={handleSubmit} className={`space-y-4 ${direction === 'backward' ? 'animate-step-backward' : ''}`}>
@@ -223,50 +236,106 @@ function OrderStep1Booking({
         </div>
       </div>
 
-      {/* Live Pulse Capsule Bar (~28px height) */}
+      {/* Heritage Table Booking Controller (Phương án 3: Bắt buộc có bàn kèm nút Xếp bàn ngẫu nhiên nhanh) */}
       {formData.orderType === 'dine-in' && (
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={() => setIsSeatMapOpen(true)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              setIsSeatMapOpen(true);
-            }
-          }}
-          className="group flex items-center justify-between px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-500/10 via-white/5 to-emerald-500/10 border border-amber-500/30 hover:border-amber-400 hover:bg-white/10 transition-all cursor-pointer shadow-xs active:scale-98"
-        >
-          <div className="flex items-center gap-2 min-w-0">
+        <div className="rounded-2xl border border-amber-600/35 bg-gradient-to-br from-amber-950/40 via-stone-900/60 to-black/50 p-3 sm:p-3.5 space-y-2.5 shadow-md">
+          {/* Header Bar: Nhãn + Trạng thái */}
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center gap-1.5 font-serif font-bold text-amber-200">
+              <Armchair className="w-3.5 h-3.5 text-amber-400" />
+              <span>Vị Trí Bàn Ăn Tại Quán</span>
+              <span className="text-red-400" title="Bắt buộc có vị trí bàn">*</span>
+            </div>
             {selectedTable ? (
-              <>
-                <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping shrink-0" />
-                <div className="text-[11px] truncate flex items-center gap-1.5">
-                  <span className="text-amber-400 font-bold">✨ Đã giữ:</span>
-                  <span className="font-semibold text-white">{selectedTable.name}</span>
-                  <span className="text-stone-300 hidden sm:inline">({selectedTable.zoneName})</span>
-                </div>
-              </>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Đã xếp vị trí
+              </span>
             ) : (
-              <>
-                <div className="relative flex items-center justify-center shrink-0 w-2 h-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                </div>
-                <div className="text-[11px] text-stone-300 flex items-center gap-1 min-w-0">
-                  <span className="text-emerald-400 font-semibold shrink-0">
-                    {formData.time ? `${formData.time} •` : 'Trực tuyến:'}
-                  </span>
-                  <span className="text-stone-200">Còn 8 bàn (có ban công)</span>
-                </div>
-              </>
+              <span className="text-[10px] text-amber-400/90 italic font-medium flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-amber-400 animate-spin" style={{ animationDuration: '4s' }} />
+                <span>Bắt buộc có bàn</span>
+              </span>
             )}
           </div>
 
-          <div className="flex items-center gap-1 shrink-0 ml-2 text-[11px] font-bold text-amber-400 group-hover:text-amber-300 transition-colors">
-            <span>{selectedTable ? 'Đổi bàn' : 'Chọn chỗ'}</span>
-            <span className="text-[10px] transition-transform group-hover:translate-x-0.5">→</span>
-          </div>
+          {/* Body Box: Đã chọn bàn vs Chưa chọn bàn */}
+          {selectedTable ? (
+            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#9b2a1f] to-[#731911] text-amber-200 border border-amber-400/40 flex items-center justify-center font-serif font-bold text-xs shrink-0 shadow-xs">
+                  {selectedTable.floor ? `T${selectedTable.floor}` : '🍜'}
+                </div>
+                <div className="min-w-0 text-left">
+                  <div className="text-xs font-bold text-amber-100 truncate flex items-center gap-1.5">
+                    <span>{selectedTable.name}</span>
+                    {selectedTable.isVip && (
+                      <span className="px-1.5 py-0.2 rounded bg-amber-400 text-stone-950 text-[9px] font-bold uppercase">VIP</span>
+                    )}
+                  </div>
+                  <div className="text-[10px] text-stone-300 truncate">
+                    {selectedTable.zoneName || 'Khu gian chính'} • Tối đa {selectedTable.capacity || 4} khách
+                  </div>
+                </div>
+              </div>
+
+              {/* 2 Nút thao tác nhanh: Đổi ngẫu nhiên khác & Xem sơ đồ */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={onQuickRandomTable}
+                  disabled={isShuffling}
+                  className={`px-2.5 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/35 border border-amber-400/50 text-amber-200 text-[11px] font-medium flex items-center gap-1 transition-all cursor-pointer shadow-xs active:scale-95 ${
+                    isShuffling ? 'opacity-60 cursor-wait' : ''
+                  }`}
+                  title="Đổi sang bàn ngẫu nhiên khác"
+                >
+                  <Shuffle className={`w-3 h-3 text-amber-300 ${isShuffling ? 'animate-spin' : ''}`} />
+                  <span className="hidden xs:inline sm:inline">Đổi ngẫu nhiên</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsSeatMapOpen(true)}
+                  className="px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-stone-200 text-[11px] font-medium flex items-center gap-1 transition-all cursor-pointer shadow-xs active:scale-95"
+                  title="Mở sơ đồ bàn 3D để tự chọn"
+                >
+                  <MapPin className="w-3 h-3 text-stone-300" />
+                  <span>Sơ đồ</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {/* Nút 1: XẾP BÀN NGẪU NHIÊN (NHANH TỨC THÌ) */}
+                <button
+                  type="button"
+                  onClick={onQuickRandomTable}
+                  disabled={isShuffling}
+                  className={`w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-stone-950 font-serif font-bold text-xs shadow-md flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 group ring-1 ring-amber-300/60 ${
+                    isShuffling ? 'opacity-60 cursor-wait' : ''
+                  }`}
+                >
+                  <Shuffle className={`w-3.5 h-3.5 transition-transform duration-300 ${isShuffling ? 'animate-spin' : 'group-hover:rotate-180'}`} />
+                  <span>Chọn Bàn Ngẫu Nhiên</span>
+                  <span className="text-[9.5px] bg-black/25 text-stone-950 px-1.5 py-0.2 rounded font-mono font-black uppercase tracking-tight">Nhanh</span>
+                </button>
+
+                {/* Nút 2: TỰ CHỌN TRÊN SƠ ĐỒ 3D */}
+                <button
+                  type="button"
+                  onClick={() => setIsSeatMapOpen(true)}
+                  className="w-full py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/15 border border-amber-500/40 text-amber-200 font-serif font-semibold text-xs shadow-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 group"
+                >
+                  <Compass className="w-3.5 h-3.5 text-amber-400 group-hover:scale-110 transition-transform" />
+                  <span>Xem Sơ Đồ Chọn Chỗ</span>
+                </button>
+              </div>
+              <p className="text-[10.5px] text-stone-400 text-center italic">
+                💡 Bấm <strong>"Chọn Bàn Ngẫu Nhiên"</strong> để hệ thống tự động bốc bàn trống đẹp nhất cho {formData.guestCount} khách mà không cần mở sơ đồ.
+              </p>
+            </div>
+          )}
         </div>
       )}
 

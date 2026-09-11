@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { paymentApi } from '../../services/paymentApi';
 import { submitSePayCheckout } from '../../utils/submitSePayCheckout';
+import { fetchAndPickRandomTable } from '../../utils/randomTableHelper';
 import { useOrderLockoutGuard } from './useOrderLockoutGuard';
 import {
   BRANCH_LABELS,
@@ -354,6 +355,14 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
     };
   }, [step, paymentData?.paymentCode, paymentData?.status, isVietQrConfirmed, onClearCart]);
 
+  const handleSelectRandomTable = useCallback(async () => {
+    const table = await fetchAndPickRandomTable(formData.guestCount, selectedTable?.id);
+    if (table) {
+      setSelectedTable(table);
+    }
+    return table;
+  }, [formData.guestCount, selectedTable?.id]);
+
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
     if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
@@ -364,13 +373,21 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
     setIsLoading(false);
     if (!eligible) return;
 
+    // Dine-in: Ensure a table is assigned (auto-assign random table if customer skipped choosing)
+    if (formData.orderType === 'dine-in' && !selectedTable) {
+      const table = await fetchAndPickRandomTable(formData.guestCount, null);
+      if (table) {
+        setSelectedTable(table);
+      }
+    }
+
     const branchPrefix = formData.branch?.startsWith('hcm') ? 'SG' : 'HN';
     const randomSalt = Math.floor(1000 + Math.random() * 9000);
     setBookingCode(`PHO1986-${branchPrefix}-${randomSalt}`);
     setDirection('forward');
     setStep(2);
     scrollToOrderSection();
-  }, [formData.branch, formData.phone, checkOrderEligibility, scrollToOrderSection]);
+  }, [formData.branch, formData.phone, formData.orderType, formData.guestCount, selectedTable, checkOrderEligibility, scrollToOrderSection]);
 
   const handleConfirmOrder = useCallback(async () => {
     setIsProcessingPayment(true);
@@ -464,7 +481,7 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
     todayDateStr, calculatedAmount, selectedTasteSet,
     isOrderLocked, lockoutReason, handleResetLockout,
     handleInputChange, handleSetOrderType, handleSetGuestCount, handleToggleTaste,
-    scrollToOrderSection, handleCloseSeatMap, handleConfirmTable,
+    scrollToOrderSection, handleCloseSeatMap, handleConfirmTable, handleSelectRandomTable,
     handleSubmit, handleConfirmOrder, handleBackToStep1, handleBackToStep2,
     handleCopyCode, handleReset
   };
