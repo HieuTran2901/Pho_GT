@@ -4,14 +4,7 @@ import {
   ClipboardList,
   Grid,
   Search,
-  RefreshCw,
-  AlertCircle,
-  Flame,
-  Utensils,
-  Check,
-  Receipt,
-  Coins,
-  TrendingUp
+  RefreshCw
 } from 'lucide-react';
 
 export default function AdminOrdersFilterBar({
@@ -127,85 +120,6 @@ export default function AdminOrdersFilterBar({
           >
             <RefreshCw className={`w-4 h-4 ${ordersLoading ? 'animate-spin text-[#8a1e14]' : ''}`} />
           </button>
-        </div>
-      </div>
-
-      {/* Mini KPI Ribbon Bar (Desktop) */}
-      <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-        {/* 1. Chờ Báo Bếp */}
-        <div className="bg-gradient-to-br from-[#fffdfa] to-[#f9f3e7] border-2 border-amber-900/20 rounded-2xl p-4 shadow-sm relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-serif font-bold text-stone-800 uppercase tracking-wide flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-rose-600 animate-ping" />
-              Chờ Báo Bếp
-            </span>
-            <div className="w-7 h-7 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center border border-rose-200 shadow-2xs">
-              <AlertCircle className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2.5 flex items-baseline gap-2">
-            <span className="text-3xl font-bold font-serif text-rose-700">
-              {orderCounts.pending}
-            </span>
-            <span className="text-xs text-stone-500 font-serif">đơn cần nổi lửa</span>
-          </div>
-        </div>
-
-        {/* 2. Bếp Đang Nấu */}
-        <div className="bg-gradient-to-br from-[#fffdfa] to-[#f9f3e7] border-2 border-amber-900/20 rounded-2xl p-4 shadow-sm relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-serif font-bold text-stone-800 uppercase tracking-wide flex items-center gap-1.5">
-              <Flame className="w-3.5 h-3.5 text-amber-600" />
-              Bếp Đang Nấu
-            </span>
-            <div className="w-7 h-7 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center border border-amber-200 shadow-2xs">
-              <Utensils className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2.5 flex items-baseline gap-2">
-            <span className="text-3xl font-bold font-serif text-amber-800">
-              {orderCounts.confirmed}
-            </span>
-            <span className="text-xs text-stone-500 font-serif">đang phục vụ</span>
-          </div>
-        </div>
-
-        {/* 3. Hoàn Tất */}
-        <div className="bg-gradient-to-br from-[#fffdfa] to-[#f9f3e7] border-2 border-amber-900/20 rounded-2xl p-4 shadow-sm relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-serif font-bold text-stone-800 uppercase tracking-wide flex items-center gap-1.5">
-              <Check className="w-3.5 h-3.5 text-emerald-600" />
-              Hoàn Tất Ra Món
-            </span>
-            <div className="w-7 h-7 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center border border-emerald-200 shadow-2xs">
-              <Receipt className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2.5 flex items-baseline gap-2">
-            <span className="text-3xl font-bold font-serif text-emerald-800">
-              {orderCounts.completed}
-            </span>
-            <span className="text-xs text-stone-500 font-serif">bát phở trao tay</span>
-          </div>
-        </div>
-
-        {/* 4. Doanh Thu Sổ Đơn */}
-        <div className="bg-gradient-to-br from-[#fffdfa] to-[#f9f3e7] border-2 border-amber-900/20 rounded-2xl p-4 shadow-sm relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-serif font-bold text-stone-800 uppercase tracking-wide flex items-center gap-1.5">
-              <Coins className="w-3.5 h-3.5 text-[#8a1e14]" />
-              Doanh Số Sổ Đơn
-            </span>
-            <div className="w-7 h-7 rounded-xl bg-[#8a1e14]/10 text-[#8a1e14] flex items-center justify-center border border-[#8a1e14]/20 shadow-2xs">
-              <TrendingUp className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2.5 flex items-baseline gap-1.5">
-            <span className="text-2xl font-bold font-serif text-[#8a1e14]">
-              {ordersShiftRevenue.toLocaleString('vi-VN')}đ
-            </span>
-            <span className="text-xs text-stone-500 font-serif">tổng tính</span>
-          </div>
         </div>
       </div>
 
