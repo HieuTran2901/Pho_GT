@@ -7,7 +7,7 @@ import {
   Compass
 } from 'lucide-react';
 
-export default function NavbarMobileBottomNav({
+function NavbarMobileBottomNav({
   activeTab,
   setActiveTab,
   onOpenCart,
@@ -119,3 +119,5 @@ export default function NavbarMobileBottomNav({
     </nav>
   );
 }
+
+export default React.memo(NavbarMobileBottomNav);

@@ -88,6 +88,26 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
     }
   }, [favoriteDish, onAddToCart, onOpenCart, onToast]);
 
+  const toggleUserDropdown = useCallback(() => {
+    setUserDropdownOpen(prev => !prev);
+  }, []);
+
+  const toggleMobileMenu = useCallback(() => {
+    setMobileMenuOpen(prev => !prev);
+  }, []);
+
+  const toggleMobileMoreSheet = useCallback(() => {
+    setMobileMoreSheetOpen(prev => !prev);
+  }, []);
+
+  const closeMobileMoreSheet = useCallback(() => {
+    setMobileMoreSheetOpen(false);
+  }, []);
+
+  const handleOpenLogin = useCallback(() => {
+    if (openAuthModal) openAuthModal('login');
+  }, [openAuthModal]);
+
   // Close dropdown on click outside only when open
   useEffect(() => {
     if (!userDropdownOpen) return;
@@ -202,7 +222,7 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
               {isAuthenticated && user ? (
                 <div className="relative hidden md:block" ref={dropdownRef}>
                   <button
-                    onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                    onClick={toggleUserDropdown}
                     className="flex items-center gap-1.5 sm:gap-2.5 px-2.5 sm:px-3.5 py-1.5 rounded-full border border-[#d49e58]/50 bg-gradient-to-r from-amber-50/90 via-orange-50/80 to-amber-100/90 hover:border-[#c88d2b] text-[#2b1810] text-xs font-serif font-bold transition-all shadow-xs group cursor-pointer"
                   >
                     <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-[#9b2a1f] to-[#6a150c] text-amber-200 flex items-center justify-center text-[10px] sm:text-xs font-bold font-serif shadow-xs ring-1 ring-[#e4aa65]/60 shrink-0">
@@ -275,7 +295,7 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
                     <span className="hidden lg:inline">LỊCH SỬ ĐƠN</span>
                   </button>
                   <button
-                    onClick={() => openAuthModal('login')}
+                    onClick={handleOpenLogin}
                     className="flex items-center gap-1.5 sm:gap-2 px-3 2xl:px-4 py-2 rounded-full border border-[#8a1e14]/40 bg-white hover:bg-amber-50/60 text-[#8a1e14] text-xs font-serif font-bold tracking-wider uppercase transition-all shadow-xs group cursor-pointer whitespace-nowrap"
                   >
                     <User className="w-3.5 h-3.5 text-[#8a1e14]" />
@@ -332,7 +352,7 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
               <button
                 type="button"
                 id="mobile-more-menu-btn"
-                onClick={() => setMobileMoreSheetOpen(!mobileMoreSheetOpen)}
+                onClick={toggleMobileMoreSheet}
                 className="md:hidden p-1.5 rounded-lg text-stone-800 hover:bg-stone-200/80 active:scale-95 shrink-0 cursor-pointer border border-stone-300/70"
                 aria-label="Khám phá và tiện ích"
                 title="Khám phá & Tiện ích 1986"
@@ -347,7 +367,7 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
               {/* Tablet Menu Button (md to xl): Toggles Drawer Menu */}
               <button
                 type="button"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                onClick={toggleMobileMenu}
                 className="hidden md:flex xl:hidden p-1.5 sm:p-2 rounded-lg text-stone-800 hover:bg-stone-200 shrink-0 cursor-pointer border border-stone-300/70 mr-1 sm:mr-2"
                 aria-label="Menu"
               >
@@ -426,7 +446,7 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
       {/* 5. Mobile More / Explore Bottom Sheet */}
       <NavbarMobileMoreSheet
         isOpen={mobileMoreSheetOpen}
-        onClose={() => setMobileMoreSheetOpen(false)}
+        onClose={closeMobileMoreSheet}
         setActiveTab={setActiveTab}
         onOpenOrder={onOpenOrder}
         onOpenGiftVault={onOpenGiftVault}

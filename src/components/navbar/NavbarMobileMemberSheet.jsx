@@ -9,7 +9,7 @@ import {
   LogOut
 } from 'lucide-react';
 
-export default function NavbarMobileMemberSheet({
+function NavbarMobileMemberSheet({
   mobileMemberSheetOpen,
   setMobileMemberSheetOpen,
   isAuthenticated,
@@ -202,3 +202,5 @@ export default function NavbarMobileMemberSheet({
     </div>
   );
 }
+
+export default React.memo(NavbarMobileMemberSheet);

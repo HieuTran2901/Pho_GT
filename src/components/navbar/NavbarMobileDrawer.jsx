@@ -8,7 +8,7 @@ import {
   Gift
 } from 'lucide-react';
 
-export default function NavbarMobileDrawer({
+function NavbarMobileDrawer({
   navItems,
   setActiveTab,
   setMobileMenuOpen,
@@ -168,3 +168,5 @@ export default function NavbarMobileDrawer({
     </div>
   );
 }
+
+export default React.memo(NavbarMobileDrawer);

@@ -14,7 +14,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 
-export default function NavbarMobileMoreSheet({
+function NavbarMobileMoreSheet({
   isOpen,
   onClose,
   setActiveTab,
@@ -305,3 +305,5 @@ export default function NavbarMobileMoreSheet({
     </div>
   );
 }
+
+export default React.memo(NavbarMobileMoreSheet);

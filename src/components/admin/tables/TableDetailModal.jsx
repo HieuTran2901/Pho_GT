@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Flame, Users, Clock, Phone, DollarSign, ExternalLink, ShieldCheck, AlertCircle } from 'lucide-react';
+import React from 'react';
+import { X, Flame, ExternalLink, ShieldCheck } from 'lucide-react';
 import { formatVND } from '../adminConstants';
 import { DIORAMA_STATUS_CONFIG } from './dioramaConstants';
 

@@ -26,7 +26,6 @@ function SeatMapModal({
   guestCount = '2'
 }) {
   const [tables, setTables] = useState(MOCK_TABLES);
-  const [isLoadingTables, setIsLoadingTables] = useState(false);
   const [isRendered, setIsRendered] = useState(isOpen);
   const [isClosing, setIsClosing] = useState(false);
   const [tempTable, setTempTable] = useState(selectedTable);
@@ -70,7 +69,6 @@ function SeatMapModal({
   useEffect(() => {
     if (!isOpen) return;
     let isMounted = true;
-    setIsLoadingTables(true);
     tableApi.getTables()
       .then((data) => {
         if (isMounted && data && Array.isArray(data)) {
@@ -79,9 +77,6 @@ function SeatMapModal({
       })
       .catch((err) => {
         console.warn('[SeatMapModal] Không thể tải trạng thái bàn realtime:', err);
-      })
-      .finally(() => {
-        if (isMounted) setIsLoadingTables(false);
       });
     return () => {
       isMounted = false;

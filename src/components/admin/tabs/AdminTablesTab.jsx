@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Users, RefreshCw, Sparkles, Quote } from 'lucide-react';
+import { Users, RefreshCw, Quote } from 'lucide-react';
 import DioramaFloorTray from '../tables/DioramaFloorTray';
 import TableDetailModal from '../tables/TableDetailModal';
 import { tableApi } from '../../../services/tableApi';
 import { MOCK_TABLES } from '../../seatmap/mockTables';
-import { DIORAMA_STATUS_CONFIG } from '../tables/dioramaConstants';
 
 /**
  * [URBAN & RAVEN] Giám Sát Sơ Đồ Bàn 2 Tầng — Phối Cảnh 2.5D Isometric Diorama

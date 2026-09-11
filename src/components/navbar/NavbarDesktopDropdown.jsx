@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { BROTH_LABELS } from './navbarConstants';
 
-export default function NavbarDesktopDropdown({
+function NavbarDesktopDropdown({
   user,
   tierInfo,
   cardNumber,
@@ -277,3 +277,5 @@ export default function NavbarDesktopDropdown({
     </div>
   );
 }
+
+export default React.memo(NavbarDesktopDropdown);
