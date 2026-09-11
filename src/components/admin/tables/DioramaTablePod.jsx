@@ -28,12 +28,12 @@ function DioramaTablePod({
       onClick={() => onSelectTable(table)}
       className={`relative group cursor-pointer select-none rounded-2xl p-2.5 transition-all duration-300 flex flex-col justify-between aspect-[1.15/1] min-h-[110px] sm:min-h-[125px] overflow-hidden ${
         isOccupied
-          ? 'bg-gradient-to-b from-[#2a1708] via-[#1a0f05] to-[#120a04] border-2 border-amber-400/90 shadow-[0_0_25px_rgba(245,158,11,0.55)] ring-1 ring-amber-300/60'
+          ? 'bg-gradient-to-b from-[#2d1809] via-[#1a0f05] to-[#120a04] border-2 border-amber-400/90 shadow-[0_0_28px_rgba(245,158,11,0.6)] ring-1 ring-amber-300/70'
           : isVip
-          ? 'bg-gradient-to-b from-[#22170d] to-[#120c08] border border-amber-500/50 shadow-[0_0_15px_rgba(212,175,55,0.25)] hover:border-amber-400'
+          ? 'bg-gradient-to-b from-[#24180e] to-[#120b07] border border-amber-500/60 shadow-[0_6px_18px_rgba(212,175,55,0.2)] hover:border-amber-400'
           : isSelected
           ? 'bg-gradient-to-b from-[#1f1914] to-[#140f0b] border-2 border-amber-400 shadow-md'
-          : 'bg-gradient-to-b from-[#1b1510] to-[#100c08] border border-white/10 hover:border-emerald-500/50 hover:bg-[#201914]'
+          : 'bg-gradient-to-b from-[#1e1610] via-[#140e09] to-[#0d0805] border border-[#3d2719] shadow-[0_6px_16px_rgba(0,0,0,0.6)] hover:border-emerald-500/60 hover:shadow-[0_8px_22px_rgba(0,0,0,0.8)] hover:bg-[#241a13]'
       }`}
     >
       {/* Hiệu ứng chùm đèn ấm chiếu từ trần xuống (Ambient Ceiling Spotlight) */}

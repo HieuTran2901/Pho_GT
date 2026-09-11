@@ -45,11 +45,12 @@ export const tableApi = {
     try {
       let token = null;
       if (typeof localStorage !== 'undefined') {
-        token = localStorage.getItem('pho1986_admin_token');
+        token = localStorage.getItem('accessToken') || localStorage.getItem('pho1986_admin_token');
       }
 
       const response = await fetch(`${ADMIN_API_BASE_URL}/${tableId}/status`, {
         method: 'PATCH',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -58,13 +59,13 @@ export const tableApi = {
         body: JSON.stringify({ status, notes }),
       });
 
-      const resData = await response.json();
+      const resData = await response.json().catch(() => null);
       if (!response.ok) {
         notifyIfAccountLocked(response.status, resData);
         throw new Error(resData?.message || `Cập nhật trạng thái bàn thất bại (${response.status})`);
       }
 
-      return resData.data;
+      return resData?.data || resData;
     } catch (error) {
       console.error('[TableApi] Lỗi cập nhật trạng thái bàn:', error);
       throw error;
