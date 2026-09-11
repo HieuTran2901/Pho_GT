@@ -58,6 +58,11 @@ function AdminTablesTab({
     );
 
     return tables.map((tb) => {
+      // Ưu tiên tôn trọng trạng thái Quản trị viên vừa chủ động chỉ định (AVAILABLE, RESERVED, MAINTENANCE)
+      if (tb.status === 'available' || tb.status === 'reserved' || tb.status === 'maintenance') {
+        return tb;
+      }
+
       if (tb.status === 'occupied' && tb.activeOrderCode) {
         return tb;
       }
@@ -106,9 +111,31 @@ function AdminTablesTab({
     }
   }, [setActiveTab, setOrderFilter, notify]);
 
-  // Cập nhật trạng thái bàn
+  // Cập nhật trạng thái bàn với Optimistic UI Update tức thời
   const handleUpdateStatus = useCallback(async (tableId, newStatus) => {
     setIsUpdatingStatus(true);
+    const normalizedStatus = String(newStatus).toLowerCase();
+
+    // 1. Cập nhật lạc quan (Optimistic Update) ngay tức thì trên giao diện (0ms delay)
+    setTables((prev) =>
+      prev.map((t) => {
+        if (t.id === tableId) {
+          return {
+            ...t,
+            status: normalizedStatus,
+            activeOrderCode: normalizedStatus === 'available' ? null : t.activeOrderCode,
+            activeGuestName: normalizedStatus === 'available' ? null : t.activeGuestName,
+            activeGuestPhone: normalizedStatus === 'available' ? null : t.activeGuestPhone,
+            activeAmount: normalizedStatus === 'available' ? null : t.activeAmount,
+          };
+        }
+        return t;
+      })
+    );
+
+    // Cập nhật ngay modal chi tiết đang mở
+    setSelectedTable((prev) => (prev && prev.id === tableId ? { ...prev, status: normalizedStatus } : prev));
+
     try {
       await tableApi.updateTableStatus(tableId, newStatus);
       await fetchLiveTables(false);
@@ -117,9 +144,12 @@ function AdminTablesTab({
       }
       setIsDetailModalOpen(false);
     } catch (err) {
+      console.error('[AdminTablesTab] Cập nhật bàn lỗi:', err);
       if (notify) {
         notify(err.message || 'Cập nhật trạng thái bàn thất bại', 'error');
       }
+      // Revert lại state đúng từ server nếu thất bại
+      await fetchLiveTables(false);
     } finally {
       setIsUpdatingStatus(false);
     }

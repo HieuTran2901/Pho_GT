@@ -47,6 +47,9 @@ function TableDetailModal({
             <h3 className="font-serif font-bold text-lg text-[#fcedc7]">
               {table.name} — Tầng {table.floor}
             </h3>
+            <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${statusCfg.badgeClass}`}>
+              {statusCfg.label}
+            </span>
           </div>
           <button
             onClick={onClose}
@@ -130,28 +133,47 @@ function TableDetailModal({
 
           {/* Điều chỉnh trạng thái bàn dành cho Quản lý */}
           <div className="space-y-2 pt-2 border-t border-white/10">
-            <span className="text-xs text-stone-400 font-medium block">
-              Điều chỉnh trạng thái bàn nhanh:
-            </span>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-stone-400 font-medium">
+                Điều chỉnh trạng thái bàn nhanh:
+              </span>
+              {isOccupied && (
+                <span className="text-[10px] text-amber-400/90 font-mono">
+                  (Đổi trạng thái sẽ giải phóng bàn)
+                </span>
+              )}
+            </div>
             <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={() => handleStatusChange('AVAILABLE')}
                 disabled={isUpdating || table.status === 'available'}
-                className="py-1.5 px-2 rounded-xl text-xs font-serif border border-emerald-500/40 bg-emerald-950/50 hover:bg-emerald-900/60 text-emerald-300 disabled:opacity-40 transition-colors"
+                className={`py-2 px-2 rounded-xl text-xs font-serif border transition-all ${
+                  table.status === 'available'
+                    ? 'border-emerald-400 bg-emerald-900/70 text-white ring-2 ring-emerald-500/50 font-bold'
+                    : 'border-emerald-500/40 bg-emerald-950/50 hover:bg-emerald-900/60 text-emerald-300 disabled:opacity-40'
+                }`}
               >
                 Sẵn sàng
               </button>
               <button
                 onClick={() => handleStatusChange('RESERVED')}
                 disabled={isUpdating || table.status === 'reserved'}
-                className="py-1.5 px-2 rounded-xl text-xs font-serif border border-amber-500/40 bg-amber-950/50 hover:bg-amber-900/60 text-amber-300 disabled:opacity-40 transition-colors"
+                className={`py-2 px-2 rounded-xl text-xs font-serif border transition-all ${
+                  table.status === 'reserved'
+                    ? 'border-amber-400 bg-amber-900/70 text-white ring-2 ring-amber-500/50 font-bold'
+                    : 'border-amber-500/40 bg-amber-950/50 hover:bg-amber-900/60 text-amber-300 disabled:opacity-40'
+                }`}
               >
                 Đặt trước
               </button>
               <button
                 onClick={() => handleStatusChange('MAINTENANCE')}
                 disabled={isUpdating || table.status === 'maintenance'}
-                className="py-1.5 px-2 rounded-xl text-xs font-serif border border-stone-600/40 bg-stone-900/50 hover:bg-stone-800/60 text-stone-400 disabled:opacity-40 transition-colors"
+                className={`py-2 px-2 rounded-xl text-xs font-serif border transition-all ${
+                  table.status === 'maintenance'
+                    ? 'border-stone-400 bg-stone-800 text-white ring-2 ring-stone-400/50 font-bold'
+                    : 'border-stone-600/40 bg-stone-900/50 hover:bg-stone-800/60 text-stone-400 disabled:opacity-40'
+                }`}
               >
                 Tạm khóa
               </button>
