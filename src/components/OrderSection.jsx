@@ -11,6 +11,7 @@ import OrderProgressStepper from './order/OrderProgressStepper';
 import { useOrderSectionState } from './order/useOrderSectionState';
 import { usePaymentGatewaysStatus } from './order/usePaymentGatewaysStatus';
 import { submitSePayCheckout } from '../utils/submitSePayCheckout';
+import SePayRedirectOverlay from './order/SePayRedirectOverlay';
 
 function OrderSection({ cartItems = [], onClearCart } = {}) {
   const [sectionRef, isVisible] = useScrollReveal({ threshold: 0.12 });
@@ -179,6 +180,12 @@ function OrderSection({ cartItems = [], onClearCart } = {}) {
         date={formData.date}
         time={formData.time}
         guestCount={formData.guestCount}
+      />
+
+      {/* SEPAY REDIRECT OVERLAY: REASSURING LOADING SCREEN */}
+      <SePayRedirectOverlay 
+        bookingCode={bookingCode}
+        amount={calculatedAmount}
       />
     </section>
   );
