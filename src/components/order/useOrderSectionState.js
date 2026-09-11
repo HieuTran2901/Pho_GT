@@ -36,12 +36,9 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
   const [isLoading, setIsLoading] = useState(false);
   const [paymentNotice, setPaymentNotice] = useState(null);
   const [paymentError, setPaymentError] = useState(null);
-
   const [selectedTable, setSelectedTable] = useState(null);
   const [isSeatMapOpen, setIsSeatMapOpen] = useState(false);
-
-  const submitTimerRef = useRef(null);
-  const copyTimerRef = useRef(null);
+  const submitTimerRef = useRef(null), copyTimerRef = useRef(null);
   const hasAutoFilledRef = useRef(Boolean(user?.fullName || user?.phone));
 
   // [SENTINEL & RAVEN] Chốt chặn tài khoản bị khóa trong luồng đặt bàn & thanh toán
@@ -102,18 +99,24 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
     const { name, value } = e.target;
     if (name === 'phone' && isOrderLocked) { setIsOrderLocked(false); setLockoutReason(''); }
     setFormData((prev) => ({ ...prev, [name]: value }));
-    if (name === 'branch') setSelectedTable(null);
   }, [isOrderLocked, setIsOrderLocked, setLockoutReason]);
 
   const handleSetOrderType = useCallback((type) => {
     setFormData((prev) => ({ ...prev, orderType: type }));
     setSelectedPaymentMethod(type === 'dine-in' ? 'POST_PAID_AT_STORE' : 'COD');
-    if (type === 'delivery') setSelectedTable(null);
   }, []);
 
   const handleSetGuestCount = useCallback((count) => {
     setFormData((prev) => ({ ...prev, guestCount: count }));
-    setSelectedTable((prevTable) => (prevTable && prevTable.capacity < parseInt(count, 10)) ? null : prevTable);
+    const partySize = parseInt(count, 10) || 2;
+    setSelectedTable((prevTable) => {
+      if (!prevTable) return null;
+      if (prevTable.capacity >= partySize) return prevTable;
+      fetchAndPickRandomTable(partySize, prevTable.id).then((newTable) => {
+        if (newTable) setSelectedTable(newTable);
+      });
+      return prevTable;
+    });
   }, []);
 
   const handleToggleTaste = useCallback((pref) => {
@@ -409,7 +412,7 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
         phone: formData.phone,
         address: targetAddress,
         amount: orderAmount,
-        tableNumber: selectedTable ? (selectedTable.name || selectedTable.id) : null
+        tableNumber: (formData.orderType === 'dine-in' && selectedTable) ? (selectedTable.name || selectedTable.id) : null
       });
       setPaymentData(paymentRes);
 
@@ -474,18 +477,14 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
   }, [user?.fullName, user?.phone, scrollToOrderSection, setIsOrderLocked, setLockoutReason]);
 
   return {
-    formData, step, direction,
-    selectedPaymentMethod, setSelectedPaymentMethod,
-    isMoreMethodsOpen, setIsMoreMethodsOpen,
-    paymentData, bookingCode, isCopied, isProcessingPayment,
-    isVietQrConfirmed, setIsVietQrConfirmed, isLoading,
-    paymentNotice, paymentError, selectedTable,
-    isSeatMapOpen, setIsSeatMapOpen,
-    todayDateStr, calculatedAmount, selectedTasteSet,
-    isOrderLocked, lockoutReason, handleResetLockout,
-    handleInputChange, handleSetOrderType, handleSetGuestCount, handleToggleTaste,
-    scrollToOrderSection, handleCloseSeatMap, handleConfirmTable, handleSelectRandomTable,
-    handleSubmit, handleConfirmOrder, handleBackToStep1, handleBackToStep2,
-    handleCopyCode, handleReset
+    formData, step, direction, selectedPaymentMethod, setSelectedPaymentMethod,
+    isMoreMethodsOpen, setIsMoreMethodsOpen, paymentData, bookingCode, isCopied,
+    isProcessingPayment, isVietQrConfirmed, setIsVietQrConfirmed, isLoading,
+    paymentNotice, paymentError, selectedTable, isSeatMapOpen, setIsSeatMapOpen,
+    todayDateStr, calculatedAmount, selectedTasteSet, isOrderLocked, lockoutReason,
+    handleResetLockout, handleInputChange, handleSetOrderType, handleSetGuestCount,
+    handleToggleTaste, scrollToOrderSection, handleCloseSeatMap, handleConfirmTable,
+    handleSelectRandomTable, handleSubmit, handleConfirmOrder, handleBackToStep1,
+    handleBackToStep2, handleCopyCode, handleReset
   };
 }
