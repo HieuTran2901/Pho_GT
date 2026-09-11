@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Ban, X } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { Ban, X, ShieldAlert, Phone, Smartphone, Globe } from 'lucide-react';
 
 export default function CustomerBlacklistModal({
   isOpen,
@@ -29,31 +30,38 @@ export default function CustomerBlacklistModal({
     onClose();
   };
 
-  return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-fadeIn">
-      <div className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-[#fcf9f2] rounded-2xl border-2 border-stone-800 p-4 sm:p-5 shadow-2xl space-y-3 text-xs text-[#22130b]">
-        <div className="flex items-center justify-between text-stone-900 font-serif font-bold pb-2 border-b border-stone-200">
-          <span className="flex items-center gap-2 text-rose-800 text-sm">
-            <Ban className="w-4 h-4 text-rose-700" /> Kích hoạt Danh Sách Cấm (3 Lớp)
-          </span>
-          <button onClick={onClose} className="text-stone-400 hover:text-stone-700">
+  const modalContent = (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-fadeIn">
+      <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white rounded-[24px] border border-stone-200 shadow-2xl p-5 sm:p-6 space-y-4 text-xs text-stone-900">
+        {/* HEADER MODAL */}
+        <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+          <div className="flex items-center gap-2.5 text-rose-700 font-bold text-sm">
+            <div className="w-8 h-8 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+              <Ban className="w-4 h-4" />
+            </div>
+            <span>Kích hoạt Danh Sách Cấm (3 Lớp Phòng Thủ)</span>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-all cursor-pointer"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <p className="text-[11px] text-stone-600">
-          Hệ thống sẽ khóa tài khoản vĩnh viễn, thu hồi toàn bộ phiên đăng nhập và kích hoạt tường lửa tự động:
+        <p className="text-stone-600 text-xs leading-relaxed">
+          Hệ thống sẽ khóa tài khoản vĩnh viễn, lập tức thu hồi toàn bộ phiên đăng nhập và kích hoạt tường lửa an ninh tự động:
         </p>
 
-        {/* Thông tin đối tượng */}
-        <div className="p-2.5 rounded-xl bg-stone-100 border border-stone-200 space-y-1 font-mono text-[11px]">
+        {/* THÔNG TIN ĐỐI TƯỢNG */}
+        <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200/80 space-y-1.5 font-mono text-xs">
           <div className="flex justify-between">
             <span className="text-stone-500 font-sans">Thực khách:</span>
-            <span className="font-bold text-stone-800">{summary?.fullName}</span>
+            <span className="font-bold text-stone-900">{summary?.fullName}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-stone-500 font-sans">Số điện thoại:</span>
-            <span className="font-bold text-rose-800">{summary?.phone}</span>
+            <span className="font-bold text-[#e11d48]">{summary?.phone}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-stone-500 font-sans">IP gần nhất:</span>
@@ -61,59 +69,68 @@ export default function CustomerBlacklistModal({
           </div>
           <div className="flex justify-between">
             <span className="text-stone-500 font-sans">Thiết bị gần nhất:</span>
-            <span className="text-stone-700 truncate max-w-[180px]">{summary?.lastDeviceId || 'Chưa ghi nhận'}</span>
+            <span className="text-stone-700 truncate max-w-[220px]">{summary?.lastDeviceId || 'Chưa ghi nhận'}</span>
           </div>
         </div>
 
-        {/* 3 Checkboxes */}
-        <div className="space-y-2 pt-1">
-          <label className="flex items-start gap-2 cursor-pointer select-none">
+        {/* 3 LỚP PHÒNG THỦ CHECKBOXES */}
+        <div className="space-y-2.5 pt-1">
+          <label className="flex items-start gap-3 p-2.5 rounded-xl border border-stone-200 hover:bg-stone-50/80 cursor-pointer transition-colors">
             <input
               type="checkbox"
               checked={banPhone}
               onChange={(e) => setBanPhone(e.target.checked)}
-              className="mt-0.5 rounded border-stone-300 text-[#8a1e14] focus:ring-[#8a1e14]"
+              className="mt-0.5 rounded border-stone-300 text-rose-600 focus:ring-rose-500"
             />
             <div>
-              <span className="font-bold text-stone-800 font-serif">1. Cấm Số Điện Thoại vĩnh viễn</span>
-              <p className="text-[10px] text-stone-500">Khóa tài khoản vĩnh viễn, chặn đăng nhập và đăng ký mới bằng SĐT này.</p>
+              <span className="font-bold text-stone-900 flex items-center gap-1.5">
+                <Phone className="w-3.5 h-3.5 text-rose-600" />
+                1. Cấm Số Điện Thoại vĩnh viễn
+              </span>
+              <p className="text-[11px] text-stone-500 mt-0.5">Khóa vĩnh viễn, chặn hoàn toàn đăng nhập và tạo tài khoản mới bằng số này.</p>
             </div>
           </label>
 
-          <label className="flex items-start gap-2 cursor-pointer select-none">
+          <label className="flex items-start gap-3 p-2.5 rounded-xl border border-stone-200 hover:bg-stone-50/80 cursor-pointer transition-colors">
             <input
               type="checkbox"
               checked={banDevice}
               onChange={(e) => setBanDevice(e.target.checked)}
-              className="mt-0.5 rounded border-stone-300 text-[#8a1e14] focus:ring-[#8a1e14]"
+              className="mt-0.5 rounded border-stone-300 text-rose-600 focus:ring-rose-500"
             />
             <div>
-              <span className="font-bold text-stone-800 font-serif">2. Cấm Thiết Bị (Device ID) vĩnh viễn</span>
-              <p className="text-[10px] text-stone-500">Chặn trực tiếp từ định danh phần cứng trình duyệt, đổi số khác vẫn bị chặn.</p>
+              <span className="font-bold text-stone-900 flex items-center gap-1.5">
+                <Smartphone className="w-3.5 h-3.5 text-rose-600" />
+                2. Cấm Thiết Bị (Device ID) vĩnh viễn
+              </span>
+              <p className="text-[11px] text-stone-500 mt-0.5">Chặn theo dấu vân tay phần cứng trình duyệt, dù đổi SIM hay dùng số khác vẫn bị chặn.</p>
             </div>
           </label>
 
-          <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-600/20 space-y-1.5">
-            <label className="flex items-start gap-2 cursor-pointer select-none">
+          <div className="p-2.5 rounded-xl bg-amber-50/60 border border-amber-200 space-y-2">
+            <label className="flex items-start gap-3 cursor-pointer">
               <input
                 type="checkbox"
                 checked={banIp}
                 onChange={(e) => setBanIp(e.target.checked)}
-                className="mt-0.5 rounded border-stone-300 text-[#8a1e14] focus:ring-[#8a1e14]"
+                className="mt-0.5 rounded border-stone-300 text-rose-600 focus:ring-rose-500"
               />
               <div>
-                <span className="font-bold text-amber-950 font-serif">3. Cấm Địa chỉ IP (Thời hạn linh hoạt)</span>
-                <p className="text-[10px] text-amber-900/80">Lưu ý: Không nên cấm vĩnh viễn vì IP 4G dùng chung. Mạng WiFi quán đã được tự động bảo vệ.</p>
+                <span className="font-bold text-amber-950 flex items-center gap-1.5">
+                  <Globe className="w-3.5 h-3.5 text-amber-700" />
+                  3. Cấm Địa chỉ IP (Thời hạn linh hoạt)
+                </span>
+                <p className="text-[11px] text-amber-900/80 mt-0.5">Lưu ý: Không nên cấm vĩnh viễn vì IP mạng 4G/5G dùng chung. Mạng WiFi quán đã được tự động bảo vệ.</p>
               </div>
             </label>
 
             {banIp && (
-              <div className="pl-6 flex items-center gap-2">
-                <span className="text-[10px] font-medium text-stone-600">Thời hạn cấm IP:</span>
+              <div className="pl-7 flex items-center gap-2 pt-1 border-t border-amber-200/60">
+                <span className="text-xs font-medium text-amber-900">Thời hạn cấm IP:</span>
                 <select
                   value={ipBanDays}
                   onChange={(e) => setIpBanDays(Number(e.target.value))}
-                  className="p-1 rounded border border-stone-300 bg-white text-[11px] text-stone-800 font-medium"
+                  className="px-2 py-1 rounded-lg border border-amber-300 bg-white text-xs text-stone-800 font-medium"
                 >
                   <option value={3}>3 ngày</option>
                   <option value={7}>7 ngày (Khuyến nghị)</option>
@@ -125,24 +142,24 @@ export default function CustomerBlacklistModal({
           </div>
         </div>
 
-        {/* Lý do cấm */}
-        <div className="space-y-1 pt-1">
-          <label className="text-[11px] font-serif font-bold text-stone-700">Lý do cấm:</label>
+        {/* LÝ DO CẤM */}
+        <div className="space-y-1.5 pt-1">
+          <label className="text-xs font-bold text-stone-700">Lý do cấm an ninh:</label>
           <input
             type="text"
             value={blacklistReason}
             onChange={(e) => setBlacklistReason(e.target.value)}
             placeholder="Nhập lý do cấm..."
-            className="w-full p-2 rounded-lg border border-stone-300 bg-white text-stone-800 text-xs focus:outline-hidden focus:border-rose-700"
+            className="w-full px-3.5 py-2 rounded-xl border border-stone-200 bg-[#f9fafb] text-stone-900 text-xs focus:bg-white focus:outline-none focus:border-rose-400"
           />
         </div>
 
-        {/* Buttons */}
-        <div className="flex justify-end gap-2 pt-2 border-t border-stone-200">
+        {/* FOOTER ACTIONS */}
+        <div className="flex justify-end gap-2.5 pt-3 border-t border-stone-100">
           <button
             type="button"
             onClick={onClose}
-            className="px-3.5 py-1.5 rounded-lg border border-stone-300 hover:bg-stone-100 font-serif text-xs text-stone-700"
+            className="px-4 py-2 rounded-xl border border-stone-200 hover:bg-stone-50 font-medium text-xs text-stone-700 cursor-pointer"
           >
             Hủy bỏ
           </button>
@@ -150,7 +167,7 @@ export default function CustomerBlacklistModal({
             type="button"
             onClick={handleSubmit}
             disabled={actionLoading || (!banPhone && !banDevice && !banIp)}
-            className="px-4 py-1.5 rounded-lg bg-rose-800 hover:bg-rose-900 active:scale-95 text-white font-serif font-bold text-xs shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50"
+            className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-medium text-xs shadow-xs transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
           >
             <Ban className="w-3.5 h-3.5" />
             <span>Kích hoạt cấm triệt để</span>
@@ -159,4 +176,6 @@ export default function CustomerBlacklistModal({
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 }

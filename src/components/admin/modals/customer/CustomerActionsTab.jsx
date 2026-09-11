@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   ShieldCheck,
   Lock,
@@ -312,15 +313,15 @@ export default function CustomerActionsTab({
         </div>
       </div>
 
-      {/* MODAL XÁC NHẬN HỦY HỘI VIÊN */}
-      {showDangerConfirm && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+      {/* MODAL XÁC NHẬN HỦY HỘI VIÊN (PORTAL BODY) */}
+      {showDangerConfirm && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
           <div className="w-full max-w-sm bg-white rounded-2xl border border-rose-200 p-5 shadow-2xl space-y-3 text-xs text-stone-900">
             <div className="flex items-center justify-between text-rose-700 font-bold">
               <span className="flex items-center gap-1.5 text-sm">
                 <AlertTriangle className="w-4 h-4 text-rose-600" /> Xác nhận hủy hội viên
               </span>
-              <button onClick={() => setShowDangerConfirm(false)} className="text-stone-400 hover:text-stone-700">
+              <button onClick={() => setShowDangerConfirm(false)} className="text-stone-400 hover:text-stone-700 cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -331,7 +332,7 @@ export default function CustomerActionsTab({
               <button
                 type="button"
                 onClick={() => setShowDangerConfirm(false)}
-                className="px-4 py-2 rounded-xl border border-stone-200 hover:bg-stone-50 text-stone-700 font-medium"
+                className="px-4 py-2 rounded-xl border border-stone-200 hover:bg-stone-50 text-stone-700 font-medium cursor-pointer"
               >
                 Hủy
               </button>
@@ -339,13 +340,14 @@ export default function CustomerActionsTab({
                 type="button"
                 onClick={handlePermanentArchive}
                 disabled={actionLoading}
-                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-medium shadow-xs"
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-medium shadow-xs cursor-pointer"
               >
                 Xác nhận hủy
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* MODAL DANH SÁCH CẤM (3 LỚP PHÒNG THỦ) */}
