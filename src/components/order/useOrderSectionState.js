@@ -370,8 +370,10 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
     }
     setIsLoading(true);
     const eligible = await checkOrderEligibility(formData.phone);
-    setIsLoading(false);
-    if (!eligible) return;
+    if (!eligible) {
+      setIsLoading(false);
+      return;
+    }
 
     // Dine-in: Ensure a table is assigned (auto-assign random table if customer skipped choosing)
     if (formData.orderType === 'dine-in' && !selectedTable) {
@@ -380,6 +382,7 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart }
         setSelectedTable(table);
       }
     }
+    setIsLoading(false);
 
     const branchPrefix = formData.branch?.startsWith('hcm') ? 'SG' : 'HN';
     const randomSalt = Math.floor(1000 + Math.random() * 9000);

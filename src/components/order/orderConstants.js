@@ -208,7 +208,7 @@ export const saveCustomerHistoryOrder = ({
     orderApi.saveLocalOrder({
       id: bookingCode,
       orderCode: bookingCode,
-      tableNumber: selectedTable?.number || null,
+      tableNumber: selectedTable?.name || selectedTable?.number || selectedTable?.id || null,
       floor: selectedTable?.floor || 1,
       orderType: selectedTable ? 'DINE_IN' : 'DELIVERY',
       deliveryAddressText: targetAddress || formData?.address,
