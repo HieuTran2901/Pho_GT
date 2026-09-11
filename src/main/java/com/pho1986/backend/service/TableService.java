@@ -42,13 +42,18 @@ public class TableService {
 
         for (DiningTable table : tables) {
             TableResponse resp = toResponse(table);
+            String dbStatus = table.getStatus() != null ? table.getStatus().toUpperCase(Locale.ROOT) : "AVAILABLE";
 
             // Find matching active order
             Optional<Order> matchedOrder = activeOrders.stream()
                     .filter(o -> isOrderForTable(o, table))
                     .findFirst();
 
-            if (matchedOrder.isPresent()) {
+            if ("MAINTENANCE".equals(dbStatus)) {
+                resp.setStatus("maintenance");
+            } else if ("RESERVED".equals(dbStatus)) {
+                resp.setStatus("reserved");
+            } else if (matchedOrder.isPresent() && !"AVAILABLE".equals(dbStatus)) {
                 Order order = matchedOrder.get();
                 resp.setStatus("occupied");
                 resp.setActiveOrderCode(order.getOrderCode());
@@ -67,7 +72,7 @@ public class TableService {
                 resp.setActiveStatus(order.getStatus());
                 resp.setActiveCreatedAt(order.getCreatedAt());
             } else {
-                resp.setStatus(table.getStatus() != null ? table.getStatus().toLowerCase(Locale.ROOT) : "available");
+                resp.setStatus(dbStatus.toLowerCase(Locale.ROOT));
             }
 
             responses.add(resp);
@@ -82,7 +87,9 @@ public class TableService {
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy bàn với ID: " + tableId));
 
         if (request.getStatus() != null && !request.getStatus().isBlank()) {
-            table.setStatus(request.getStatus().toUpperCase(Locale.ROOT));
+            String newStatus = request.getStatus().toUpperCase(Locale.ROOT);
+            table.setStatus(newStatus);
+            table.setUpdatedAt(java.time.LocalDateTime.now());
         }
 
         DiningTable saved = tableRepository.save(table);
