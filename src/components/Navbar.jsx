@@ -272,7 +272,7 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
                     title="Tra cứu lịch sử đơn hàng"
                   >
                     <FileText className="w-3.5 h-3.5 text-[#8a1e14] group-hover:scale-110 transition-transform" />
-                    <span>LỊCH SỬ ĐƠN</span>
+                    <span className="hidden lg:inline">LỊCH SỬ ĐƠN</span>
                   </button>
                   <button
                     onClick={() => openAuthModal('login')}
@@ -311,7 +311,8 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
                 id="navbar-cart-btn"
                 onClick={onOpenCart}
                 aria-label="Giỏ hàng phở"
-                className={`hidden md:flex relative p-1.5 sm:p-2 rounded-full bg-stone-200/80 hover:bg-stone-300 text-stone-800 transition-all duration-200 border border-stone-300 hover:scale-105 active:scale-90 hover:shadow-md shrink-0 group cursor-pointer ${
+                title="Xem giỏ hàng"
+                className={`hidden md:flex relative p-2 sm:p-2.5 rounded-full bg-stone-200/80 hover:bg-stone-300 text-stone-800 transition-all duration-200 border border-stone-300 hover:scale-105 active:scale-90 hover:shadow-md shrink-0 group cursor-pointer mr-2 sm:mr-3 xl:mr-7 2xl:mr-9 ${
                   isCartJiggling ? 'animate-cart-jiggle ring-2 ring-amber-400/80' : ''
                 }`}
               >
@@ -347,7 +348,7 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="hidden md:flex xl:hidden p-1.5 sm:p-2 rounded-lg text-stone-800 hover:bg-stone-200 shrink-0 cursor-pointer border border-stone-300/70"
+                className="hidden md:flex xl:hidden p-1.5 sm:p-2 rounded-lg text-stone-800 hover:bg-stone-200 shrink-0 cursor-pointer border border-stone-300/70 mr-1 sm:mr-2"
                 aria-label="Menu"
               >
                 {mobileMenuOpen ? (
