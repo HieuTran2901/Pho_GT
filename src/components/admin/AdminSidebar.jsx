@@ -265,28 +265,6 @@ function AdminSidebar({
               <span>Cài đặt</span>
             </button>
           </nav>
-
-          {/* Tranh nét vẽ Khuê Văn Các / Chùa Một Cột Hà Nội xưa chìm tinh xảo */}
-          <div className="px-4 py-2 opacity-25 pointer-events-none flex justify-center">
-            <svg viewBox="0 0 160 110" className="w-40 h-28 text-[#d4af37]" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M 80 12 L 80 5" />
-              <path d="M 55 22 Q 80 14, 105 22" />
-              <path d="M 45 32 Q 80 20, 115 32" />
-              <path d="M 45 32 L 55 22 M 115 32 L 105 22" />
-              <rect x="58" y="32" width="44" height="24" rx="2" />
-              <circle cx="80" cy="44" r="8" />
-              <line x1="72" y1="44" x2="88" y2="44" />
-              <line x1="80" y1="36" x2="80" y2="52" />
-              <path d="M 25 64 Q 80 48, 135 64" />
-              <path d="M 25 64 L 58 56 M 135 64 L 102 56" />
-              <line x1="42" y1="64" x2="42" y2="104" />
-              <line x1="62" y1="64" x2="62" y2="104" />
-              <line x1="98" y1="64" x2="98" y2="104" />
-              <line x1="118" y1="64" x2="118" y2="104" />
-              <line x1="30" y1="92" x2="130" y2="92" />
-              <path d="M 20 104 L 140 104" strokeWidth="2" />
-            </svg>
-          </div>
         </div>
 
         {/* Sidebar Footer: Thẻ Chi Nhánh & Quay Lại Khách Hàng */}
