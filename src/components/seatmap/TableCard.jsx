@@ -10,15 +10,23 @@ const TableCard = React.memo(function TableCard({
   partySize,
   onSelect
 }) {
-  const shortZone = table.zoneName
+  const shortZone = (table.zoneName || '')
     .replace('Cạnh Bếp Nước Dùng 90°C', 'Cạnh Bếp 90°C')
-    .replace('Gian Tranh Phố Hà Nội', 'Gian Tranh Cổ')
-    .replace('Ban Công View Phố Cổ Đi Bộ', 'Ban Công Phố')
-    .replace('Phòng Riêng Tri Kỷ 1986', 'Phòng VIP 1986')
-    .replace('Phòng VIP Hoàng Gia Tầng 2', 'VIP Hoàng Gia')
-    .replace('Ban Công Góc Phố', 'Ban Công Góc')
+    .replace('Cửa Vào Tầng 1', 'Lối Cửa Vào')
     .replace('Gian Cổ Kính Tầng 1', 'Gian Cổ Kính')
-    .replace('Cửa Vào Tầng 1', 'Lối Cửa Vào');
+    .replace('Cạnh Cửa Sổ Phố Cổ', 'Cửa Sổ Phố')
+    .replace('Khu Vực Trung Tâm', 'Khu Trung Tâm')
+    .replace('Phòng Riêng Tri Kỷ 1986', 'Phòng VIP 1986')
+    .replace('Ban Công Tầng 2', 'Ban Công')
+    .replace('Ban Công View Phố Cổ Đi Bộ', 'Ban Công Phố')
+    .replace('Ban Công VIP Phố Cổ', 'Ban Công VIP')
+    .replace('Gian Tranh Cổ Tầng 2', 'Gian Tranh Cổ')
+    .replace('Gian Tranh Phố Hà Nội', 'Gian Tranh Cổ')
+    .replace('Phòng VIP Trúc Lâm', 'VIP Trúc Lâm')
+    .replace('Phòng VIP Hoàng Gia Tầng 2', 'VIP Hoàng Gia')
+    .replace('Gian Thư Họa Hà Thành', 'Gian Thư Họa')
+    .replace('Khu Thưởng Trà & Đọc Sách', 'Khu Thưởng Trà')
+    .replace('Ban Công Góc Phố', 'Ban Công Góc');
 
   return (
     <>
@@ -107,6 +115,10 @@ const TableCard = React.memo(function TableCard({
             <span className="text-[9px] text-amber-400/90 font-semibold px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 whitespace-nowrap">
               Giữ chỗ
             </span>
+          ) : table.status === 'maintenance' ? (
+            <span className="text-[9px] text-stone-400 font-semibold px-1.5 py-0.5 rounded bg-stone-800 border border-stone-700 whitespace-nowrap">
+              Tạm khóa
+            </span>
           ) : (
             <span className="text-[9px] text-stone-500 font-semibold px-1.5 py-0.5 rounded bg-white/5 whitespace-nowrap">
               Đã kín
@@ -149,8 +161,10 @@ const TableCard = React.memo(function TableCard({
               <span className="w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-emerald-500/30" title="Còn trống" />
             ) : isHolding ? (
               <span className="w-2 h-2 rounded-full bg-amber-400 ring-2 ring-amber-500/30" title="Đang giữ" />
+            ) : table.status === 'maintenance' ? (
+              <span className="text-[9px] text-stone-400 font-semibold px-1 py-0.2 rounded bg-stone-800 border border-stone-700" title="Tạm khóa">Khóa</span>
             ) : (
-              <span className="text-[9px] text-stone-500 font-semibold">Kín</span>
+              <span className="text-[9px] text-stone-500 font-semibold" title="Đã có khách">Kín</span>
             )}
           </div>
         </div>

@@ -69,17 +69,25 @@ function SeatMapModal({
   useEffect(() => {
     if (!isOpen) return;
     let isMounted = true;
-    tableApi.getTables()
-      .then((data) => {
-        if (isMounted && data && Array.isArray(data)) {
-          setTables(data);
-        }
-      })
-      .catch((err) => {
-        console.warn('[SeatMapModal] Không thể tải trạng thái bàn realtime:', err);
-      });
+
+    const fetchTables = () => {
+      tableApi.getTables()
+        .then((data) => {
+          if (isMounted && data && Array.isArray(data) && data.length > 0) {
+            setTables(data);
+          }
+        })
+        .catch((err) => {
+          console.warn('[SeatMapModal] Không thể tải trạng thái bàn realtime:', err);
+        });
+    };
+
+    fetchTables();
+    const interval = setInterval(fetchTables, 10000);
+
     return () => {
       isMounted = false;
+      clearInterval(interval);
     };
   }, [isOpen]);
 
