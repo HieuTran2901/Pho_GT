@@ -44,6 +44,7 @@ public class OrderDtos {
 
         private String paymentMethod = "COD";
         private String notes;
+        private String tableNumber;
 
         @NotEmpty(message = "Đơn hàng phải có ít nhất 1 món")
         private List<CreateOrderItemRequest> items;
@@ -58,6 +59,8 @@ public class OrderDtos {
         public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
         public String getNotes() { return notes; }
         public void setNotes(String notes) { this.notes = notes; }
+        public String getTableNumber() { return tableNumber; }
+        public void setTableNumber(String tableNumber) { this.tableNumber = tableNumber; }
         public List<CreateOrderItemRequest> getItems() { return items; }
         public void setItems(List<CreateOrderItemRequest> items) { this.items = items; }
     }
@@ -97,6 +100,7 @@ public class OrderDtos {
         private String guestPhone;
         private String deliveryAddressText;
         private String notes;
+        private String tableNumber;
         private LocalDateTime createdAt;
         private List<OrderItem> items;
         private boolean isOwner;
@@ -111,6 +115,7 @@ public class OrderDtos {
             res.finalAmount = order.getFinalAmount();
             res.paymentMethod = order.getPaymentMethod();
             res.paymentStatus = order.getPaymentStatus();
+            res.tableNumber = order.getTableNumber();
             res.createdAt = order.getCreatedAt();
             res.items = order.getItems();
             res.isOwner = isOwner;
@@ -167,6 +172,7 @@ public class OrderDtos {
         public String getGuestPhone() { return guestPhone; }
         public String getDeliveryAddressText() { return deliveryAddressText; }
         public String getNotes() { return notes; }
+        public String getTableNumber() { return tableNumber; }
         public LocalDateTime getCreatedAt() { return createdAt; }
         public List<OrderItem> getItems() { return items; }
         public boolean isOwner() { return isOwner; }

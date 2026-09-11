@@ -131,6 +131,7 @@ public class PaymentService {
                     newOrder.setTotalAmount(initialAmount);
                     newOrder.setFinalAmount(initialAmount);
                     newOrder.setNotes(request.getNote());
+                    newOrder.setTableNumber(request.getTableNumber());
                     if (userId != null) {
                         User user = userRepository.findById(userId).orElse(null);
                         newOrder.setUser(user);

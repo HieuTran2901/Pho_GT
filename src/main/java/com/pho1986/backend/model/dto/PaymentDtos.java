@@ -17,6 +17,7 @@ public class PaymentDtos {
         private String phone;
         private String address;
         private Double amount;
+        private String tableNumber;
 
         public String getOrderCode() { return orderCode; }
         public void setOrderCode(String orderCode) { this.orderCode = orderCode; }
@@ -32,6 +33,8 @@ public class PaymentDtos {
         public void setAddress(String address) { this.address = address; }
         public Double getAmount() { return amount; }
         public void setAmount(Double amount) { this.amount = amount; }
+        public String getTableNumber() { return tableNumber; }
+        public void setTableNumber(String tableNumber) { this.tableNumber = tableNumber; }
     }
 
     public static class PaymentResponse {

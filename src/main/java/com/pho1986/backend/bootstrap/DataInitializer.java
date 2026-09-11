@@ -26,6 +26,7 @@ public class DataInitializer implements CommandLineRunner {
     private final LoyaltyAccountRepository loyaltyAccountRepository;
     private final LoyaltyTransactionRepository loyaltyTransactionRepository;
     private final PaymentGatewayConfigRepository paymentGatewayConfigRepository;
+    private final DiningTableRepository diningTableRepository;
     private final PasswordEncoder passwordEncoder;
     private final Environment environment;
 
@@ -56,6 +57,7 @@ public class DataInitializer implements CommandLineRunner {
             LoyaltyAccountRepository loyaltyAccountRepository,
             LoyaltyTransactionRepository loyaltyTransactionRepository,
             PaymentGatewayConfigRepository paymentGatewayConfigRepository,
+            DiningTableRepository diningTableRepository,
             PasswordEncoder passwordEncoder,
             Environment environment) {
         this.categoryRepository = categoryRepository;
@@ -66,6 +68,7 @@ public class DataInitializer implements CommandLineRunner {
         this.loyaltyAccountRepository = loyaltyAccountRepository;
         this.loyaltyTransactionRepository = loyaltyTransactionRepository;
         this.paymentGatewayConfigRepository = paymentGatewayConfigRepository;
+        this.diningTableRepository = diningTableRepository;
         this.passwordEncoder = passwordEncoder;
         this.environment = environment;
     }
@@ -80,6 +83,9 @@ public class DataInitializer implements CommandLineRunner {
 
         // Gieo cấu hình các Cổng Thanh Toán (M5.4 - Payment Maintenance Control Hub)
         seedPaymentGateways();
+
+        // Gieo 22 bàn ăn di sản 2 tầng (DRAGON - DB_AGENT)
+        seedDiningTables();
 
         long catCount = categoryRepository.count();
 
@@ -243,6 +249,40 @@ public class DataInitializer implements CommandLineRunner {
             );
             paymentGatewayConfigRepository.saveAll(defaultGateways);
             System.out.println("💳 [DRAGON & BLADE] Đã khởi tạo 6 cổng thanh toán mặc định (M5.4 Payment Hub) thành công!");
+        }
+    }
+
+    private void seedDiningTables() {
+        if (diningTableRepository.count() == 0) {
+            List<DiningTable> defaultTables = List.of(
+                    // Tầng 1 (12 bàn)
+                    new DiningTable("t1-01", "Bàn 01", 1, "bep", "Cạnh Bếp Nước Dùng 90°C", 2, "Ngắm nhìn nồi nước dùng truyền thống sôi bốc khói", false),
+                    new DiningTable("t1-02", "Bàn 02", 1, "bep", "Cạnh Bếp Nước Dùng 90°C", 2, "Thưởng thức phở nóng ngay khi vừa chan nước dùng", false),
+                    new DiningTable("t1-03", "Bàn 03", 1, "phoco", "Gian Cổ Kính Tầng 1", 4, "Bàn gỗ lim cổ kính, quạt trần hoài niệm", false),
+                    new DiningTable("t1-04", "Bàn 04", 1, "phoco", "Gian Cổ Kính Tầng 1", 4, "Bàn trung tâm không gian ấm cúng 1986", false),
+                    new DiningTable("t1-05", "VIP-01", 1, "vip", "Phòng Riêng Tri Kỷ 1986", 6, "Không gian riêng tư sang trọng, đèn chùm cổ điển", true),
+                    new DiningTable("t1-06", "Bàn 06", 1, "bep", "Cửa Vào Tầng 1", 2, "Bàn cạnh lối vào thoáng mát, thuận tiện gọi món", false),
+                    new DiningTable("t1-07", "Bàn 07", 1, "phoco", "Gian Cổ Kính Tầng 1", 4, "Không gian thưởng phở truyền thống trang nhã", false),
+                    new DiningTable("t1-08", "Bàn 08", 1, "phoco", "Gian Cổ Kính Tầng 1", 4, "Bàn gỗ lớn phù hợp nhóm bạn bè & gia đình", false),
+                    new DiningTable("t1-09", "Bàn 09", 1, "cuaso", "Cạnh Cửa Sổ Phố Cổ", 2, "Ánh sáng tự nhiên ngắm nhìn phố phường Hà Nội", false),
+                    new DiningTable("t1-10", "Bàn 10", 1, "cuaso", "Cạnh Cửa Sổ Phố Cổ", 2, "Góc ngồi lãng mạn cho 2 người", false),
+                    new DiningTable("t1-11", "Bàn 11", 1, "trungtam", "Khu Vực Trung Tâm", 4, "Vị trí trung tâm kết nối không gian ấm cúng", false),
+                    new DiningTable("t1-12", "Bàn 12", 1, "trungtam", "Khu Vực Trung Tâm", 4, "Bàn tiệc gia đình thưởng thức trọn vẹn hương vị phở", false),
+
+                    // Tầng 2 (10 bàn)
+                    new DiningTable("t2-01", "Ban Công 01", 2, "bancong", "Ban Công Tầng 2", 4, "Ngắm nhìn phố phường Hà Nội từ trên cao thoáng mát", false),
+                    new DiningTable("t2-02", "Ban Công 02", 2, "bancong", "Ban Công Tầng 2", 4, "Gió thu nhè nhẹ, thưởng phở chiều tà", false),
+                    new DiningTable("t2-03", "Ban Công 03", 2, "bancong", "Ban Công Tầng 2", 4, "Góc ban công thoáng đãng, lãng mạn", false),
+                    new DiningTable("t2-04", "Gian Tranh 01", 2, "giantranh", "Gian Tranh Cổ Tầng 2", 4, "Trang trí tranh phố cổ Hà Nội thập niên 80", false),
+                    new DiningTable("t2-05", "VIP Trúc Lâm", 2, "viptang2", "Phòng VIP Trúc Lâm", 8, "Bàn tiệc lớn cao cấp dành cho gia đình và đối tác", true),
+                    new DiningTable("t2-06", "Gian Tranh 02", 2, "giantranh", "Gian Tranh Cổ Tầng 2", 2, "Góc thưởng phở bình yên, ngắm tranh sơn dầu", false),
+                    new DiningTable("t2-07", "Ban Công VIP", 2, "bancong", "Ban Công VIP Phố Cổ", 6, "Vị trí ban công góc đẹp nhất nhìn trọn phố Hàng Bạc", true),
+                    new DiningTable("t2-08", "Gian Thư Họa", 2, "thuhoa", "Gian Thư Họa Hà Thành", 4, "Không gian đượm chất nghệ thuật thư pháp cổ", false),
+                    new DiningTable("t2-09", "Thưởng Trà 01", 2, "thuongtra", "Khu Thưởng Trà & Đọc Sách", 2, "Thưởng thức trà sen Tây Hồ sau bát phở nóng", false),
+                    new DiningTable("t2-10", "Thưởng Trà 02", 2, "thuongtra", "Khu Thưởng Trà & Đọc Sách", 2, "Không gian thư thái tĩnh lặng tầng 2", false)
+            );
+            diningTableRepository.saveAll(defaultTables);
+            System.out.println("🏮 [DRAGON] Đã khởi tạo 22 bàn ăn di sản 2 tầng chuẩn Phở Gia Truyền 1986 thành công!");
         }
     }
 }

@@ -38,6 +38,8 @@ class DataInitializerSecurityTest {
     @Mock
     private PaymentGatewayConfigRepository paymentGatewayConfigRepository;
     @Mock
+    private DiningTableRepository diningTableRepository;
+    @Mock
     private PasswordEncoder passwordEncoder;
     @Mock
     private Environment environment;
@@ -55,6 +57,7 @@ class DataInitializerSecurityTest {
                 loyaltyAccountRepository,
                 loyaltyTransactionRepository,
                 paymentGatewayConfigRepository,
+                diningTableRepository,
                 passwordEncoder,
                 environment
         );

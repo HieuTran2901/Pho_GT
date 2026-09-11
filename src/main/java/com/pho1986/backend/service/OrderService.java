@@ -85,6 +85,7 @@ public class OrderService {
         order.setDiscountAmount(discountAmount);
         order.setFinalAmount(finalAmount);
         order.setNotes(request.getNotes());
+        order.setTableNumber(request.getTableNumber());
 
         for (CreateOrderItemRequest itemReq : request.getItems()) {
             if (StringUtils.hasText(itemReq.getDishId())) {

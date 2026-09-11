@@ -48,6 +48,7 @@ public class SecurityConfig {
                         .requestMatchers("/health").permitAll()
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/dishes/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/tables/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/loyalty/rewards").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/orders").permitAll() // Hỗ trợ Guest checkout
                         .requestMatchers(HttpMethod.GET, "/api/v1/orders/quick-reorder").authenticated()
