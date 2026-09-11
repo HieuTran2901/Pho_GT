@@ -23,18 +23,21 @@ public class OrderService {
     private final TasteProfileRepository tasteProfileRepository;
     private final LoyaltyAccountRepository loyaltyAccountRepository;
     private final LoyaltyTransactionRepository loyaltyTransactionRepository;
+    private final DishRepository dishRepository;
 
     public OrderService(
             OrderRepository orderRepository,
             UserRepository userRepository,
             TasteProfileRepository tasteProfileRepository,
             LoyaltyAccountRepository loyaltyAccountRepository,
-            LoyaltyTransactionRepository loyaltyTransactionRepository) {
+            LoyaltyTransactionRepository loyaltyTransactionRepository,
+            DishRepository dishRepository) {
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
         this.tasteProfileRepository = tasteProfileRepository;
         this.loyaltyAccountRepository = loyaltyAccountRepository;
         this.loyaltyTransactionRepository = loyaltyTransactionRepository;
+        this.dishRepository = dishRepository;
     }
 
     /**
@@ -84,6 +87,13 @@ public class OrderService {
         order.setNotes(request.getNotes());
 
         for (CreateOrderItemRequest itemReq : request.getItems()) {
+            if (StringUtils.hasText(itemReq.getDishId())) {
+                dishRepository.findById(itemReq.getDishId()).ifPresent(dish -> {
+                    if (Boolean.FALSE.equals(dish.getIsAvailable())) {
+                        throw new IllegalStateException("Món \"" + dish.getName() + "\" hiện đang tạm hết hàng tại quán. Quý khách vui lòng chọn món khác.");
+                    }
+                });
+            }
             OrderItem item = new OrderItem(
                     itemReq.getDishId(),
                     itemReq.getDishName(),

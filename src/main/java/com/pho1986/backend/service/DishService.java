@@ -21,9 +21,9 @@ public class DishService {
 
     public List<Dish> getDishes(String categorySlug) {
         if (categorySlug != null && !categorySlug.isBlank()) {
-            return dishRepository.findByCategorySlugAndIsAvailableTrueOrderByIsSignatureDescPriceAsc(categorySlug);
+            return dishRepository.findByCategorySlugOrderByIsAvailableDescIsSignatureDescPriceAsc(categorySlug);
         }
-        return dishRepository.findByIsAvailableTrueOrderByIsSignatureDescPriceAsc();
+        return dishRepository.findByOrderByIsAvailableDescIsSignatureDescPriceAsc();
     }
 
     public Dish getDishBySlug(String slug) {

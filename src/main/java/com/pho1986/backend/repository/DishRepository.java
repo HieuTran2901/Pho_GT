@@ -12,4 +12,6 @@ public interface DishRepository extends JpaRepository<Dish, String> {
     Optional<Dish> findBySlug(String slug);
     List<Dish> findByIsAvailableTrueOrderByIsSignatureDescPriceAsc();
     List<Dish> findByCategorySlugAndIsAvailableTrueOrderByIsSignatureDescPriceAsc(String categorySlug);
+    List<Dish> findByOrderByIsAvailableDescIsSignatureDescPriceAsc();
+    List<Dish> findByCategorySlugOrderByIsAvailableDescIsSignatureDescPriceAsc(String categorySlug);
 }
