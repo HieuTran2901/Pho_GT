@@ -75,6 +75,9 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
+        // [DRAGON - DB_AGENT] Tự động tương thích schema chuyển đổi Refresh Token
+        migrateRefreshTokenSchema();
+
         // Gieo tài khoản Quản trị viên ADMIN theo chuẩn an ninh SENTINEL
         seedAdminUser();
 
@@ -283,6 +286,16 @@ public class DataInitializer implements CommandLineRunner {
             );
             diningTableRepository.saveAll(defaultTables);
             System.out.println("🏮 [DRAGON] Đã khởi tạo 22 bàn ăn di sản 2 tầng chuẩn Phở Gia Truyền 1986 thành công!");
+        }
+    }
+
+    private void migrateRefreshTokenSchema() {
+        if (dataSource == null) return;
+        try (java.sql.Connection conn = dataSource.getConnection();
+             java.sql.Statement stmt = conn.createStatement()) {
+            stmt.execute("ALTER TABLE refresh_tokens MODIFY COLUMN token VARCHAR(512) NULL");
+        } catch (Exception ignored) {
+            // Cột có thể đã được xóa hoặc đã là NULL
         }
     }
 }

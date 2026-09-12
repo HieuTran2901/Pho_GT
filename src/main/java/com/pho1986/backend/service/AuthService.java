@@ -8,6 +8,7 @@ import com.pho1986.backend.common.AccountLockedException;
 import com.pho1986.backend.security.JwtTokenProvider;
 import com.pho1986.backend.security.LoginRateLimiter;
 import com.pho1986.backend.security.TokenRevocationService;
+import com.pho1986.backend.security.TokenHashUtil;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.UUID;
 
 @Service
 public class AuthService {
@@ -56,12 +58,18 @@ public class AuthService {
         this.threatDefenseService = threatDefenseService;
     }
 
-    private String createAndSaveRefreshToken(User user) {
+    private String createAndSaveRefreshToken(User user, String familyId) {
         String token = tokenProvider.generateRefreshToken(user.getId(), user.getRole());
+        String tokenHash = TokenHashUtil.sha256Hex(token);
+        String finalFamilyId = (familyId != null && !familyId.isBlank()) ? familyId : UUID.randomUUID().toString();
         LocalDateTime expiryDate = LocalDateTime.now().plusNanos(tokenProvider.getRefreshExpirationMs() * 1_000_000);
-        RefreshToken refreshToken = new RefreshToken(user, token, expiryDate);
+        RefreshToken refreshToken = new RefreshToken(user, finalFamilyId, tokenHash, expiryDate);
         refreshTokenRepository.save(refreshToken);
         return token;
+    }
+
+    private String createAndSaveRefreshToken(User user) {
+        return createAndSaveRefreshToken(user, UUID.randomUUID().toString());
     }
 
     @Transactional
@@ -275,20 +283,32 @@ public class AuthService {
         return userRepository.save(user);
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = { BadCredentialsException.class })
     public AuthResponse refreshToken(String refreshTokenString) {
         if (refreshTokenString == null || refreshTokenString.isBlank() || !tokenProvider.validateToken(refreshTokenString)) {
             throw new BadCredentialsException("Phiên đăng nhập đã hết hạn, quý khách vui lòng đăng nhập lại nhé!");
         }
 
-        RefreshToken refreshToken = refreshTokenRepository.findByToken(refreshTokenString)
+        String tokenHash = TokenHashUtil.sha256Hex(refreshTokenString);
+        RefreshToken refreshToken = refreshTokenRepository.findByTokenHash(tokenHash)
                 .orElseThrow(() -> new BadCredentialsException("Phiên đăng nhập không hợp lệ hoặc đã hết hiệu lực."));
 
-        if (refreshToken.isRevoked() || refreshToken.isExpired()) {
-            throw new BadCredentialsException("Phiên đăng nhập đã bị thu hồi hoặc đã hết hạn.");
+        // [SENTINEL & BLADE] BREACH CONTAINMENT (RFC 6819 Section 5.2.2.3):
+        // Phát hiện tái sử dụng token đã thu hồi (Token Reuse / Theft Attempt)
+        if (refreshToken.isRevoked()) {
+            String familyId = refreshToken.getFamilyId();
+            refreshTokenRepository.revokeFamilyTokens(familyId);
+            org.slf4j.LoggerFactory.getLogger(AuthService.class)
+                    .warn("[SENTINEL THREAT ALERT] Phát hiện tái sử dụng RefreshToken đã thu hồi! User: {}, FamilyId: {}. Kích hoạt Breach Containment (thu hồi toàn bộ dòng token của phiên).",
+                            refreshToken.getUser().getId(), familyId);
+            throw new BadCredentialsException("CẢNH BÁO BẢO MẬT: Phát hiện dấu hiệu phiên đăng nhập bất thường. Để bảo vệ an toàn tài khoản, toàn bộ phiên của thiết bị này đã được ngắt kết nối.");
         }
 
-        // [SECURITY_AGENT] Refresh Token Rotation: Revoke old token and issue a fresh one
+        if (refreshToken.isExpired()) {
+            throw new BadCredentialsException("Phiên đăng nhập đã hết hạn, quý khách vui lòng đăng nhập lại nhé!");
+        }
+
+        // [SECURITY_AGENT] Refresh Token Rotation: Revoke old token and issue a fresh one in the same family
         refreshToken.setRevoked(true);
         refreshTokenRepository.save(refreshToken);
 
@@ -306,7 +326,7 @@ public class AuthService {
         }
 
         String newAccessToken = tokenProvider.generateAccessToken(user.getId(), user.getRole());
-        String newRefreshToken = createAndSaveRefreshToken(user);
+        String newRefreshToken = createAndSaveRefreshToken(user, refreshToken.getFamilyId());
 
         return new AuthResponse(user, newAccessToken, newRefreshToken);
     }
@@ -326,7 +346,8 @@ public class AuthService {
 
         // [SECURITY_AGENT] Revoke Refresh Token in persistent store
         if (refreshTokenString != null && !refreshTokenString.isBlank()) {
-            refreshTokenRepository.findByToken(refreshTokenString).ifPresent(rt -> {
+            String tokenHash = TokenHashUtil.sha256Hex(refreshTokenString);
+            refreshTokenRepository.findByTokenHash(tokenHash).ifPresent(rt -> {
                 rt.setRevoked(true);
                 refreshTokenRepository.save(rt);
             });
