@@ -9,7 +9,9 @@ import java.util.List;
 
 @Entity
 @Table(name = "users", indexes = {
-    @Index(name = "idx_users_status", columnList = "status")
+    @Index(name = "idx_users_status", columnList = "status"),
+    @Index(name = "idx_users_role_created", columnList = "role, created_at DESC"),
+    @Index(name = "idx_users_role_status", columnList = "role, status")
 })
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class User {

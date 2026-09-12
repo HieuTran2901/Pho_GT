@@ -5,7 +5,10 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "order_items")
+@Table(name = "order_items", indexes = {
+    @Index(name = "idx_order_items_order_id", columnList = "order_id"),
+    @Index(name = "idx_order_items_dish_id", columnList = "dish_id")
+})
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class OrderItem {
 
@@ -18,6 +21,7 @@ public class OrderItem {
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
+    @Column(name = "dish_id", length = 50)
     private String dishId;
 
     @Column(nullable = false, length = 150)

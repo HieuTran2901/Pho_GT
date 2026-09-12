@@ -1,6 +1,7 @@
 package com.pho1986.backend.repository;
 
 import com.pho1986.backend.model.entity.User;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -19,6 +20,7 @@ public interface UserRepository extends JpaRepository<User, String> {
     long countByRole(String role);
     long countByRoleAndStatus(String role, String status);
 
+    @EntityGraph(attributePaths = {"loyaltyAccount", "tasteProfile"})
     @Query("SELECT u FROM User u WHERE u.role = 'CUSTOMER' " +
            "AND (:search IS NULL OR :search = '' OR LOWER(u.fullName) LIKE LOWER(CONCAT('%', :search, '%')) OR u.phone LIKE CONCAT('%', :search, '%')) " +
            "AND (:status IS NULL OR :status = '' OR u.status = :status) " +
@@ -26,4 +28,16 @@ public interface UserRepository extends JpaRepository<User, String> {
     List<User> searchCustomers(@Param("search") String search, @Param("status") String status);
 
     List<User> findByStatusIn(java.util.Collection<String> statuses);
+
+    @Query("SELECT COUNT(u) FROM User u WHERE u.role = 'CUSTOMER' AND (u.status = 'LOCKED' OR (u.lockedUntil IS NOT NULL AND u.lockedUntil > :now))")
+    long countLockedCustomers(@Param("now") java.time.LocalDateTime now);
+
+    @Query("SELECT COUNT(u) FROM User u WHERE u.role = 'CUSTOMER' AND (u.status = 'LOCKED' OR (u.lockedUntil IS NOT NULL AND u.lockedUntil > :now)) AND u.lockType = 'ADMIN_MANUAL'")
+    long countAdminLockedCustomers(@Param("now") java.time.LocalDateTime now);
+
+    @Query("SELECT COUNT(u) FROM User u WHERE u.role = 'CUSTOMER' AND u.status <> 'LOCKED' AND (u.lockedUntil IS NULL OR u.lockedUntil <= :now)")
+    long countActiveCustomers(@Param("now") java.time.LocalDateTime now);
+
+    @Query("SELECT COUNT(la) FROM LoyaltyAccount la WHERE la.user.role = 'CUSTOMER' AND la.membershipTier IN ('VANG', 'KIM_CUONG')")
+    long countVipCustomers();
 }

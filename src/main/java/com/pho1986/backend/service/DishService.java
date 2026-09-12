@@ -5,10 +5,12 @@ import com.pho1986.backend.model.entity.Dish;
 import com.pho1986.backend.repository.CategoryRepository;
 import com.pho1986.backend.repository.DishRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@Transactional(readOnly = true)
 public class DishService {
 
     private final DishRepository dishRepository;

@@ -7,7 +7,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "loyalty_accounts")
+@Table(name = "loyalty_accounts", indexes = {
+    @Index(name = "idx_loyalty_acc_tier", columnList = "membership_tier")
+})
 public class LoyaltyAccount {
 
     @Id

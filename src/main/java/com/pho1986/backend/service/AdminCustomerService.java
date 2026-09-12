@@ -44,6 +44,7 @@ public class AdminCustomerService {
         this.threatDefenseService = threatDefenseService;
     }
 
+    @Transactional(readOnly = true)
     public List<AdminCustomerSummaryResponse> getCustomers(String search, String status, String tier) {
         String cleanSearch = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
         String cleanStatus = (status != null && !status.trim().isEmpty() && !"ALL".equalsIgnoreCase(status))
@@ -59,7 +60,7 @@ public class AdminCustomerService {
         List<User> users = userRepository.searchCustomers(cleanSearch, queryStatus);
         LocalDateTime now = LocalDateTime.now();
 
-        return users.stream()
+        List<User> filteredUsers = users.stream()
                 .filter(u -> {
                     boolean isLockedNow = "LOCKED".equalsIgnoreCase(u.getStatus()) || (u.getLockedUntil() != null && u.getLockedUntil().isAfter(now));
                     if (filterLocked) {
@@ -82,34 +83,37 @@ public class AdminCustomerService {
                             ? la.getMembershipTier() : "DONG";
                     return tier.equalsIgnoreCase(userTier);
                 })
-                .map(this::toSummaryResponse)
+                .collect(Collectors.toList());
+
+        // [DRAGON & BLADE] Batch fetch món yêu thích để triệt tiêu toàn bộ vòng lặp N+1 queries
+        Set<String> dishIds = filteredUsers.stream()
+                .map(User::getTasteProfile)
+                .filter(Objects::nonNull)
+                .map(TasteProfile::getFavoriteDishId)
+                .filter(id -> id != null && !id.isBlank())
+                .collect(Collectors.toSet());
+
+        Map<String, String> dishNames = dishIds.isEmpty() ? Collections.emptyMap() :
+                dishRepository.findAllById(dishIds).stream()
+                        .collect(Collectors.toMap(Dish::getId, Dish::getName, (existing, replacement) -> existing));
+
+        return filteredUsers.stream()
+                .map(u -> toSummaryResponse(u, dishNames))
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public Map<String, Object> getCustomerMetrics() {
-        List<User> customers = userRepository.searchCustomers(null, null);
+        // [DRAGON & BLADE] Tối ưu hóa truy vấn CSDL:
+        // Thay vì kéo toàn bộ hàng chục ngàn User vào RAM JVM, thực thi các câu lệnh Aggregate COUNT trực tiếp trên Index MySQL.
         LocalDateTime now = LocalDateTime.now();
 
-        long total = customers.size();
-        long locked = customers.stream()
-                .filter(u -> "LOCKED".equalsIgnoreCase(u.getStatus()) || (u.getLockedUntil() != null && u.getLockedUntil().isAfter(now)))
-                .count();
-        long passwordLocked = customers.stream()
-                .filter(u -> ("LOCKED".equalsIgnoreCase(u.getStatus()) || (u.getLockedUntil() != null && u.getLockedUntil().isAfter(now))) && u.isPasswordLocked())
-                .count();
-        long adminLocked = Math.max(0, locked - passwordLocked);
-        long active = customers.stream()
-                .filter(u -> !"LOCKED".equalsIgnoreCase(u.getStatus()) && (u.getLockedUntil() == null || !u.getLockedUntil().isAfter(now)))
-                .count();
-
-        long vipCount = customers.stream()
-                .filter(u -> {
-                    LoyaltyAccount la = u.getLoyaltyAccount();
-                    if (la == null || la.getMembershipTier() == null) return false;
-                    String t = la.getMembershipTier().toUpperCase();
-                    return "VANG".equals(t) || "KIM_CUONG".equals(t);
-                })
-                .count();
+        long total = userRepository.countByRole("CUSTOMER");
+        long active = userRepository.countActiveCustomers(now);
+        long locked = userRepository.countLockedCustomers(now);
+        long adminLocked = userRepository.countAdminLockedCustomers(now);
+        long passwordLocked = Math.max(0, locked - adminLocked);
+        long vipCount = userRepository.countVipCustomers();
 
         Map<String, Object> metrics = new HashMap<>();
         metrics.put("totalCustomers", total);
@@ -122,6 +126,7 @@ public class AdminCustomerService {
     }
 
 
+    @Transactional(readOnly = true)
     public AdminCustomerDetailResponse getCustomerDetail(String customerId) {
         User user = userRepository.findById(customerId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy khách hàng với ID: " + customerId));
@@ -302,6 +307,10 @@ public class AdminCustomerService {
     }
 
     private AdminCustomerSummaryResponse toSummaryResponse(User user) {
+        return toSummaryResponse(user, null);
+    }
+
+    private AdminCustomerSummaryResponse toSummaryResponse(User user, Map<String, String> dishNames) {
         AdminCustomerSummaryResponse res = new AdminCustomerSummaryResponse();
         res.setId(user.getId());
         res.setPhone(user.getPhone());
@@ -344,8 +353,12 @@ public class AdminCustomerService {
             res.setBrothType(tp.getBrothType());
             res.setOnionStyle(tp.getOnionStyle());
             if (tp.getFavoriteDishId() != null) {
-                dishRepository.findById(tp.getFavoriteDishId())
-                        .ifPresent(d -> res.setFavoriteDishName(d.getName()));
+                if (dishNames != null && dishNames.containsKey(tp.getFavoriteDishId())) {
+                    res.setFavoriteDishName(dishNames.get(tp.getFavoriteDishId()));
+                } else {
+                    dishRepository.findById(tp.getFavoriteDishId())
+                            .ifPresent(d -> res.setFavoriteDishName(d.getName()));
+                }
             }
         }
 
