@@ -10,10 +10,9 @@ import OrderStep3Success from './order/OrderStep3Success';
 import OrderProgressStepper from './order/OrderProgressStepper';
 import { useOrderSectionState } from './order/useOrderSectionState';
 import { usePaymentGatewaysStatus } from './order/usePaymentGatewaysStatus';
-import { submitSePayCheckout } from '../utils/submitSePayCheckout';
 import SePayRedirectOverlay from './order/SePayRedirectOverlay';
 
-function OrderSection({ cartItems = [], onClearCart, onToast } = {}) {
+function OrderSection({ cartItems = [], onClearCart, onToast, onExploreMenu } = {}) {
   const [sectionRef, isVisible] = useScrollReveal({ threshold: 0.12 });
   const {
     formData,
@@ -34,6 +33,7 @@ function OrderSection({ cartItems = [], onClearCart, onToast } = {}) {
     paymentError,
     selectedTable,
     tableLockWarning,
+    mainDishWarning,
     isSeatMapOpen,
     setIsSeatMapOpen,
     todayDateStr,
@@ -54,7 +54,8 @@ function OrderSection({ cartItems = [], onClearCart, onToast } = {}) {
     handleBackToStep1,
     handleBackToStep2,
     handleCopyCode,
-    handleReset
+    handleReset,
+    handleVerifyPayment
   } = useOrderSectionState(sectionRef, { cartItems, onClearCart, onToast });
 
   const { isMaintenance, isDisabled, getMaintenanceMessage } = usePaymentGatewaysStatus(
@@ -108,6 +109,8 @@ function OrderSection({ cartItems = [], onClearCart, onToast } = {}) {
                   handleSubmit={handleSubmit}
                   direction={direction}
                   tableLockWarning={tableLockWarning}
+                  mainDishWarning={mainDishWarning}
+                  onExploreMenu={onExploreMenu}
                   isOrderLocked={isOrderLocked}
                   lockoutReason={lockoutReason}
                   handleResetLockout={handleResetLockout}
@@ -150,8 +153,7 @@ function OrderSection({ cartItems = [], onClearCart, onToast } = {}) {
                       isCopied={isCopied}
                       handleCopyCode={handleCopyCode}
                       handleBackToStep2={handleBackToStep2}
-                      setIsVietQrConfirmed={setIsVietQrConfirmed}
-                      submitSePayCheckout={submitSePayCheckout}
+                      handleVerifyPayment={handleVerifyPayment}
                     />
                   ) : (
                     <OrderStep3Success

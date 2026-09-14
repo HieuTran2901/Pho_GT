@@ -41,12 +41,16 @@ export const tableApi = {
   /**
    * Cập nhật trạng thái bàn (dành cho Admin: AVAILABLE, RESERVED, MAINTENANCE)
    */
-  async updateTableStatus(tableId, status, notes = '') {
+  async updateTableStatus(tableId, status, payload = {}) {
     try {
       let token = null;
       if (typeof localStorage !== 'undefined') {
         token = localStorage.getItem('accessToken') || localStorage.getItem('pho1986_admin_token');
       }
+
+      const bodyPayload = typeof payload === 'string'
+        ? { status, notes: payload }
+        : { status, ...payload };
 
       const response = await fetch(`${ADMIN_API_BASE_URL}/${tableId}/status`, {
         method: 'PATCH',
@@ -56,13 +60,17 @@ export const tableApi = {
           'Accept': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ status, notes }),
+        body: JSON.stringify(bodyPayload),
       });
 
       const resData = await response.json().catch(() => null);
       if (!response.ok) {
         notifyIfAccountLocked(response.status, resData);
-        throw new Error(resData?.message || `Cập nhật trạng thái bàn thất bại (${response.status})`);
+        const err = new Error(resData?.message || `Cập nhật trạng thái bàn thất bại (${response.status})`);
+        err.status = response.status;
+        err.data = resData?.data;
+        err.isConflict = response.status === 409;
+        throw err;
       }
 
       return resData?.data || resData;

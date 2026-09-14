@@ -86,5 +86,74 @@ export const loyaltyApi = {
       headers
     });
     return handleResponse(response);
+  },
+
+  /**
+   * Lấy danh sách ví quà tri kỷ thực tế của khách hàng từ Database
+   */
+  async getMyGifts(token) {
+    const headers = { 'Accept': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(`${API_BASE_URL}/my-gifts`, {
+      credentials: 'include',
+      headers
+    });
+    return handleResponse(response);
+  },
+
+  /**
+   * Đánh dấu sử dụng quà vào đơn hàng
+   */
+  async applyGift(giftId, orderId, token) {
+    // 1. Cập nhật ngay trong LocalStorage nếu có
+    try {
+      if (typeof localStorage !== 'undefined') {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('pho1986_gifts_')) {
+            const raw = localStorage.getItem(key);
+            if (raw) {
+              const list = JSON.parse(raw);
+              if (Array.isArray(list)) {
+                let modified = false;
+                const updated = list.map((g) => {
+                  if (g.id === giftId || g.code === giftId || (giftId.startsWith('gift_') && g.id === giftId.slice(5))) {
+                    modified = true;
+                    return { ...g, status: 'USED', orderId, usedAt: new Date().toISOString() };
+                  }
+                  return g;
+                });
+                if (modified) {
+                  localStorage.setItem(key, JSON.stringify(updated));
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[LoyaltyApi] LocalStorage gift update warning:', e);
+    }
+
+    // 2. Đồng bộ lên Backend
+    try {
+      const headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const url = `${API_BASE_URL}/my-gifts/${giftId}/apply${orderId ? `?orderId=${encodeURIComponent(orderId)}` : ''}`;
+      const response = await fetch(url, {
+        method: 'POST',
+        credentials: 'include',
+        headers
+      });
+      return await handleResponse(response);
+    } catch (err) {
+      console.warn('[LoyaltyApi] Backend applyGift error:', err.message);
+      return false;
+    }
   }
 };

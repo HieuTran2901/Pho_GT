@@ -4,6 +4,19 @@ import { Check, ArrowRight, Sparkles, Clock } from 'lucide-react';
 const currencyFormatter = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
 const formatPrice = (price) => currencyFormatter.format(price);
 
+const formatExactDate = (dateStr) => {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return null;
+  return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+};
+
+const getProjectedExpiry = (days = 30) => {
+  const target = new Date();
+  target.setDate(target.getDate() + (days || 30));
+  return target.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+};
+
 function GiftVoucherCard({
   gift,
   mode = 'USE', // 'USE' (Quà của tôi) | 'REDEEM' (Đổi bằng điểm)
@@ -11,12 +24,15 @@ function GiftVoucherCard({
   isInCart = false,
   userPoints = 0,
   isRedeeming = false,
+  isNewlyRedeemed = false,
   onApply,
   onRedeem
 }) {
   const isFreeItem = gift.rewardType === 'FREE_ITEM';
   const isCashDiscount = gift.rewardType === 'DISCOUNT_CASH' || gift.rewardType === 'DISCOUNT_PERCENT';
   const isRedeemable = userPoints >= (gift.pointsRequired || 0);
+  const isUsed = gift.status === 'USED';
+  const isExpired = gift.status === 'EXPIRED';
 
   // 1. Theme màu sắc tương phản cao theo bản chất phần quà
   const themeClasses = isFreeItem
@@ -58,7 +74,15 @@ function GiftVoucherCard({
   return (
     <div
       className={`relative flex flex-col ${isHero ? 'sm:flex-row' : 'sm:flex-row'} rounded-2xl overflow-hidden border-2 transition-all duration-300 group ${themeClasses.card} ${
-        isInCart ? 'ring-2 ring-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.3)]' : 'hover:-translate-y-0.5 hover:shadow-[0_15px_35px_rgba(0,0,0,0.7)]'
+        isNewlyRedeemed
+          ? 'ring-4 ring-amber-400 shadow-[0_0_35px_rgba(245,158,11,0.85)] scale-[1.02] animate-pulse'
+          : isUsed
+          ? 'opacity-80 grayscale-[20%] border-stone-600/60 shadow-none'
+          : isExpired
+          ? 'opacity-60 grayscale-[40%] border-stone-700/60 shadow-none'
+          : isInCart
+          ? 'ring-2 ring-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.3)]'
+          : 'hover:-translate-y-0.5 hover:shadow-[0_15px_35px_rgba(0,0,0,0.7)]'
       }`}
     >
       {/* VẾT CẮT KHUYẾT VÉ CỔ ĐIỂN (CIRCULAR TICKET NOTCHES) */}
@@ -86,6 +110,17 @@ function GiftVoucherCard({
             <div className="absolute inset-0 bg-emerald-950/85 backdrop-blur-2xs flex flex-col items-center justify-center text-emerald-300">
               <Check className="w-6 h-6 stroke-[3]" />
               <span className="text-[9px] font-serif font-bold uppercase mt-0.5">Trong giỏ</span>
+            </div>
+          )}
+          {isUsed && (
+            <div className="absolute inset-0 bg-black/65 backdrop-blur-2xs flex flex-col items-center justify-center text-red-400">
+              <Check className="w-6 h-6 stroke-[3]" />
+              <span className="text-[9px] font-serif font-bold uppercase mt-0.5">Đã dùng</span>
+            </div>
+          )}
+          {isExpired && (
+            <div className="absolute inset-0 bg-black/75 backdrop-blur-2xs flex flex-col items-center justify-center text-stone-400">
+              <span className="text-[9px] font-serif font-bold uppercase mt-0.5">Hết hạn</span>
             </div>
           )}
         </div>
@@ -150,48 +185,107 @@ function GiftVoucherCard({
           </div>
         </div>
 
+        {/* CON DẤU MỘC ĐỎ SON 1986 "ĐÃ SỬ DỤNG" / "HẾT HẠN" */}
+        {isUsed && (
+          <div className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 pointer-events-none select-none z-20">
+            <div className="transform -rotate-12 border-2 border-dashed border-red-600/90 bg-red-950/40 px-3 py-1 sm:px-4 sm:py-1.5 rounded-xl shadow-lg backdrop-blur-xs flex flex-col items-center justify-center text-center">
+              <span className="text-[10px] sm:text-xs font-serif font-black tracking-widest text-red-400 uppercase">
+                ★ ĐÃ SỬ DỤNG ★
+              </span>
+              {gift.usedAt && (
+                <span className="text-[8px] sm:text-[9px] font-mono font-bold text-red-300/80 mt-0.5">
+                  {new Date(gift.usedAt).toLocaleDateString('vi-VN')}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {isExpired && (
+          <div className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 pointer-events-none select-none z-20">
+            <div className="transform rotate-12 border-2 border-dashed border-stone-500/80 bg-stone-900/60 px-3 py-1 sm:px-4 sm:py-1.5 rounded-xl shadow-lg backdrop-blur-xs flex flex-col items-center justify-center text-center">
+              <span className="text-[10px] sm:text-xs font-serif font-black tracking-widest text-stone-400 uppercase">
+                HẾT HẠN
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* HÀNG CUỐI: THỜI HẠN & NÚT HÀNH ĐỘNG */}
         <div className="mt-3.5 pt-2.5 border-t border-black/10 sm:border-black/5 flex flex-wrap items-center justify-between gap-2.5">
-          <div className={`text-[11px] flex items-center gap-1.5 font-sans ${themeClasses.meta}`}>
+          <div className={`text-[11px] flex items-center gap-1.5 font-sans ${themeClasses.meta} flex-wrap`}>
             <Clock className="w-3.5 h-3.5 opacity-80 shrink-0" />
-            <span>{gift.expiryText || 'Áp dụng cho mọi hình thức đặt phở'}</span>
+            <span>
+              {mode === 'REDEEM'
+                ? `Hạn dùng đến: ${getProjectedExpiry(gift.validityDays || 30)}`
+                : (gift.expiryDate ? `Hạn dùng: ${formatExactDate(gift.expiryDate)}` : (gift.expiryText || 'Áp dụng cho mọi hình thức đặt phở'))}
+            </span>
+            {gift.isExpiringSoon && !isUsed && !isExpired && (
+              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse">
+                {gift.expiryDate ? `Hạn chót: ${formatExactDate(gift.expiryDate)}` : (gift.daysRemaining === 0 ? 'Hết hạn hôm nay' : 'Sắp hết hạn')}
+              </span>
+            )}
+            {gift.orderId && (
+              <span className="text-[10px] text-amber-500 font-mono font-bold ml-1 bg-black/30 px-1.5 py-0.5 rounded border border-amber-900/40">
+                Đơn #{gift.orderId}
+              </span>
+            )}
           </div>
 
           {/* NÚT HÀNH ĐỘNG DỰA THEO CHẾ ĐỘ */}
           {mode === 'USE' ? (
-            <button
-              type="button"
-              disabled={isInCart}
-              onClick={(e) => {
-                if (!onApply) return;
-                const rect = e.currentTarget.getBoundingClientRect();
-                const coords = {
-                  startX: rect.left + rect.width / 2,
-                  startY: rect.top + rect.height / 2
-                };
-                onApply(gift, coords);
-              }}
-              className={`px-4 py-2 rounded-xl font-serif text-xs font-bold flex items-center gap-1.5 shadow-md transition-all active:scale-95 cursor-pointer shrink-0 ${
-                isInCart
-                  ? 'bg-emerald-700 text-white border border-emerald-500 cursor-default'
-                  : isHero
-                  ? 'bg-gradient-to-r from-[#9b2a1f] to-[#7a1811] hover:from-[#b83327] hover:to-[#911d15] text-amber-100 border border-amber-300/60 shadow-[0_0_15px_rgba(212,175,55,0.5)] font-black text-sm'
-                  : 'bg-gradient-to-r from-[#8a1f18] to-[#6a150c] hover:from-[#a0241c] hover:to-[#7f1910] text-amber-100 border border-amber-500/40 hover:shadow-[0_0_12px_rgba(212,175,55,0.4)]'
-              }`}
-            >
-              {isInCart ? (
-                <>
-                  <Check className="w-4 h-4" />
-                  <span>Đã trong bát phở</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                  <span>{isHero ? 'DÙNG NGAY BÁT NÀY' : 'Dùng ngay'}</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </>
-              )}
-            </button>
+            isUsed ? (
+              <button
+                type="button"
+                disabled
+                className="px-4 py-2 rounded-xl font-serif text-xs font-bold bg-stone-900/90 text-stone-500 border border-stone-800 cursor-not-allowed shrink-0 flex items-center gap-1.5 shadow-xs"
+              >
+                <Check className="w-3.5 h-3.5 text-red-500/70" />
+                <span>Đã sử dụng</span>
+              </button>
+            ) : isExpired ? (
+              <button
+                type="button"
+                disabled
+                className="px-4 py-2 rounded-xl font-serif text-xs font-bold bg-stone-900/90 text-stone-500 border border-stone-800 cursor-not-allowed shrink-0 flex items-center gap-1.5 shadow-xs"
+              >
+                <span>Hết hạn</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                disabled={isInCart}
+                onClick={(e) => {
+                  if (!onApply) return;
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const coords = {
+                    startX: rect.left + rect.width / 2,
+                    startY: rect.top + rect.height / 2
+                  };
+                  onApply(gift, coords);
+                }}
+                className={`px-4 py-2 rounded-xl font-serif text-xs font-bold flex items-center gap-1.5 shadow-md transition-all active:scale-95 cursor-pointer shrink-0 ${
+                  isInCart
+                    ? 'bg-emerald-700 text-white border border-emerald-500 cursor-default'
+                    : isHero
+                    ? 'bg-gradient-to-r from-[#9b2a1f] to-[#7a1811] hover:from-[#b83327] hover:to-[#911d15] text-amber-100 border border-amber-300/60 shadow-[0_0_15px_rgba(212,175,55,0.5)] font-black text-sm'
+                    : 'bg-gradient-to-r from-[#8a1f18] to-[#6a150c] hover:from-[#a0241c] hover:to-[#7f1910] text-amber-100 border border-amber-500/40 hover:shadow-[0_0_12px_rgba(212,175,55,0.4)]'
+                }`}
+              >
+                {isInCart ? (
+                  <>
+                    <Check className="w-4 h-4" />
+                    <span>Đã trong bát phở</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                    <span>{isHero ? 'DÙNG NGAY BÁT NÀY' : 'Dùng ngay'}</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </>
+                )}
+              </button>
+            )
           ) : (
             <div className="flex items-center gap-2.5">
               <span className="font-serif text-xs font-bold text-amber-300 bg-black/40 px-2 py-1 rounded-lg border border-amber-500/30">
@@ -200,7 +294,14 @@ function GiftVoucherCard({
               <button
                 type="button"
                 disabled={!isRedeemable || isRedeeming}
-                onClick={() => onRedeem && onRedeem(gift)}
+                onClick={(e) => {
+                  if (!onRedeem) return;
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  onRedeem(gift, {
+                    startX: rect.left + rect.width / 2,
+                    startY: rect.top + rect.height / 2
+                  });
+                }}
                 className={`px-3.5 py-1.5 rounded-xl font-serif text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 shrink-0 ${
                   isRedeemable
                     ? 'bg-gradient-to-r from-[#d4af37] to-[#aa831b] hover:from-[#eac654] hover:to-[#c49a26] text-stone-950 font-black shadow-md cursor-pointer'

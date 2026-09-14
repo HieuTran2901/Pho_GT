@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect, Suspense, lazy } from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import MenuSection from './components/MenuSection';
@@ -11,37 +11,25 @@ import FlyingPhoBowl from './components/FlyingPhoBowl';
 import FlyingGiftRibbon from './components/loyalty/FlyingGiftRibbon';
 import HeritageIslandToast from './components/toast/HeritageIslandToast';
 import AuthModal from './components/AuthModal';
-import CustomerOrderHistoryModal from './components/order/CustomerOrderHistoryModal';
-import GiftVaultModal from './components/loyalty/GiftVaultModal';
-import { useAuth } from './context/AuthContext';
-import AdminPortal from './components/admin/AdminPortal';
-import AdminLoginView from './components/admin/AdminLoginView';
 import MemberWelcome3DCard from './components/auth/MemberWelcome3DCard';
+import HeritageChatbox from './components/chat/HeritageChatbox';
+import { useAuth } from './context/AuthContext';
 import { TIER_CONFIG } from './components/navbar/navbarConstants';
 import { getCartStorageKey, loadCartFromStorage } from './utils/cartStorage';
 
+import { useAppRouting } from './hooks/useAppRouting';
+import HeritageRouteLoading from './components/common/HeritageRouteLoading';
+
+// [RAVEN & TITAN] Code-Splitting: Tải lười các phân khu nặng để tối ưu dung lượng Bundle ban đầu
+const AdminPortal = lazy(() => import('./components/admin/AdminPortal'));
+const AdminLoginView = lazy(() => import('./components/admin/AdminLoginView'));
+const MarketingPage = lazy(() => import('./marketing/MarketingPage'));
+const CustomerOrderHistoryModal = lazy(() => import('./components/order/CustomerOrderHistoryModal'));
+const GiftVaultModal = lazy(() => import('./components/loyalty/GiftVaultModal'));
+
 export default function App() {
   const { user, openAuthModal } = useAuth();
-  const [isAdminRoute, setIsAdminRoute] = useState(() => 
-    typeof window !== 'undefined' && (window.location.pathname.startsWith('/admin') || window.location.hash === '#admin')
-  );
-
-  useEffect(() => {
-    const handleLocationChange = () => {
-      setIsAdminRoute(window.location.pathname.startsWith('/admin') || window.location.hash === '#admin');
-    };
-    window.addEventListener('popstate', handleLocationChange);
-    window.addEventListener('hashchange', handleLocationChange);
-    return () => {
-      window.removeEventListener('popstate', handleLocationChange);
-      window.removeEventListener('hashchange', handleLocationChange);
-    };
-  }, []);
-
-  const navigateToHome = useCallback(() => {
-    window.history.pushState(null, '', '/');
-    setIsAdminRoute(false);
-  }, []);
+  const { isAdminRoute, isMarketingRoute, navigateToHome } = useAppRouting();
 
   // [RAVEN & BLADE] Phương án 1: User-Scoped Cart Partitioning
   // Mỗi tài khoản (hoặc khách vãng lai) sở hữu một giỏ hàng riêng biệt
@@ -190,25 +178,12 @@ export default function App() {
     // 2. Spawn parabolic flying bowl if coordinates exist
     if (coords && typeof window !== 'undefined') {
       const { endX, endY } = getCartTargetCoordinates();
-      const newFly = {
-        id: Date.now() + Math.random(),
-        image: item.image,
-        name: item.name,
-        startX: coords.startX,
-        startY: coords.startY,
-        endX,
-        endY
-      };
+      const newFly = { id: Date.now() + Math.random(), image: item.image, name: item.name, startX: coords.startX, startY: coords.startY, endX, endY };
       setFlyingBowls((prev) => [...prev, newFly]);
     }
 
     // 3. Trigger Option 1 Dynamic Heritage Island Capsule Toast
-    showToast({
-      type: 'dish',
-      name: item.name,
-      image: item.image,
-      price: item.price,
-    });
+    showToast({ type: 'dish', name: item.name, image: item.image, price: item.price });
   }, [showToast, getCartTargetCoordinates]);
 
   // [RAVEN & URBAN] Thêm quà tặng Tri Kỷ (0đ) vào giỏ hàng với quỹ đạo Parabol bay vào giỏ
@@ -234,17 +209,7 @@ export default function App() {
     // 1. Phóng dải vé Parabol lượn vào giỏ hàng nếu có tọa độ nút bấm
     if (coords && typeof window !== 'undefined') {
       const { endX, endY } = getCartTargetCoordinates();
-
-      const newFlyGift = {
-        id: Date.now() + Math.random(),
-        image: gift.image,
-        name: giftItem.name,
-        startX: coords.startX,
-        startY: coords.startY,
-        endX,
-        endY
-      };
-
+      const newFlyGift = { id: Date.now() + Math.random(), image: gift.image, name: giftItem.name, startX: coords.startX, startY: coords.startY, endX, endY };
       setFlyingGifts((prev) => [...prev, newFlyGift]);
     } else {
       setCartOpen(true);
@@ -366,17 +331,40 @@ export default function App() {
     }
   }, [scrollToSection]);
   const handleExploreMenu = useCallback(() => scrollToSection('menu'), [scrollToSection]);
+  const handleNavigateToMenuFromCart = useCallback(() => {
+    handleCloseCart();
+    handleExploreMenu();
+  }, [handleCloseCart, handleExploreMenu]);
 
   const cartCount = useMemo(
     () => cartItems.reduce((acc, curr) => acc + curr.quantity, 0),
     [cartItems]
   );
 
+  if (isMarketingRoute) {
+    return (
+      <Suspense fallback={<HeritageRouteLoading />}>
+        <MarketingPage
+          onBackToHome={navigateToHome}
+          onNavigateToSection={(section) => {
+            navigateToHome();
+            setTimeout(() => scrollToSection(section), 80);
+          }}
+        />
+      </Suspense>
+    );
+  }
+
   if (isAdminRoute) {
-    if (user?.role === 'ADMIN') {
-      return <AdminPortal onBackToHome={navigateToHome} />;
-    }
-    return <AdminLoginView onBackToHome={navigateToHome} />;
+    return (
+      <Suspense fallback={<HeritageRouteLoading />}>
+        {user?.role === 'ADMIN' ? (
+          <AdminPortal onBackToHome={navigateToHome} />
+        ) : (
+          <AdminLoginView onBackToHome={navigateToHome} />
+        )}
+      </Suspense>
+    );
   }
 
   return (
@@ -414,25 +402,33 @@ export default function App() {
         {/* Auth Modal (Heritage Vintage Register/Login) */}
         <AuthModal onToast={showToast} />
 
-        {/* Customer Order History Modal (Sổ Lịch Sử Đơn Hàng) */}
-        <CustomerOrderHistoryModal
-          isOpen={orderHistoryOpen}
-          onClose={handleCloseOrderHistory}
-          onAddToCart={handleAddToCart}
-          onToast={showToast}
-          onNavigateToMenu={handleExploreMenu}
-        />
+        {/* Customer Order History Modal (Loaded on demand) */}
+        {orderHistoryOpen && (
+          <Suspense fallback={null}>
+            <CustomerOrderHistoryModal
+              isOpen={orderHistoryOpen}
+              onClose={handleCloseOrderHistory}
+              onAddToCart={handleAddToCart}
+              onToast={showToast}
+              onNavigateToMenu={handleExploreMenu}
+            />
+          </Suspense>
+        )}
 
-        {/* Customer Gift Vault Modal (Hòm Gấm Tri Kỷ 1986) */}
-        <GiftVaultModal
-          isOpen={giftVaultOpen}
-          onClose={handleCloseGiftVault}
-          user={user}
-          cartItems={cartItems}
-          onApplyGiftToCart={handleApplyGiftToCart}
-          onToast={showToast}
-          openAuthModal={openAuthModal}
-        />
+        {/* Customer Gift Vault Modal (Loaded on demand) */}
+        {giftVaultOpen && (
+          <Suspense fallback={null}>
+            <GiftVaultModal
+              isOpen={giftVaultOpen}
+              onClose={handleCloseGiftVault}
+              user={user}
+              cartItems={cartItems}
+              onApplyGiftToCart={handleApplyGiftToCart}
+              onToast={showToast}
+              openAuthModal={openAuthModal}
+            />
+          </Suspense>
+        )}
 
         {/* Flying Parabolic Pho Bowls */}
         {flyingBowls.map((fly) => (
@@ -461,7 +457,12 @@ export default function App() {
           <MenuSection onAddToCart={handleAddToCart} />
           <StorySection />
           <Testimonials />
-          <OrderSection cartItems={cartItems} onClearCart={handleClearCart} onToast={showToast} />
+          <OrderSection
+            cartItems={cartItems}
+            onClearCart={handleClearCart}
+            onToast={showToast}
+            onExploreMenu={handleExploreMenu}
+          />
         </main>
 
         {/* Slide-out Cart Drawer */}
@@ -472,6 +473,15 @@ export default function App() {
           onUpdateQuantity={handleUpdateQuantity}
           onRemoveItem={handleRemoveItem}
           onCheckout={handleCheckout}
+          onNavigateToMenu={handleNavigateToMenuFromCart}
+        />
+
+        {/* Heritage AI Assistant Chatbox (Tiểu Nhị 1986) */}
+        <HeritageChatbox
+          onAddToCart={handleAddToCart}
+          onOpenOrder={handleOpenOrder}
+          onExploreMenu={handleExploreMenu}
+          onToast={showToast}
         />
 
         {/* Footer */}

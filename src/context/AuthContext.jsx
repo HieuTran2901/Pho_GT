@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { authApi } from '../services/authApi';
+import { loyaltyApi } from '../services/loyaltyApi';
 import AccountLockedNoticeModal from '../components/auth/AccountLockedNoticeModal';
 
 const AuthContext = createContext(null);
@@ -43,27 +44,45 @@ export function AuthProvider({ children }) {
     userRef.current = user;
   }, [user]);
 
-  // [SENTINEL & RAVEN] Lắng nghe sự kiện tài khoản bị khóa toàn cục (Session Termination)
+  // Lắng nghe sự kiện tài khoản bị khóa toàn cục hoặc cập nhật điểm Tri Kỷ
   useEffect(() => {
     const handleAccountLocked = (e) => {
-      const reason = e?.detail?.reason || 'Tài khoản của quý khách hiện đang bị khóa bởi Quản trị viên.';
-      const hadActiveSession = Boolean(userRef.current || localStorage.getItem(AUTH_STORAGE_KEY));
+      const reason = e?.detail?.reason || '';
+      const hadActiveSession = Boolean(localStorage.getItem(AUTH_STORAGE_KEY));
       setUser(null);
       localStorage.removeItem(AUTH_STORAGE_KEY);
       localStorage.removeItem(AUTH_TOKEN_KEY);
-
-      // [SENTINEL & RAVEN] Ép dọn sạch Cookie HttpOnly ở phía Backend ngay lập tức
       authApi.logout().catch(() => {});
 
-      // Chỉ bật modal thông báo toàn cục khi người dùng thực sự có phiên đăng nhập VÀ KHÔNG đang ở màn hình AuthModal
       if (hadActiveSession && !authModalOpenRef.current) {
         setLockedNotice({ isOpen: true, reason });
       }
     };
 
+    const handleLoyaltyUpdated = (e) => {
+      const newAcc = e?.detail;
+      if (!newAcc) return;
+      setUser((prev) => {
+        if (!prev) return prev;
+        const updated = {
+          ...prev,
+          loyaltyAccount: {
+            ...(prev.loyaltyAccount || {}),
+            ...newAcc,
+          },
+        };
+        try {
+          localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(updated));
+        } catch {}
+        return updated;
+      });
+    };
+
     window.addEventListener('pho1986:account-locked', handleAccountLocked);
+    window.addEventListener('pho1986:loyalty-updated', handleLoyaltyUpdated);
     return () => {
       window.removeEventListener('pho1986:account-locked', handleAccountLocked);
+      window.removeEventListener('pho1986:loyalty-updated', handleLoyaltyUpdated);
     };
   }, []);
 
@@ -246,6 +265,36 @@ export function AuthProvider({ children }) {
     });
   }, []);
 
+  const updateLoyaltyAccount = useCallback((newLoyaltyAccount) => {
+    if (!newLoyaltyAccount) return;
+    setUser((prev) => {
+      if (!prev) return prev;
+      const updated = {
+        ...prev,
+        loyaltyAccount: {
+          ...(prev.loyaltyAccount || {}),
+          ...newLoyaltyAccount,
+        },
+      };
+      try {
+        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  }, []);
+
+  const syncLoyaltySummary = useCallback(async () => {
+    try {
+      const summary = await loyaltyApi.getLoyaltySummary();
+      if (summary?.account) {
+        updateLoyaltyAccount(summary.account);
+      }
+      return summary;
+    } catch {
+      return null;
+    }
+  }, [updateLoyaltyAccount]);
+
   // Memoize contextValue to prevent redundant consumer re-renders
   const contextValue = useMemo(() => ({
     user,
@@ -261,6 +310,8 @@ export function AuthProvider({ children }) {
     register,
     logout,
     updateTasteProfile,
+    updateLoyaltyAccount,
+    syncLoyaltySummary,
     refreshSession: performSilentRefresh,
   }), [
     user,
@@ -273,6 +324,8 @@ export function AuthProvider({ children }) {
     register,
     logout,
     updateTasteProfile,
+    updateLoyaltyAccount,
+    syncLoyaltySummary,
     performSilentRefresh,
   ]);
 

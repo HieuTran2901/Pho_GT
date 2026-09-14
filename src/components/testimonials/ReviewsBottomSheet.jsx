@@ -56,7 +56,7 @@ const ReviewsBottomSheet = React.memo(function ReviewsBottomSheet({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[80] sm:hidden flex flex-col justify-end">
+    <div className="fixed inset-0 z-[80] sm:hidden flex flex-col justify-end overflow-hidden">
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/70 backdrop-blur-xs animate-backdrop-fade-in"

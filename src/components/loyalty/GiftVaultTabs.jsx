@@ -1,21 +1,25 @@
 import React from 'react';
 import { TAB_DEFINITIONS } from './giftVaultConstants';
 
-function GiftVaultTabs({ activeTab, onSelectTab, counts = {} }) {
+function GiftVaultTabs({ activeTab, onSelectTab, counts = {}, jiggleTab = null }) {
   return (
     <div className="border-b border-amber-900/50 bg-[#160a07] px-2 sm:px-6">
       <div className="grid grid-cols-3 sm:flex sm:justify-start gap-1 sm:gap-2">
         {TAB_DEFINITIONS.map((tab) => {
           const isActive = activeTab === tab.id;
+          const isJiggling = jiggleTab === tab.id;
           const count = counts[tab.id];
 
           return (
             <button
               key={tab.id}
+              id={`gift-vault-tab-${tab.id}`}
               type="button"
               onClick={() => onSelectTab(tab.id)}
               className={`relative py-2.5 sm:py-3 px-1 sm:px-4 font-serif text-[11px] sm:text-sm font-bold flex items-center justify-center sm:justify-start gap-1 sm:gap-2 transition-all duration-200 cursor-pointer ${
-                isActive
+                isJiggling
+                  ? 'scale-110 text-amber-300 ring-2 ring-amber-400 bg-amber-400/20 rounded-xl animate-pulse'
+                  : isActive
                   ? 'text-amber-300'
                   : 'text-stone-400 hover:text-stone-200'
               }`}

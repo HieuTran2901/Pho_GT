@@ -11,11 +11,18 @@ const TableCard = React.memo(function TableCard({
   onSelect
 }) {
   const isMaintenance = table.status === 'maintenance';
-  const isOccupied = !isAvailable && !isHolding && !isMaintenance;
+  const isReserved = table.status === 'reserved';
+  const isOccupied = table.status === 'occupied' || (!isAvailable && !isHolding && !isMaintenance && !isReserved);
   const unavailableSurfaceClass = isMaintenance
     ? 'bg-amber-950/50 border-amber-600/50 text-amber-300'
+    : isReserved
+    ? 'bg-amber-950/40 border-amber-500/50 text-amber-300'
     : 'bg-rose-950/40 border-rose-900/50 text-rose-300';
-  const unavailableChairClass = isMaintenance ? 'bg-amber-600/70' : 'bg-rose-800/70';
+  const unavailableChairClass = isMaintenance
+    ? 'bg-amber-600/70'
+    : isReserved
+    ? 'bg-amber-500/70'
+    : 'bg-rose-800/70';
 
   const shortZone = (table.zoneName || '')
     .replace('Cạnh Bếp Nước Dùng 90°C', 'Cạnh Bếp 90°C')
@@ -49,6 +56,8 @@ const TableCard = React.memo(function TableCard({
             ? 'bg-amber-500/5 border-amber-500/20 opacity-70 cursor-not-allowed'
             : isMaintenance
             ? 'bg-gradient-to-r from-amber-950/35 via-[#1c130b] to-black/80 border-amber-600/50 opacity-85 cursor-not-allowed shadow-inner'
+            : isReserved
+            ? 'bg-gradient-to-r from-amber-950/35 via-[#1a1208] to-stone-900 border-amber-500/40 opacity-85 cursor-not-allowed'
             : 'bg-gradient-to-r from-rose-950/25 via-stone-900/60 to-black/70 border-rose-900/40 opacity-75 cursor-not-allowed'
         }`}
       >
@@ -64,6 +73,8 @@ const TableCard = React.memo(function TableCard({
                   : 'bg-white/10 border-white/15 text-stone-200'
                 : isMaintenance
                 ? 'bg-amber-950/50 border-amber-600/50 text-amber-300'
+                : isReserved
+                ? 'bg-amber-950/40 border-amber-500/40 text-amber-300'
                 : isHolding
                 ? 'bg-amber-500/20 border-amber-500/30 text-amber-300'
                 : 'bg-rose-950/40 border-rose-900/40 text-rose-300'
@@ -74,7 +85,7 @@ const TableCard = React.memo(function TableCard({
             ) : table.isVip ? (
               <Crown className="w-4 h-4 text-amber-400 mb-0.5" />
             ) : (
-              <Armchair className={`w-4 h-4 mb-0.5 ${isOccupied ? 'text-rose-400/90' : 'text-amber-300/80'}`} />
+              <Armchair className={`w-4 h-4 mb-0.5 ${isOccupied ? 'text-rose-400/90' : isReserved ? 'text-amber-400/90' : 'text-amber-300/80'}`} />
             )}
             <span className="text-[9px] font-bold tracking-tight">
               {table.capacity} chỗ
@@ -133,6 +144,11 @@ const TableCard = React.memo(function TableCard({
               <Lock className="w-2.5 h-2.5 text-amber-400" />
               <span>Tạm khóa</span>
             </span>
+          ) : isReserved ? (
+            <span className="text-[9px] text-amber-300 font-semibold px-1.5 py-0.5 rounded bg-amber-950/80 border border-amber-500/50 whitespace-nowrap flex items-center gap-1 shadow-xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_5px_#f59e0b]" />
+              <span>Đã đặt</span>
+            </span>
           ) : (
             <span className="text-[9px] text-rose-300 font-semibold px-1.5 py-0.5 rounded bg-rose-950/70 border border-rose-800/50 whitespace-nowrap flex items-center gap-1 shadow-xs">
               <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_5px_#f43f5e]" />
@@ -156,6 +172,8 @@ const TableCard = React.memo(function TableCard({
             ? 'bg-amber-500/5 border-amber-500/20 opacity-70 cursor-not-allowed'
             : isMaintenance
             ? 'bg-gradient-to-b from-amber-950/40 via-[#1c1209] to-[#0c0704] border-amber-600/50 opacity-85 cursor-not-allowed shadow-inner'
+            : isReserved
+            ? 'bg-gradient-to-b from-amber-950/30 via-stone-900/60 to-[#120e07] border-amber-500/40 opacity-85 cursor-not-allowed'
             : 'bg-gradient-to-b from-rose-950/30 via-stone-900/60 to-[#120707] border-rose-900/40 opacity-75 cursor-not-allowed'
         }`}
       >
@@ -182,6 +200,11 @@ const TableCard = React.memo(function TableCard({
               <span className="text-[9px] text-amber-300 font-bold px-1.5 py-0.2 rounded bg-amber-950/80 border border-amber-600/60 flex items-center gap-0.5 shadow-xs" title="Tạm khóa">
                 <Lock className="w-2.5 h-2.5 text-amber-400" />
                 <span>Khóa</span>
+              </span>
+            ) : isReserved ? (
+              <span className="text-[9px] text-amber-300 font-semibold px-1.5 py-0.2 rounded bg-amber-950/80 border border-amber-500/50 flex items-center gap-1 shadow-xs" title="Đã có khách đặt trước">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_5px_#f59e0b]" />
+                <span>Đã đặt</span>
               </span>
             ) : (
               <span className="text-[9px] text-rose-300 font-semibold px-1.5 py-0.2 rounded bg-rose-950/70 border border-rose-800/50 flex items-center gap-1 shadow-xs" title="Đã có khách">

@@ -11,7 +11,7 @@ const formatPrice = (price) => currencyFormatter.format(price);
  * Dải lụa tâm điểm mini siêu tinh gọn (~62px) dành riêng cho Mobile.
  * Thay thế thẻ Hero 280px khổng lồ, giúp tiết kiệm hơn 200px chiều cao cho màn hình điện thoại.
  */
-export default function CompactHeroBanner({ gift, isInCart = false, onApply }) {
+function CompactHeroBanner({ gift, isInCart = false, onApply }) {
   if (!gift) return null;
 
   return (
@@ -51,12 +51,15 @@ export default function CompactHeroBanner({ gift, isInCart = false, onApply }) {
         </div>
       </div>
 
-      {/* Nút thao tác nhanh 1 chạm */}
-      <div className="shrink-0 relative z-10">
-        {isInCart ? (
+        {gift.status === 'USED' ? (
+          <div className="px-2.5 py-1.5 rounded-xl bg-stone-900/90 text-stone-400 border border-stone-800 text-[11px] font-serif font-bold flex items-center gap-1 shadow-xs">
+            <Check className="w-3.5 h-3.5 text-red-400" />
+            <span>Đã sử dụng</span>
+          </div>
+        ) : isInCart ? (
           <div className="px-3 py-1.5 rounded-xl bg-emerald-950/90 text-emerald-300 border border-emerald-500/50 text-[11px] font-serif font-bold flex items-center gap-1 shadow-inner">
             <Check className="w-3.5 h-3.5 stroke-[3]" />
-            <span>Đã dùng</span>
+            <span>Trong giỏ</span>
           </div>
         ) : (
           <button
@@ -78,6 +81,7 @@ export default function CompactHeroBanner({ gift, isInCart = false, onApply }) {
           </button>
         )}
       </div>
-    </div>
-  );
-}
+    );
+  }
+
+export default React.memo(CompactHeroBanner);

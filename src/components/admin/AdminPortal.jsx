@@ -195,6 +195,7 @@ export default function AdminPortal({ onBackToHome }) {
                   notify={s.notify}
                   setActiveTab={s.setActiveTab}
                   setOrderFilter={s.setOrderFilter}
+                  fetchOrders={s.fetchOrders}
                 />
               )}
 

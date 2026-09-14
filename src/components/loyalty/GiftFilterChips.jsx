@@ -8,7 +8,7 @@ import React from 'react';
  * [ Tất cả (8) ] [ 🎁 Món 0đ (3) ] [ 🏷️ Giảm tiền (3) ]
  * Giúp thu gọn danh sách khi có nhiều voucher, triệt tiêu cảm giác cuộn dài.
  */
-export default function GiftFilterChips({ activeFilter = 'ALL', onSelectFilter, categories = [] }) {
+function GiftFilterChips({ activeFilter = 'ALL', onSelectFilter, categories = [] }) {
   if (!categories || categories.length <= 1) return null;
 
   return (
@@ -44,3 +44,5 @@ export default function GiftFilterChips({ activeFilter = 'ALL', onSelectFilter, 
     </div>
   );
 }
+
+export default React.memo(GiftFilterChips);

@@ -211,19 +211,19 @@ export function useMenuSectionState(onAddToCart) {
   useEffect(() => {
     checkScrollLimits();
     const el = scrollContainerRef.current;
-    if (el) {
-      el.addEventListener('scroll', checkScrollLimits);
-      window.addEventListener('resize', checkScrollLimits);
-      const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => checkScrollLimits()) : null;
-      if (ro) ro.observe(el);
+    if (!el) return;
 
-      return () => {
-        el.removeEventListener('scroll', checkScrollLimits);
-        window.removeEventListener('resize', checkScrollLimits);
-        if (ro) ro.disconnect();
-      };
-    }
-  }, [allCategories.length, checkScrollLimits]);
+    el.addEventListener('scroll', checkScrollLimits);
+    window.addEventListener('resize', checkScrollLimits);
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => checkScrollLimits()) : null;
+    if (ro) ro.observe(el);
+
+    return () => {
+      el.removeEventListener('scroll', checkScrollLimits);
+      window.removeEventListener('resize', checkScrollLimits);
+      if (ro) ro.disconnect();
+    };
+  }, [checkScrollLimits]);
 
   const scrollCategories = useCallback((direction) => {
     const el = scrollContainerRef.current;

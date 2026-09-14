@@ -33,7 +33,7 @@ export default function DishDetailModal({
   if (!selectedDetailItem) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center">
+    <div className="fixed inset-0 z-50 flex items-end justify-center overflow-hidden">
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/65 backdrop-blur-xs transition-opacity animate-fadeIn"

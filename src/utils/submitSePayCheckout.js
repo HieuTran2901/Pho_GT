@@ -29,10 +29,11 @@ export function submitSePayCheckout({ checkoutUrl, checkoutFields }) {
     }
   }
 
-  // 2. Prepare invisible form
+  // 2. Prepare invisible form (target='_blank' to keep main page polling state active)
   const form = document.createElement('form');
   form.method = 'POST';
   form.action = checkoutUrl;
+  form.target = '_blank';
   form.style.display = 'none';
 
   Object.entries(checkoutFields).forEach(([name, rawValue]) => {

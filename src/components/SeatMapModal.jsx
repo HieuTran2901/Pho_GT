@@ -256,16 +256,16 @@ function SeatMapModal({
               <span>Trống</span>
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_5px_#f43f5e]" />
-              <span className="text-rose-300 font-medium">Đã kín</span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 border border-amber-400 shadow-[0_0_5px_#d97706]" />
-              <span className="text-amber-300 font-medium">Tạm khóa 🔒</span>
-            </span>
-            <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_5px_#f59e0b]" />
-              <span>Đang giữ</span>
+              <span className="text-amber-300 font-medium">Đã đặt</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_5px_#f43f5e]" />
+              <span className="text-rose-300 font-medium">Đang dùng</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-600 border border-amber-400 shadow-[0_0_5px_#d97706]" />
+              <span className="text-amber-300 font-medium">Tạm khóa 🔒</span>
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-amber-300 ring-2 ring-amber-400 shadow-xs" />

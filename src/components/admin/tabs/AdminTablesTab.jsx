@@ -13,7 +13,8 @@ function AdminTablesTab({
   orders = [],
   notify,
   setActiveTab,
-  setOrderFilter
+  setOrderFilter,
+  fetchOrders
 }) {
   const [tables, setTables] = useState(MOCK_TABLES);
   const [isLoading, setIsLoading] = useState(false);
@@ -57,12 +58,8 @@ function AdminTablesTab({
     );
 
     return tables.map((tb) => {
-      // Ưu tiên tôn trọng trạng thái Quản trị viên vừa chủ động chỉ định (AVAILABLE, RESERVED, MAINTENANCE)
-      if (tb.status === 'available' || tb.status === 'reserved' || tb.status === 'maintenance') {
-        return tb;
-      }
-
-      if (tb.status === 'occupied' && tb.activeOrderCode) {
+      // Ưu tiên nếu bàn đã có dữ liệu đơn active từ backend, đang tạm khóa bảo trì hoặc đang sẵn sàng
+      if (tb.activeOrderCode || tb.status === 'maintenance' || tb.status === 'available') {
         return tb;
       }
 
@@ -75,9 +72,10 @@ function AdminTablesTab({
       });
 
       if (matchedLocal) {
+        const isOccupiedLocal = matchedLocal.status === 'COOKING';
         return {
           ...tb,
-          status: 'occupied',
+          status: isOccupiedLocal ? 'occupied' : 'reserved',
           activeOrderCode: matchedLocal.orderCode,
           activeGuestName: matchedLocal.guestName || (matchedLocal.user ? matchedLocal.user.fullName : 'Khách tại bàn'),
           activeGuestPhone: matchedLocal.guestPhone || '',
@@ -111,7 +109,7 @@ function AdminTablesTab({
   }, [setActiveTab, setOrderFilter, notify]);
 
   // Cập nhật trạng thái bàn với Optimistic UI Update tức thời
-  const handleUpdateStatus = useCallback(async (tableId, newStatus) => {
+  const handleUpdateStatus = useCallback(async (tableId, newStatus, payload = {}) => {
     setIsUpdatingStatus(true);
     const normalizedStatus = String(newStatus).toLowerCase();
 
@@ -136,10 +134,21 @@ function AdminTablesTab({
     setSelectedTable((prev) => (prev && prev.id === tableId ? { ...prev, status: normalizedStatus } : prev));
 
     try {
-      await tableApi.updateTableStatus(tableId, newStatus);
+      await tableApi.updateTableStatus(tableId, newStatus, payload);
       await fetchLiveTables(false);
+      if (fetchOrders) {
+        fetchOrders();
+      }
       if (notify) {
-        notify(`Đã đổi trạng thái bàn sang ${newStatus}!`, 'success');
+        if (payload?.resolution === 'MOVE_TABLE') {
+          notify('Đã chuyển bàn cho thực khách thành công!', 'success');
+        } else if (payload?.resolution === 'COMPLETE') {
+          notify('Đã hoàn tất đơn hàng và giải phóng bàn sẵn sàng!', 'success');
+        } else if (payload?.resolution === 'CANCEL') {
+          notify('Đã hủy đơn và giải phóng bàn!', 'info');
+        } else {
+          notify(`Đã đổi trạng thái bàn sang ${newStatus}!`, 'success');
+        }
       }
       setIsDetailModalOpen(false);
     } catch (err) {
@@ -152,7 +161,7 @@ function AdminTablesTab({
     } finally {
       setIsUpdatingStatus(false);
     }
-  }, [fetchLiveTables, notify]);
+  }, [fetchLiveTables, fetchOrders, notify]);
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto pb-10">
@@ -247,6 +256,7 @@ function AdminTablesTab({
       {/* 4. MODAL CHI TIẾT & ĐIỀU PHỐI BÀN */}
       <TableDetailModal
         table={selectedTable}
+        allTables={mergedTables}
         isOpen={isDetailModalOpen}
         onClose={() => setIsDetailModalOpen(false)}
         onViewOrder={handleViewOrder}

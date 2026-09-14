@@ -24,7 +24,7 @@ export default function CustomerOrderItemRow({ item }) {
         <div className="relative w-[44px] h-[44px] rounded-xl overflow-hidden border border-[#d4af37]/40 shrink-0 bg-stone-200">
           <img
             src={imgError ? DEFAULT_PHO_IMAGE : imageUrl}
-            alt={item.name}
+            alt={item.dishName || item.name}
             loading="lazy"
             onError={() => setImgError(true)}
             className="w-full h-full object-cover"
@@ -37,7 +37,7 @@ export default function CustomerOrderItemRow({ item }) {
         {/* Tên món & tùy chọn */}
         <div className="min-w-0">
           <div className="font-serif font-bold text-stone-900 truncate">
-            {item.name}
+            {item.dishName || item.name}
           </div>
           {options.length > 0 ? (
             <div className="flex items-center gap-1 flex-wrap mt-0.5">

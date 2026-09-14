@@ -77,7 +77,6 @@ function OrderStep2Payment({
   );
 
   const isCurrentMaintenance = typeof isMaintenance === 'function' && isMaintenance(selectedPaymentMethod);
-  const currentMaintenanceMsg = typeof getMaintenanceMessage === 'function' ? getMaintenanceMessage(selectedPaymentMethod) : '';
   const isVietQrMaint = typeof isMaintenance === 'function' && isMaintenance('VIETQR');
   const isPostPaidMaint = typeof isMaintenance === 'function' && isMaintenance('POST_PAID_AT_STORE');
   const isCodMaint = typeof isMaintenance === 'function' && isMaintenance('COD');

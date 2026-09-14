@@ -220,14 +220,17 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
             <div className="flex items-center gap-1.5 sm:gap-2 2xl:gap-3 shrink-0">
               {/* Login / Member Profile Section */}
               {isAuthenticated && user ? (
-                <div className="relative hidden md:block" ref={dropdownRef}>
-                  <button
-                    onClick={toggleUserDropdown}
-                    className="flex items-center gap-1.5 sm:gap-2.5 px-2.5 sm:px-3.5 py-1.5 rounded-full border border-[#d49e58]/50 bg-gradient-to-r from-amber-50/90 via-orange-50/80 to-amber-100/90 hover:border-[#c88d2b] text-[#2b1810] text-xs font-serif font-bold transition-all shadow-xs group cursor-pointer"
-                  >
-                    <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-[#9b2a1f] to-[#6a150c] text-amber-200 flex items-center justify-center text-[10px] sm:text-xs font-bold font-serif shadow-xs ring-1 ring-[#e4aa65]/60 shrink-0">
-                      {user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
-                    </div>
+                <div className="hidden md:flex items-center gap-1.5 sm:gap-2">
+                  <div className="relative" ref={dropdownRef}>
+                    <button
+                      type="button"
+                      id="navbar-user-btn"
+                      onClick={toggleUserDropdown}
+                      className="flex items-center gap-1.5 sm:gap-2.5 px-2.5 sm:px-3.5 py-1.5 rounded-full border border-[#d49e58]/50 bg-gradient-to-r from-amber-50/90 via-orange-50/80 to-amber-100/90 hover:border-[#c88d2b] text-[#2b1810] text-xs font-serif font-bold transition-all shadow-xs group cursor-pointer"
+                    >
+                      <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-[#9b2a1f] to-[#6a150c] text-amber-200 flex items-center justify-center text-[10px] sm:text-xs font-bold font-serif shadow-xs ring-1 ring-[#e4aa65]/60 shrink-0">
+                        {user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
+                      </div>
                     <div className="text-left leading-tight hidden lg:block">
                       <div className="text-xs font-bold truncate max-w-[110px] text-[#2b1810] flex items-center gap-1">
                         <span>{user.fullName}</span>
@@ -265,6 +268,7 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
                       onToast={onToast}
                     />
                   )}
+                  </div>
                 </div>
               ) : !isInitialized ? (
                 <div className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full border border-amber-900/10 bg-amber-50/40 animate-pulse w-32 h-8.5">
@@ -273,18 +277,6 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
                 </div>
               ) : (
                 <div className="hidden md:flex items-center gap-1.5 sm:gap-2">
-                  <button
-                    onClick={onOpenGiftVault}
-                    id="navbar-gift-vault-btn"
-                    className="flex items-center gap-1.5 px-2 2xl:px-3 py-2 rounded-full border border-amber-500/50 hover:border-[#8a1e14] bg-gradient-to-r from-amber-50 to-orange-50/80 hover:bg-amber-100 text-[#8a1e14] text-xs font-serif font-bold tracking-wider transition-all shadow-xs cursor-pointer group whitespace-nowrap"
-                    title="Khám phá kho quà tri ân"
-                  >
-                    <div className="relative">
-                      <Gift className="w-3.5 h-3.5 text-[#8a1e14] group-hover:scale-110 transition-transform" />
-                      <span className="absolute -top-1 -right-1 w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                    </div>
-                    <span>KHO QUÀ</span>
-                  </button>
                   <button
                     onClick={onOpenOrderHistory}
                     id="navbar-order-history-btn"
@@ -304,27 +296,42 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
                 </div>
               )}
 
-              {/* Hotline button */}
+              {/* Hotline button: Nằm gần khung card tài khoản */}
               <a
                 href="tel:19008686"
                 title="Hotline đặt hàng: 1900 8686"
                 aria-label="Gọi hotline 1900 8686"
-                className="min-[1320px]:hidden w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#96281b] hover:bg-[#7e2015] text-white flex items-center justify-center shadow-md transition-all shrink-0 active:scale-95"
+                className={`${user ? 'min-[1320px]:hidden ' : ''}w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#96281b] hover:bg-[#7e2015] text-white flex items-center justify-center shadow-md transition-all shrink-0 active:scale-95 group`}
               >
-                <Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-200 animate-pulse" />
+                <Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-200 animate-pulse group-hover:rotate-12 transition-transform" />
               </a>
-              <a
-                href="tel:19008686"
-                className="hidden min-[1320px]:flex items-center gap-2 px-3.5 2xl:px-5 py-2 rounded-full bg-[#96281b] hover:bg-[#7e2015] text-white shadow-md transition-all group shrink-0"
+              {user && (
+                <a
+                  href="tel:19008686"
+                  className="hidden min-[1320px]:flex items-center gap-2 px-3.5 2xl:px-5 py-2 rounded-full bg-[#96281b] hover:bg-[#7e2015] text-white shadow-md transition-all group shrink-0"
+                >
+                  <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center">
+                    <Phone className="w-3.5 h-3.5 text-amber-200 animate-pulse" />
+                  </div>
+                  <div className="text-left">
+                    <div className="font-bold text-xs sm:text-sm leading-tight tracking-wide font-serif">1900 8686</div>
+                    <div className="text-[9px] text-amber-200/90 uppercase tracking-tight leading-none">Hotline đặt hàng</div>
+                  </div>
+                </a>
+              )}
+
+              {/* Kho quà button: Nằm cạnh giỏ hàng bên phải */}
+              <button
+                type="button"
+                onClick={onOpenGiftVault}
+                id="navbar-gift-vault-btn"
+                title="Khám phá kho quà tri ân"
+                aria-label="Khám phá kho quà tri ân"
+                className="hidden md:flex relative w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-r from-amber-50 to-orange-50/90 hover:from-amber-100 hover:to-orange-100 border border-amber-500/60 hover:border-[#8a1e14] text-[#8a1e14] items-center justify-center shadow-xs hover:shadow-md transition-all shrink-0 active:scale-95 group cursor-pointer"
               >
-                <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center">
-                  <Phone className="w-3.5 h-3.5 text-amber-200 animate-pulse" />
-                </div>
-                <div className="text-left">
-                  <div className="font-bold text-xs sm:text-sm leading-tight tracking-wide font-serif">1900 8686</div>
-                  <div className="text-[9px] text-amber-200/90 uppercase tracking-tight leading-none">Hotline đặt hàng</div>
-                </div>
-              </a>
+                <Gift className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#8a1e14] group-hover:scale-110 group-hover:rotate-12 transition-transform" />
+                <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500 border border-white animate-pulse" />
+              </button>
 
               {/* Cart Trigger (Hidden on mobile < md because Bottom Nav has floating center Cart FAB) */}
               <button

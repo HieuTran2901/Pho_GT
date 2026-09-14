@@ -10,6 +10,9 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    scrollbar-gutter: stable;
+  }
   html, body {
     @apply bg-[#faf6ef] text-[#2c1810];
     overflow-x: hidden;

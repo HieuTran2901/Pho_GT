@@ -83,7 +83,7 @@ export function getOrderThumbnails(order) {
       seenUrls.add(imgUrl);
       thumbs.push({
         url: imgUrl,
-        name: item.name || 'Món phở',
+        name: item.dishName || item.name || 'Món phở',
         quantity: item.quantity || 1
       });
     }

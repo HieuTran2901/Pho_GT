@@ -4,6 +4,19 @@ import { Check, ChevronDown, Sparkles, Clock, ArrowRight } from 'lucide-react';
 const currencyFormatter = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
 const formatPrice = (price) => currencyFormatter.format(price);
 
+const formatExactDate = (dateStr) => {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return null;
+  return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+};
+
+const getProjectedExpiry = (days = 30) => {
+  const target = new Date();
+  target.setDate(target.getDate() + (days || 30));
+  return target.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+};
+
 /**
  * [RAVEN & URBAN] GiftWalletStack
  * Phở Gia Truyền 1986
@@ -11,14 +24,15 @@ const formatPrice = (price) => currencyFormatter.format(price);
  * Giao diện "Ví Gấm Tri Kỷ Xếp Lớp" dành riêng cho Mobile (Apple Wallet style).
  * Các tấm vé quà tặng xếp tầng lên nhau, chạm vào vé nào thì vé đó bung mở chi tiết.
  */
-export default function GiftWalletStack({
+function GiftWalletStack({
   gifts = [],
   mode = 'USE', // 'USE' | 'REDEEM'
   isGiftInCart = () => false,
   onApply,
   onRedeem,
   userPoints = 0,
-  redeemingId = null
+  redeemingId = null,
+  newlyRedeemedId = null
 }) {
   const [expandedId, setExpandedId] = useState(null);
 
@@ -41,6 +55,8 @@ export default function GiftWalletStack({
         {gifts.map((gift) => {
           const isExpanded = expandedId === gift.id;
           const isInCart = isGiftInCart(gift);
+          const isUsed = gift.status === 'USED';
+          const isExpired = gift.status === 'EXPIRED';
           const isFreeItem = gift.rewardType === 'FREE_ITEM';
           const isCashDiscount = gift.rewardType === 'DISCOUNT_CASH' || gift.rewardType === 'DISCOUNT_PERCENT';
           const isRedeemable = userPoints >= (gift.pointsRequired || 0);
@@ -80,12 +96,18 @@ export default function GiftWalletStack({
                 accentText: 'text-amber-400'
               };
 
+          const isNewlyRedeemed = newlyRedeemedId === gift.id;
+
           return (
             <div
               key={gift.id}
-              className={`rounded-2xl border-2 transition-all duration-300 overflow-hidden ${theme.cardBg} ${theme.border} ${theme.shadow} ${
-                isInCart ? 'ring-2 ring-emerald-500' : ''
-              } ${isExpanded ? 'scale-[1.01] shadow-2xl' : 'hover:brightness-105'}`}
+              className={`rounded-2xl border-2 transition-all duration-300 overflow-hidden relative ${theme.cardBg} ${theme.border} ${theme.shadow} ${
+                isNewlyRedeemed
+                  ? 'ring-4 ring-amber-400 shadow-[0_0_25px_rgba(245,158,11,0.85)] animate-pulse'
+                  : isInCart
+                  ? 'ring-2 ring-emerald-500'
+                  : ''
+              } ${isUsed || isExpired ? 'opacity-85' : ''} ${isExpanded ? 'scale-[1.01] shadow-2xl' : 'hover:brightness-105'}`}
             >
               {/* GÁY VÉ (HEADER STRIP) - LUÔN HIỂN THỊ */}
               <button
@@ -125,11 +147,19 @@ export default function GiftWalletStack({
 
                 {/* Trạng thái mở & Chevron */}
                 <div className="flex items-center gap-1.5 shrink-0">
-                  {isInCart && (
+                  {isUsed ? (
+                    <span className="text-[9px] font-serif font-bold text-red-400 bg-red-950/80 px-1.5 py-0.5 rounded-full border border-red-800/80">
+                      Đã dùng
+                    </span>
+                  ) : isExpired ? (
+                    <span className="text-[9px] font-serif font-bold text-stone-400 bg-stone-900/80 px-1.5 py-0.5 rounded-full border border-stone-700/80">
+                      Hết hạn
+                    </span>
+                  ) : isInCart ? (
                     <span className="text-[9px] font-serif font-bold text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded-full border border-emerald-300">
                       Trong giỏ
                     </span>
-                  )}
+                  ) : null}
                   <div className={`w-6 h-6 rounded-full bg-black/10 flex items-center justify-center transition-transform duration-300 ${
                     isExpanded ? 'rotate-180 bg-black/20' : ''
                   }`}>
@@ -141,6 +171,31 @@ export default function GiftWalletStack({
               {/* THÂN VÉ (ACCORDION BODY) - BUNG MỞ KHI ĐƯỢC CHỌN */}
               {isExpanded && (
                 <div className="p-3.5 pt-2 animate-fadeIn space-y-3">
+                  {/* CON DẤU MỘC ĐỎ SON 1986 "ĐÃ SỬ DỤNG" / "HẾT HẠN" */}
+                  {isUsed && (
+                    <div className="flex items-center justify-center py-1">
+                      <div className="transform -rotate-6 border-2 border-dashed border-red-600/90 bg-red-950/60 px-3 py-1 rounded-xl shadow-md text-center">
+                        <span className="text-[11px] font-serif font-black tracking-widest text-red-400 uppercase">
+                          ★ ĐÃ SỬ DỤNG ★
+                        </span>
+                        {gift.usedAt && (
+                          <span className="block text-[8px] font-mono font-bold text-red-300/80 mt-0.5">
+                            {new Date(gift.usedAt).toLocaleDateString('vi-VN')}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {isExpired && (
+                    <div className="flex items-center justify-center py-1">
+                      <div className="transform rotate-6 border-2 border-dashed border-stone-500/80 bg-stone-900/80 px-3 py-1 rounded-xl shadow-md text-center">
+                        <span className="text-[11px] font-serif font-black tracking-widest text-stone-400 uppercase">
+                          HẾT HẠN
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Mô tả quà tặng */}
                   <p className={`text-xs font-sans leading-relaxed ${theme.desc}`}>
                     {gift.description || 'Ưu đãi ẩm thực truyền thống dành riêng cho hội viên Tri Kỷ 1986.'}
@@ -148,9 +203,23 @@ export default function GiftWalletStack({
 
                   {/* Giá trị phần thưởng & Hạn dùng */}
                   <div className="flex items-center justify-between text-xs pt-1 border-t border-black/10">
-                    <div className="flex items-center gap-1.5 text-[11px] text-stone-500 font-sans">
+                    <div className="flex items-center gap-1.5 text-[11px] text-stone-500 font-sans flex-wrap">
                       <Clock className="w-3.5 h-3.5 opacity-80" />
-                      <span>{gift.expiryText || 'Áp dụng cho mọi hình thức đặt phở'}</span>
+                      <span>
+                        {mode === 'REDEEM'
+                          ? `Hạn dùng đến: ${getProjectedExpiry(gift.validityDays || 30)}`
+                          : (gift.expiryDate ? `Hạn dùng: ${formatExactDate(gift.expiryDate)}` : (gift.expiryText || 'Áp dụng cho mọi hình thức đặt phở'))}
+                      </span>
+                      {gift.isExpiringSoon && !isUsed && !isExpired && (
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                          {gift.expiryDate ? `Hạn chót: ${formatExactDate(gift.expiryDate)}` : (gift.daysRemaining === 0 ? 'Hôm nay' : 'Sắp hết hạn')}
+                        </span>
+                      )}
+                      {gift.orderId && (
+                        <span className="text-[9px] text-amber-500 font-mono font-bold bg-black/30 px-1 py-0.5 rounded border border-amber-900/40">
+                          #{gift.orderId}
+                        </span>
+                      )}
                     </div>
 
                     {gift.code && (
@@ -163,37 +232,56 @@ export default function GiftWalletStack({
                   {/* NÚT HÀNH ĐỘNG CHUẨN NGÓN CÁI */}
                   <div className="pt-1">
                     {mode === 'USE' ? (
-                      <button
-                        type="button"
-                        disabled={isInCart}
-                        onClick={(e) => {
-                          if (!onApply) return;
-                          const rect = e.currentTarget.getBoundingClientRect();
-                          const coords = {
-                            startX: rect.left + rect.width / 2,
-                            startY: rect.top + rect.height / 2
-                          };
-                          onApply(gift, coords);
-                        }}
-                        className={`w-full py-2.5 px-4 rounded-xl font-serif text-xs font-bold flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 cursor-pointer ${
-                          isInCart
-                            ? 'bg-emerald-700 text-white border border-emerald-500 cursor-default'
-                            : 'bg-gradient-to-r from-[#8a1f18] to-[#6a150c] hover:from-[#a0241c] hover:to-[#7f1910] text-amber-100 border border-amber-500/50 shadow-[0_4px_12px_rgba(138,31,24,0.4)]'
-                        }`}
-                      >
-                        {isInCart ? (
-                          <>
-                            <Check className="w-4 h-4 stroke-[3]" />
-                            <span>ĐÃ ÁP DỤNG TRONG GIỎ HÀNG</span>
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="w-4 h-4 text-amber-300" />
-                            <span>DÙNG NGAY BÁT NÀY</span>
-                            <ArrowRight className="w-4 h-4" />
-                          </>
-                        )}
-                      </button>
+                      isUsed ? (
+                        <button
+                          type="button"
+                          disabled
+                          className="w-full py-2.5 px-4 rounded-xl font-serif text-xs font-bold bg-stone-900/90 text-stone-500 border border-stone-800 cursor-not-allowed flex items-center justify-center gap-2 shadow-xs"
+                        >
+                          <Check className="w-4 h-4 text-red-500/70" />
+                          <span>ĐÃ SỬ DỤNG</span>
+                        </button>
+                      ) : isExpired ? (
+                        <button
+                          type="button"
+                          disabled
+                          className="w-full py-2.5 px-4 rounded-xl font-serif text-xs font-bold bg-stone-900/90 text-stone-500 border border-stone-800 cursor-not-allowed flex items-center justify-center gap-2 shadow-xs"
+                        >
+                          <span>HẾT HẠN SỬ DỤNG</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={isInCart}
+                          onClick={(e) => {
+                            if (!onApply) return;
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            const coords = {
+                              startX: rect.left + rect.width / 2,
+                              startY: rect.top + rect.height / 2
+                            };
+                            onApply(gift, coords);
+                          }}
+                          className={`w-full py-2.5 px-4 rounded-xl font-serif text-xs font-bold flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 cursor-pointer ${
+                            isInCart
+                              ? 'bg-emerald-700 text-white border border-emerald-500 cursor-default'
+                              : 'bg-gradient-to-r from-[#8a1f18] to-[#6a150c] hover:from-[#a0241c] hover:to-[#7f1910] text-amber-100 border border-amber-500/50 shadow-[0_4px_12px_rgba(138,31,24,0.4)]'
+                          }`}
+                        >
+                          {isInCart ? (
+                            <>
+                              <Check className="w-4 h-4 stroke-[3]" />
+                              <span>ĐÃ ÁP DỤNG TRONG GIỎ HÀNG</span>
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="w-4 h-4 text-amber-300" />
+                              <span>DÙNG NGAY BÁT NÀY</span>
+                              <ArrowRight className="w-4 h-4" />
+                            </>
+                          )}
+                        </button>
+                      )
                     ) : (
                       /* Mode REDEEM */
                       <div className="flex items-center justify-between gap-2">
@@ -203,7 +291,14 @@ export default function GiftWalletStack({
                         <button
                           type="button"
                           disabled={!isRedeemable || isRedeemingThis}
-                          onClick={() => onRedeem && onRedeem(gift)}
+                          onClick={(e) => {
+                            if (!onRedeem) return;
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            onRedeem(gift, {
+                              startX: rect.left + rect.width / 2,
+                              startY: rect.top + rect.height / 2
+                            });
+                          }}
                           className={`flex-1 py-2 px-3 rounded-xl font-serif text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95 ${
                             isRedeemable
                               ? 'bg-gradient-to-r from-[#d4af37] to-[#aa831b] text-stone-950 font-black shadow-md cursor-pointer'
@@ -233,3 +328,5 @@ export default function GiftWalletStack({
     </div>
   );
 }
+
+export default React.memo(GiftWalletStack);

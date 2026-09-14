@@ -121,7 +121,10 @@ export default function SePayRedirectOverlay({
         {/* Informative Subtitle */}
         <p className="text-xs sm:text-sm text-stone-300 text-center leading-relaxed mb-4">
           Hệ thống đang thiết lập cổng thanh toán <strong className="text-amber-300">Napas 247 an toàn</strong> cho đơn hàng{' '}
-          <span className="font-mono text-amber-200 font-bold">{currentBookingCode}</span>.
+          <span className="font-mono text-amber-200 font-bold">{currentBookingCode}</span>
+          {currentAmount ? (
+            <> • Số tiền: <strong className="text-amber-300">{Number(currentAmount).toLocaleString('vi-VN')}đ</strong></>
+          ) : null}.
         </p>
 
         {/* Progress Bar & Counter */}

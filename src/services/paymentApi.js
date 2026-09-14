@@ -19,7 +19,9 @@ export const paymentApi = {
     phone = '',
     address = '',
     amount = 150000,
-    tableNumber = null
+    tableNumber = null,
+    appliedGiftId = null,
+    items = []
   }) {
     try {
       const token = typeof localStorage !== 'undefined' ? localStorage.getItem('accessToken') : null;
@@ -40,7 +42,9 @@ export const paymentApi = {
           phone,
           address,
           amount,
-          tableNumber
+          tableNumber,
+          appliedGiftId,
+          items
         })
       });
 
@@ -59,10 +63,21 @@ export const paymentApi = {
       if (response.ok && json?.data) {
         return json.data;
       } else if (json?.message) {
-        console.warn('[PaymentApi] Backend message:', json.message);
+        console.warn('[PaymentApi] Backend error response:', json.message);
+        const err = new Error(json.message);
+        err.status = response.status;
+        err.data = json;
+        throw err;
+      } else if (!response.ok) {
+        const err = new Error(`Máy chủ từ chối yêu cầu (${response.status})`);
+        err.status = response.status;
+        err.data = json;
+        throw err;
       }
     } catch (e) {
-      if (e.isLocked || e.status === 423) {
+      // [SENTINEL & RAVEN] Chốt chặn tài khoản bị khóa hoặc phản hồi lỗi từ backend (4xx, 5xx)
+      // Tuyệt đối không fallback mã QR tĩnh nếu backend đã phản hồi lỗi cụ thể (bảo trì bàn, gateway maintenance, rate limit)
+      if (e.isLocked || e.status) {
         throw e;
       }
       console.warn('[PaymentApi] Backend offline or unreachable, falling back to client generation:', e.message);
@@ -73,7 +88,7 @@ export const paymentApi = {
     const transferContent = `PHO1986 ${cleanCode}`;
     const encodedContent = encodeURIComponent(transferContent);
     const encodedAccountName = encodeURIComponent('PHO GIA TRUYEN 1986');
-    const qrCodeUrl = `https://img.vietqr.io/image/970422-0986198686-compact2.png?amount=${amount}&addInfo=${encodedContent}&accountName=${encodedAccountName}`;
+    const qrCodeUrl = `https://img.vietqr.io/image/970422-0384090045-compact2.png?amount=${amount}&addInfo=${encodedContent}&accountName=${encodedAccountName}`;
 
     return {
       paymentCode: `PAY-${cleanCode}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
@@ -85,7 +100,7 @@ export const paymentApi = {
       qrCodeUrl,
       bankBin: '970422',
       bankName: 'MBBank - Ngân hàng Quân Đội',
-      bankAccountNo: '0986198686',
+      bankAccountNo: '0384090045',
       bankAccountName: 'PHO GIA TRUYEN 1986',
       payUrl: null,
       checkoutUrl: null,
@@ -119,10 +134,14 @@ export const paymentApi = {
       if (response.ok && json?.data) {
         return json.data;
       }
+      return {
+        status: response.ok ? (json?.data?.status || 'PENDING') : 'ERROR',
+        message: json?.message || `Lỗi máy chủ (${response.status})`
+      };
     } catch (e) {
       console.warn('[PaymentApi] Status check error:', e.message);
+      return { status: 'ERROR', message: e.message };
     }
-    return { status: 'PENDING' };
   },
 
   /**

@@ -6,13 +6,11 @@ import GlidingGiftRibbon from './loyalty/GlidingGiftRibbon';
 const currencyFormatter = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
 const formatPrice = (price) => currencyFormatter.format(price);
 
-function CartDrawer({ isOpen, onClose, cartItems, onUpdateQuantity, onRemoveItem, onCheckout }) {
+function CartDrawer({ isOpen, onClose, cartItems, onUpdateQuantity, onRemoveItem, onCheckout, onNavigateToMenu }) {
   // ESC key listener to close drawer gracefully
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
-      }
+      if (e.key === 'Escape' && isOpen) onClose();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -20,17 +18,11 @@ function CartDrawer({ isOpen, onClose, cartItems, onUpdateQuantity, onRemoveItem
 
   // Lock body scroll when drawer is open
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
+    document.body.style.overflow = isOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
 
-  const { totalAmount, itemCount, mainItems, freeGift } = useMemo(() => {
+  const { totalAmount, itemCount, mainItems, freeGift, hasPaidItems } = useMemo(() => {
     let total = 0;
     let count = 0;
     const main = [];
@@ -40,13 +32,11 @@ function CartDrawer({ isOpen, onClose, cartItems, onUpdateQuantity, onRemoveItem
       const item = cartItems[i];
       total += (item.price || 0) * (item.quantity || 1);
       count += (item.quantity || 1);
-      if (item.isFreeGift) {
-        gift = item;
-      } else {
-        main.push(item);
-      }
+      if (item.isFreeGift) gift = item;
+      else main.push(item);
     }
-    return { totalAmount: total, itemCount: count, mainItems: main, freeGift: gift };
+    const hasPaid = main.some((item) => (item.price || 0) > 0);
+    return { totalAmount: total, itemCount: count, mainItems: main, freeGift: gift, hasPaidItems: hasPaid };
   }, [cartItems]);
 
   const animatedTotalAmount = useAnimatedNumber(totalAmount, 400);
@@ -418,7 +408,7 @@ function CartDrawer({ isOpen, onClose, cartItems, onUpdateQuantity, onRemoveItem
                     {/* Gợi ý khách thêm bát phở để gắn kết */}
                     <div className="text-[11px] font-serif text-amber-900 bg-gradient-to-r from-amber-100/90 to-orange-100/80 border border-amber-300/80 rounded-xl p-2.5 flex items-center gap-2 shadow-xs">
                       <span className="text-base">🍜</span>
-                      <span>Hãy chọn thêm 01 bát phở để tạo thành <strong>Combo Tri Kỷ</strong> chuẩn vị nhé!</span>
+                      <span>{!hasPaidItems ? 'Quý khách vui lòng chọn thêm ít nhất 01 bát phở chính để áp dụng phần quà này nhé!' : 'Đã tạo thành Combo Tri Kỷ chuẩn vị cùng món chính!'}</span>
                     </div>
                   </div>
                 )}
@@ -458,13 +448,23 @@ function CartDrawer({ isOpen, onClose, cartItems, onUpdateQuantity, onRemoveItem
                 </div>
               </div>
 
-              <button
-                onClick={onCheckout}
-                className="w-full py-3.5 rounded-xl bg-brand-red hover:bg-brand-redhover text-white font-bold text-sm shadow-lg flex items-center justify-center gap-2 transition-colors cursor-pointer"
-              >
-                <span>Gửi Yêu Cầu Đặt Món Ngay</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
+              {hasPaidItems ? (
+                <button
+                  onClick={onCheckout}
+                  className="w-full py-3.5 rounded-xl bg-brand-red hover:bg-brand-redhover text-white font-bold text-sm shadow-lg flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                >
+                  <span>Gửi Yêu Cầu Đặt Món Ngay</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              ) : (
+                <button
+                  onClick={onNavigateToMenu || onClose}
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#9b2a1f] to-[#b43a2b] hover:from-[#852319] hover:to-[#9b2a1f] text-amber-100 font-serif font-bold text-sm shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer ring-1 ring-amber-400/50"
+                >
+                  <span>🍜 Chọn Thêm Món Chính Để Dùng Quà</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              )}
             </div>
           )}
         </div>

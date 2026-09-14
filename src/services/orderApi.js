@@ -137,18 +137,24 @@ export const orderApi = {
     // Đọc đơn hàng đã lưu ở Local Storage
     const localOrders = this.getLocalOrders();
 
-    // Hợp nhất dữ liệu: Đơn server + Đơn local (Loại bỏ trùng lặp mã đơn)
+    // Hợp nhất dữ liệu: Đơn server + Đơn local (Bảo toàn chi tiết items)
     const orderMap = new Map();
 
     // Nạp đơn từ server trước
     serverOrders.forEach(ord => {
-      if (ord.orderCode) orderMap.set(ord.orderCode, ord);
+      if (ord.orderCode) orderMap.set(ord.orderCode, { ...ord });
     });
 
-    // Nạp đơn từ local nếu chưa có trên server
-    localOrders.forEach(ord => {
-      if (ord.orderCode && !orderMap.has(ord.orderCode)) {
-        orderMap.set(ord.orderCode, ord);
+    // Nạp đơn từ local nếu chưa có trên server, hoặc bổ sung items nếu đơn server chưa kịp nạp items
+    localOrders.forEach(localOrd => {
+      if (!localOrd.orderCode) return;
+      if (!orderMap.has(localOrd.orderCode)) {
+        orderMap.set(localOrd.orderCode, localOrd);
+      } else {
+        const existing = orderMap.get(localOrd.orderCode);
+        if ((!existing.items || existing.items.length === 0) && localOrd.items && localOrd.items.length > 0) {
+          existing.items = localOrd.items;
+        }
       }
     });
 

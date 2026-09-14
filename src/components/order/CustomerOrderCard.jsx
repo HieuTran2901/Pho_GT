@@ -126,11 +126,11 @@ function CustomerOrderCard({
             <div className="flex items-start justify-between gap-2">
               <div>
                 <h4 className="font-serif font-bold text-sm sm:text-base text-stone-900 leading-snug truncate">
-                  {primaryItem.quantity > 1 ? `${primaryItem.quantity}x ` : ''}{primaryItem.name}
+                  {primaryItem.quantity > 1 ? `${primaryItem.quantity}x ` : ''}{primaryItem.dishName || primaryItem.name}
                 </h4>
                 {secondaryItems.length > 0 && (
                   <p className="text-[11px] text-stone-500 truncate mt-0.5">
-                    + {secondaryItems.map(i => `${i.quantity}x ${i.name}`).join(', ')}
+                    + {secondaryItems.map(i => `${i.quantity}x ${i.dishName || i.name}`).join(', ')}
                   </p>
                 )}
               </div>

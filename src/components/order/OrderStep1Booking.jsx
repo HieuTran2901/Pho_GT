@@ -20,7 +20,9 @@ function OrderStep1Booking({
   tableLockWarning,
   isOrderLocked,
   lockoutReason,
-  handleResetLockout
+  handleResetLockout,
+  mainDishWarning,
+  onExploreMenu
 }) {
   const [isTasteExpanded, setIsTasteExpanded] = useState(() => {
     return Boolean(formData.note && formData.note.trim().length > 0);
@@ -432,6 +434,30 @@ function OrderStep1Booking({
 
       {/* Submit Button with Mobile Safe-Zone Clearance (pb-24 sm:pb-0) */}
       <div className="pt-2 pb-24 sm:pb-0">
+        {mainDishWarning && (
+          <div className="mb-3 p-2.5 sm:p-3 rounded-xl bg-amber-950/80 border border-amber-500/50 text-amber-200 flex items-center justify-between gap-2.5 shadow-sm animate-fadeIn">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-base shrink-0">🍜</span>
+              <span className="text-xs font-serif leading-snug">
+                {mainDishWarning}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                if (onExploreMenu) onExploreMenu();
+                else {
+                  const el = document.getElementById('menu');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }
+              }}
+              className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/35 border border-amber-400/50 text-amber-200 hover:text-amber-100 text-[11px] font-serif font-bold whitespace-nowrap transition-all shrink-0 cursor-pointer shadow-xs active:scale-95"
+            >
+              Chọn Phở Ngay →
+            </button>
+          </div>
+        )}
+
         {isOrderLocked ? (
           <button
             type="button"
