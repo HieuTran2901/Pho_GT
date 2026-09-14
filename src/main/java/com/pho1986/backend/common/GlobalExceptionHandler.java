@@ -126,6 +126,19 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
+    @ExceptionHandler(PaidTableConflictException.class)
+    public ResponseEntity<ApiResponse<Map<String, Object>>> handlePaidTableConflict(PaidTableConflictException ex) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("conflictType", "PAID_ORDER_ACTIVE");
+        data.put("orderCode", ex.getOrderCode());
+        data.put("guestName", ex.getGuestName());
+        data.put("guestPhone", ex.getGuestPhone());
+        data.put("amount", ex.getAmount());
+
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ApiResponse<>(false, ex.getMessage(), data, null));
+    }
+
     @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
     public ResponseEntity<ApiResponse<Void>> handleResponseStatusException(org.springframework.web.server.ResponseStatusException ex) {
         return ResponseEntity.status(ex.getStatusCode())

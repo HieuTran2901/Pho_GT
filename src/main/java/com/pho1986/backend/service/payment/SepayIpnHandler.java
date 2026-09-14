@@ -28,32 +28,53 @@ public class SepayIpnHandler {
      * Xác thực Secret Key từ SePay IPN webhook (Constant-time comparison)
      */
     public void verifyIpnSecret(String authHeader, String secretHeader) {
-        String configuredSecret = sepayProperties.getIpnSecret();
-        if (!StringUtils.hasText(configuredSecret)) {
-            log.error("[SePay IPN] SEPAY_IPN_SECRET chưa được cấu hình trong hệ thống!");
-            throw new IllegalStateException("SEPAY_IPN_SECRET_NOT_CONFIGURED");
-        }
+        String configuredIpnSecret = sepayProperties.getIpnSecret();
+        String configuredSecretKey = sepayProperties.getSecretKey();
 
         String receivedSecret = null;
         if (StringUtils.hasText(secretHeader)) {
             receivedSecret = secretHeader.trim();
         } else if (StringUtils.hasText(authHeader)) {
             String trimmed = authHeader.trim();
-            if (trimmed.startsWith("ApiKey ")) {
+            if (trimmed.regionMatches(true, 0, "ApiKey ", 0, 7)) {
                 receivedSecret = trimmed.substring(7).trim();
-            } else if (trimmed.startsWith("Bearer ")) {
+            } else if (trimmed.regionMatches(true, 0, "Bearer ", 0, 7)) {
                 receivedSecret = trimmed.substring(7).trim();
             } else {
                 receivedSecret = trimmed;
             }
         }
 
-        if (receivedSecret == null || !MessageDigest.isEqual(
-                configuredSecret.getBytes(StandardCharsets.UTF_8),
-                receivedSecret.getBytes(StandardCharsets.UTF_8))) {
-            log.warn("[SePay IPN] Từ chối webhook do sai IPN Secret!");
+        log.info("[SePay IPN Auth] Header Auth: [{}], Header Secret: [{}], Received: [{}]",
+                authHeader != null ? (authHeader.length() > 12 ? authHeader.substring(0, 12) + "..." : authHeader) : "null",
+                secretHeader != null ? "***" : "null",
+                receivedSecret != null ? (receivedSecret.length() > 4 ? receivedSecret.substring(0, 4) + "***" : "***") : "null");
+
+        boolean matchesIpnSecret = StringUtils.hasText(configuredIpnSecret) && receivedSecret != null &&
+                MessageDigest.isEqual(configuredIpnSecret.getBytes(StandardCharsets.UTF_8), receivedSecret.getBytes(StandardCharsets.UTF_8));
+
+        boolean matchesSecretKey = StringUtils.hasText(configuredSecretKey) && receivedSecret != null &&
+                MessageDigest.isEqual(configuredSecretKey.getBytes(StandardCharsets.UTF_8), receivedSecret.getBytes(StandardCharsets.UTF_8));
+
+        if (!matchesIpnSecret && !matchesSecretKey) {
+            log.warn("[SePay IPN] Từ chối webhook do sai IPN Secret! Nhận: [{}]",
+                    receivedSecret != null ? (receivedSecret.length() > 4 ? receivedSecret.substring(0, 4) + "***" : "***") : "NULL");
             throw new SecurityException("Xác thực SePay IPN thất bại: Secret Token không hợp lệ!");
         }
+    }
+
+    /**
+     * Kiểm tra xem gói tin có phải là test ping từ SePay Dashboard hay không
+     */
+    public boolean isTestPing(SepayIpnPayload payload, String lookupCode) {
+        if (payload == null) return false;
+        String content = payload.getContent();
+        String desc = payload.getDescription();
+        String code = payload.getCode();
+        return (content != null && content.toUpperCase().contains("TEST"))
+                || (desc != null && desc.toUpperCase().contains("TEST"))
+                || (code != null && code.toUpperCase().contains("TEST"))
+                || (lookupCode != null && lookupCode.toUpperCase().contains("TEST"));
     }
 
     /**
@@ -72,6 +93,9 @@ public class SepayIpnHandler {
         }
 
         if (!StringUtils.hasText(orderCode)) {
+            if (isTestPing(payload, null)) {
+                return "TEST-ORDER";
+            }
             throw new IllegalArgumentException("Không thể xác định mã đơn hàng từ dữ liệu SePay IPN!");
         }
         return orderCode;

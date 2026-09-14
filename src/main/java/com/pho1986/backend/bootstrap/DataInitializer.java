@@ -2,6 +2,7 @@ package com.pho1986.backend.bootstrap;
 
 import com.pho1986.backend.model.entity.*;
 import com.pho1986.backend.repository.*;
+import com.pho1986.backend.service.CustomerGiftService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
@@ -12,6 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 
@@ -27,6 +29,8 @@ public class DataInitializer implements CommandLineRunner {
     private final LoyaltyTransactionRepository loyaltyTransactionRepository;
     private final PaymentGatewayConfigRepository paymentGatewayConfigRepository;
     private final DiningTableRepository diningTableRepository;
+    private final VoucherRepository voucherRepository;
+    private final CustomerGiftService customerGiftService;
     private final PasswordEncoder passwordEncoder;
     private final Environment environment;
 
@@ -58,6 +62,8 @@ public class DataInitializer implements CommandLineRunner {
             LoyaltyTransactionRepository loyaltyTransactionRepository,
             PaymentGatewayConfigRepository paymentGatewayConfigRepository,
             DiningTableRepository diningTableRepository,
+            VoucherRepository voucherRepository,
+            CustomerGiftService customerGiftService,
             PasswordEncoder passwordEncoder,
             Environment environment) {
         this.categoryRepository = categoryRepository;
@@ -69,6 +75,8 @@ public class DataInitializer implements CommandLineRunner {
         this.loyaltyTransactionRepository = loyaltyTransactionRepository;
         this.paymentGatewayConfigRepository = paymentGatewayConfigRepository;
         this.diningTableRepository = diningTableRepository;
+        this.voucherRepository = voucherRepository;
+        this.customerGiftService = customerGiftService;
         this.passwordEncoder = passwordEncoder;
         this.environment = environment;
     }
@@ -89,6 +97,9 @@ public class DataInitializer implements CommandLineRunner {
 
         // Gieo 22 bàn ăn di sản 2 tầng (DRAGON - DB_AGENT)
         seedDiningTables();
+
+        // Gieo Tem Phiếu Giảm Giá & Tri Kỷ 1986 (DRAGON - DB_AGENT)
+        seedVouchers();
 
         long catCount = categoryRepository.count();
 
@@ -176,7 +187,11 @@ public class DataInitializer implements CommandLineRunner {
                     loyalty, null, 85, "EARN_ORDER", 135, "Tích điểm thưởng từ đơn hàng đầu tiên"
             ));
 
+            customerGiftService.grantWelcomeGifts(demoUser);
+
             System.out.println("👤 [Spring Boot] Gieo tài khoản mẫu 0988888888 (Nguyễn Văn Hiếu - Tri Kỷ) thành công!");
+        } else if (!isProdProfile()) {
+            userRepository.findByPhone("0988888888").ifPresent(customerGiftService::grantWelcomeGifts);
         }
     }
 
@@ -286,6 +301,45 @@ public class DataInitializer implements CommandLineRunner {
             );
             diningTableRepository.saveAll(defaultTables);
             System.out.println("🏮 [DRAGON] Đã khởi tạo 22 bàn ăn di sản 2 tầng chuẩn Phở Gia Truyền 1986 thành công!");
+        }
+    }
+
+    private void seedVouchers() {
+        if (voucherRepository.count() == 0) {
+            System.out.println("🐉 [DRAGON - DB_AGENT] Bắt đầu khởi tạo Tem Phiếu Giảm Giá & Tri Kỷ 1986 vào Database...");
+            LocalDateTime now = LocalDateTime.now();
+            List<Voucher> seedList = List.of(
+                    new Voucher(
+                            "PHO1986VIP",
+                            "Tem Phiếu Tri Kỷ 1986",
+                            "Giảm 20% tối đa 50.000đ cho hóa đơn thưởng vị phở từ 150.000đ.",
+                            "PERCENT",
+                            20.0,
+                            50000.0,
+                            150000.0,
+                            now.minusDays(1),
+                            now.plusYears(1),
+                            1000,
+                            true,
+                            true
+                    ),
+                    new Voucher(
+                            "TRIKY1986",
+                            "Phiếu Bát Quen Khởi Vị",
+                            "Giảm trực tiếp 30.000đ tiền mặt cho đơn hàng từ 100.000đ.",
+                            "FIXED_AMOUNT",
+                            30000.0,
+                            null,
+                            100000.0,
+                            now.minusDays(1),
+                            now.plusYears(1),
+                            500,
+                            true,
+                            true
+                    )
+            );
+            voucherRepository.saveAll(seedList);
+            System.out.println("✅ [DRAGON - DB_AGENT] Đã khởi tạo thành công 2 mã tem phiếu chuẩn vào Database!");
         }
     }
 

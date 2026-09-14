@@ -32,6 +32,7 @@ public class AuthService {
     private final TokenRevocationService tokenRevocationService;
     private final LoginRateLimiter loginRateLimiter;
     private final com.pho1986.backend.security.ThreatDefenseService threatDefenseService;
+    private final CustomerGiftService customerGiftService;
 
     public AuthService(
             UserRepository userRepository,
@@ -44,7 +45,8 @@ public class AuthService {
             RefreshTokenRepository refreshTokenRepository,
             TokenRevocationService tokenRevocationService,
             LoginRateLimiter loginRateLimiter,
-            com.pho1986.backend.security.ThreatDefenseService threatDefenseService) {
+            com.pho1986.backend.security.ThreatDefenseService threatDefenseService,
+            CustomerGiftService customerGiftService) {
         this.userRepository = userRepository;
         this.tasteProfileRepository = tasteProfileRepository;
         this.loyaltyAccountRepository = loyaltyAccountRepository;
@@ -56,6 +58,7 @@ public class AuthService {
         this.tokenRevocationService = tokenRevocationService;
         this.loginRateLimiter = loginRateLimiter;
         this.threatDefenseService = threatDefenseService;
+        this.customerGiftService = customerGiftService;
     }
 
     private String createAndSaveRefreshToken(User user, String familyId) {
@@ -139,6 +142,9 @@ public class AuthService {
                 "Điểm chào mừng thành viên mới Phở Gia Truyền 1986"
         );
         loyaltyTransactionRepository.save(transaction);
+
+        // Gieo 3 món quà chào mừng tri kỷ chuẩn vào ví CSDL của người dùng
+        customerGiftService.grantWelcomeGifts(user);
 
         String accessToken = tokenProvider.generateAccessToken(user.getId(), user.getRole());
         String refreshToken = createAndSaveRefreshToken(user);

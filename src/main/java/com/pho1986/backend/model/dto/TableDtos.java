@@ -21,6 +21,7 @@ public class TableDtos {
         private String activeGuestPhone;
         private Double activeAmount;
         private String activeStatus;
+        private String activePaymentStatus;
         private LocalDateTime activeCreatedAt;
 
         public TableResponse() {}
@@ -68,6 +69,9 @@ public class TableDtos {
         public String getActiveStatus() { return activeStatus; }
         public void setActiveStatus(String activeStatus) { this.activeStatus = activeStatus; }
 
+        public String getActivePaymentStatus() { return activePaymentStatus; }
+        public void setActivePaymentStatus(String activePaymentStatus) { this.activePaymentStatus = activePaymentStatus; }
+
         public LocalDateTime getActiveCreatedAt() { return activeCreatedAt; }
         public void setActiveCreatedAt(LocalDateTime activeCreatedAt) { this.activeCreatedAt = activeCreatedAt; }
     }
@@ -75,11 +79,23 @@ public class TableDtos {
     public static class UpdateTableStatusRequest {
         private String status; // "AVAILABLE" | "RESERVED" | "MAINTENANCE"
         private String notes;
+        private String resolution; // "MOVE_TABLE" | "COMPLETE" | "CANCEL"
+        private String targetTableId; // ID hoặc Tên của bàn đích khi đổi bàn
+        private Boolean forceRelease; // Cờ cưỡng chế giải phóng bàn nếu cần
 
         public String getStatus() { return status; }
         public void setStatus(String status) { this.status = status; }
 
         public String getNotes() { return notes; }
         public void setNotes(String notes) { this.notes = notes; }
+
+        public String getResolution() { return resolution; }
+        public void setResolution(String resolution) { this.resolution = resolution; }
+
+        public String getTargetTableId() { return targetTableId; }
+        public void setTargetTableId(String targetTableId) { this.targetTableId = targetTableId; }
+
+        public Boolean getForceRelease() { return forceRelease; }
+        public void setForceRelease(Boolean forceRelease) { this.forceRelease = forceRelease; }
     }
 }

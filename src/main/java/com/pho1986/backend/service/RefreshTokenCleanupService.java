@@ -51,6 +51,7 @@ public class RefreshTokenCleanupService {
      * Executes chunked deletion loop.
      * Each batch is committed in its own transaction context to minimize row-lock duration.
      */
+    @Transactional
     public int purgeExpiredTokensInBatches() {
         LocalDateTime cutoff = LocalDateTime.now();
         int totalDeleted = 0;

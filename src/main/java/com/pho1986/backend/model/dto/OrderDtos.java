@@ -48,6 +48,7 @@ public class OrderDtos {
 
         @NotEmpty(message = "Đơn hàng phải có ít nhất 1 món")
         private List<CreateOrderItemRequest> items;
+        private String appliedGiftId;
 
         public String getGuestName() { return guestName; }
         public void setGuestName(String guestName) { this.guestName = guestName; }
@@ -63,6 +64,8 @@ public class OrderDtos {
         public void setTableNumber(String tableNumber) { this.tableNumber = tableNumber; }
         public List<CreateOrderItemRequest> getItems() { return items; }
         public void setItems(List<CreateOrderItemRequest> items) { this.items = items; }
+        public String getAppliedGiftId() { return appliedGiftId; }
+        public void setAppliedGiftId(String appliedGiftId) { this.appliedGiftId = appliedGiftId; }
     }
 
     public static class QuickReorderResponse {
@@ -101,6 +104,7 @@ public class OrderDtos {
         private String deliveryAddressText;
         private String notes;
         private String tableNumber;
+        private String voucherCode;
         private LocalDateTime createdAt;
         private List<OrderItem> items;
         private boolean isOwner;
@@ -116,6 +120,7 @@ public class OrderDtos {
             res.paymentMethod = order.getPaymentMethod();
             res.paymentStatus = order.getPaymentStatus();
             res.tableNumber = order.getTableNumber();
+            res.voucherCode = order.getVoucherCode();
             res.createdAt = order.getCreatedAt();
             res.items = order.getItems();
             res.isOwner = isOwner;
@@ -173,6 +178,7 @@ public class OrderDtos {
         public String getDeliveryAddressText() { return deliveryAddressText; }
         public String getNotes() { return notes; }
         public String getTableNumber() { return tableNumber; }
+        public String getVoucherCode() { return voucherCode; }
         public LocalDateTime getCreatedAt() { return createdAt; }
         public List<OrderItem> getItems() { return items; }
         public boolean isOwner() { return isOwner; }

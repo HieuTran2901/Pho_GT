@@ -76,9 +76,7 @@ public class SepayPaymentGateway {
             String signature = generateSignature(fieldsToSign, secretKey);
             fieldsToSign.put("signature", signature);
 
-            String checkoutUrl = "sandbox".equalsIgnoreCase(sepayProperties.getEnvironment())
-                    ? "https://pay-sandbox.sepay.vn/v1/checkout/init"
-                    : "https://pay.sepay.vn/v1/checkout/init";
+            String checkoutUrl = "https://pay.sepay.vn/checkout/init";
 
             java.util.Map<String, Object> checkoutFields = new java.util.LinkedHashMap<>(fieldsToSign);
             log.info("[SePay] Đã tạo thành công SePay POST checkout payload cho đơn hàng [{}]: invoiceNumber = {}", orderCode, invoiceNumber);

@@ -10,7 +10,10 @@ import org.springframework.util.StringUtils;
 
 import java.security.SecureRandom;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
@@ -25,6 +28,7 @@ public class OrderService {
     private final LoyaltyTransactionRepository loyaltyTransactionRepository;
     private final DishRepository dishRepository;
     private final TableService tableService;
+    private final CustomerGiftService customerGiftService;
 
     public OrderService(
             OrderRepository orderRepository,
@@ -33,7 +37,8 @@ public class OrderService {
             LoyaltyAccountRepository loyaltyAccountRepository,
             LoyaltyTransactionRepository loyaltyTransactionRepository,
             DishRepository dishRepository,
-            TableService tableService) {
+            TableService tableService,
+            CustomerGiftService customerGiftService) {
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
         this.tasteProfileRepository = tasteProfileRepository;
@@ -41,6 +46,7 @@ public class OrderService {
         this.loyaltyTransactionRepository = loyaltyTransactionRepository;
         this.dishRepository = dishRepository;
         this.tableService = tableService;
+        this.customerGiftService = customerGiftService;
     }
 
     /**
@@ -89,19 +95,35 @@ public class OrderService {
         order.setFinalAmount(finalAmount);
         order.setNotes(request.getNotes());
         order.setTableNumber(request.getTableNumber());
+        if (StringUtils.hasText(request.getAppliedGiftId())) {
+            order.setVoucherCode(request.getAppliedGiftId().trim());
+        }
 
         if (StringUtils.hasText(request.getTableNumber())) {
             tableService.validateTableAvailable(request.getTableNumber());
         }
 
-        for (CreateOrderItemRequest itemReq : request.getItems()) {
-            if (StringUtils.hasText(itemReq.getDishId())) {
-                dishRepository.findById(itemReq.getDishId()).ifPresent(dish -> {
-                    if (Boolean.FALSE.equals(dish.getIsAvailable())) {
+        // [TEST-R015 & BLADE] Batch fetch all dishes to avoid N+1 SELECT queries
+        List<String> dishIds = request.getItems().stream()
+                .map(CreateOrderItemRequest::getDishId)
+                .filter(StringUtils::hasText)
+                .distinct()
+                .toList();
+
+        if (!dishIds.isEmpty()) {
+            Map<String, Dish> dishMap = dishRepository.findAllById(dishIds).stream()
+                    .collect(Collectors.toMap(Dish::getId, Function.identity()));
+            for (CreateOrderItemRequest itemReq : request.getItems()) {
+                if (StringUtils.hasText(itemReq.getDishId())) {
+                    Dish dish = dishMap.get(itemReq.getDishId());
+                    if (dish != null && Boolean.FALSE.equals(dish.getIsAvailable())) {
                         throw new IllegalStateException("Món \"" + dish.getName() + "\" hiện đang tạm hết hàng tại quán. Quý khách vui lòng chọn món khác.");
                     }
-                });
+                }
             }
+        }
+
+        for (CreateOrderItemRequest itemReq : request.getItems()) {
             OrderItem item = new OrderItem(
                     itemReq.getDishId(),
                     itemReq.getDishName(),
@@ -114,6 +136,10 @@ public class OrderService {
         }
 
         order = orderRepository.save(order);
+
+        if (StringUtils.hasText(request.getTableNumber())) {
+            tableService.markTableStatus(request.getTableNumber(), "RESERVED");
+        }
 
         // Tích điểm cho thành viên
         if (user != null) {
@@ -138,9 +164,22 @@ public class OrderService {
             }
         }
 
+        // Tự động đánh dấu vé quà tặng là ĐÃ SỬ DỤNG
+        if (StringUtils.hasText(request.getAppliedGiftId())) {
+            String targetUserId = (user != null) ? user.getId() : null;
+            if (targetUserId == null && StringUtils.hasText(request.getGuestPhone())) {
+                String cleanPhone = request.getGuestPhone().replaceAll("[\\s.-]+", "");
+                targetUserId = userRepository.findByPhone(cleanPhone).map(User::getId).orElse(null);
+            }
+            if (targetUserId != null) {
+                customerGiftService.applyGiftToOrder(targetUserId, request.getAppliedGiftId(), order.getOrderCode());
+            }
+        }
+
         return order;
     }
 
+    @Transactional(readOnly = true)
     public QuickReorderResponse getQuickReorder(String userId) {
         Order lastOrder = orderRepository.findFirstByUserIdOrderByCreatedAtDesc(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Bạn chưa có đơn hàng nào trước đây để gọi lại"));
@@ -155,10 +194,12 @@ public class OrderService {
         );
     }
 
+    @Transactional(readOnly = true)
     public List<Order> getOrderHistory(String userId) {
         return orderRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }
 
+    @Transactional(readOnly = true)
     public Order getOrderByCode(String orderCode) {
         return orderRepository.findByOrderCode(orderCode)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng #" + orderCode));
@@ -167,7 +208,8 @@ public class OrderService {
     /**
      * [SENTINEL & BLADE] Pre-flight check kiểm tra tính hợp lệ của tài khoản / SĐT trước khi đặt bàn
      */
-     public void checkEligibility(String userId, String phone) {
+    @Transactional(readOnly = true)
+    public void checkEligibility(String userId, String phone) {
          if (userId != null) {
              User user = userRepository.findById(userId).orElse(null);
              if (user != null && (user.isAccountLocked() || "LOCKED".equalsIgnoreCase(user.getStatus()))) {

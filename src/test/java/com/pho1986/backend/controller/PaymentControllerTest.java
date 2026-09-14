@@ -78,7 +78,7 @@ public class PaymentControllerTest {
                 .andExpect(jsonPath("$.data.paymentMethod", is("VIETQR")))
                 .andExpect(jsonPath("$.data.status", is("PENDING")))
                 .andExpect(jsonPath("$.data.qrCodeUrl", containsString("vietqr.io")))
-                .andExpect(jsonPath("$.data.bankAccountNo", is("0986198686")))
+                .andExpect(jsonPath("$.data.bankAccountNo", is("0384090045")))
                 .andExpect(jsonPath("$.data.transferContent", containsString("PHO1986")))
                 .andExpect(jsonPath("$.data.expiredAt", notNullValue()));
     }

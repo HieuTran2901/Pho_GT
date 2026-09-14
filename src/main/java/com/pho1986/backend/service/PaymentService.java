@@ -1,8 +1,10 @@
 package com.pho1986.backend.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pho1986.backend.model.dto.OrderDtos.CreateOrderItemRequest;
 import com.pho1986.backend.model.dto.PaymentDtos.*;
 import com.pho1986.backend.model.entity.Order;
+import com.pho1986.backend.model.entity.OrderItem;
 import com.pho1986.backend.model.entity.PaymentTransaction;
 import com.pho1986.backend.model.entity.User;
 import com.pho1986.backend.repository.OrderRepository;
@@ -45,49 +47,36 @@ public class PaymentService {
     private final MomoIpnHandler momoIpnHandler;
     private final PaymentGatewayService paymentGatewayService;
     private final TableService tableService;
+    private final CustomerGiftService customerGiftService;
+    private final VoucherService voucherService;
 
     @Value("${app.payment.webhook-secret:pho1986_webhook_secret_key_prod_auth_2026}")
     private String webhookSecret;
-
     @Value("${app.payment.vietqr.bank-bin:970422}")
     private String defaultBankBin; // MBBank
-
     @Value("${app.payment.vietqr.bank-name:MBBank - Ngân hàng Quân Đội}")
     private String defaultBankName;
-
-    @Value("${app.payment.vietqr.account-no:0986198686}")
+    @Value("${app.payment.vietqr.account-no:0384090045}")
     private String defaultAccountNo;
-
     @Value("${app.payment.vietqr.account-name:PHO GIA TRUYEN 1986}")
     private String defaultAccountName;
 
     public PaymentService(
-            PaymentTransactionRepository paymentTransactionRepository,
-            OrderRepository orderRepository,
-            UserRepository userRepository,
-            LoyaltyService loyaltyService,
-            SepayPaymentGateway sepayPaymentGateway,
-            MomoPaymentGateway momoPaymentGateway,
-            PaymentRateLimiter paymentRateLimiter,
-            ObjectMapper objectMapper,
-            VietQrHelper vietQrHelper,
-            SepayIpnHandler sepayIpnHandler,
-            MomoIpnHandler momoIpnHandler,
-            PaymentGatewayService paymentGatewayService,
-            TableService tableService) {
-        this.paymentTransactionRepository = paymentTransactionRepository;
-        this.orderRepository = orderRepository;
-        this.userRepository = userRepository;
-        this.loyaltyService = loyaltyService;
-        this.sepayPaymentGateway = sepayPaymentGateway;
-        this.momoPaymentGateway = momoPaymentGateway;
-        this.paymentRateLimiter = paymentRateLimiter;
-        this.objectMapper = objectMapper;
-        this.vietQrHelper = vietQrHelper;
-        this.sepayIpnHandler = sepayIpnHandler;
-        this.momoIpnHandler = momoIpnHandler;
-        this.paymentGatewayService = paymentGatewayService;
-        this.tableService = tableService;
+            PaymentTransactionRepository paymentTransactionRepository, OrderRepository orderRepository,
+            UserRepository userRepository, LoyaltyService loyaltyService,
+            SepayPaymentGateway sepayPaymentGateway, MomoPaymentGateway momoPaymentGateway,
+            PaymentRateLimiter paymentRateLimiter, ObjectMapper objectMapper,
+            VietQrHelper vietQrHelper, SepayIpnHandler sepayIpnHandler,
+            MomoIpnHandler momoIpnHandler, PaymentGatewayService paymentGatewayService,
+            TableService tableService, CustomerGiftService customerGiftService, VoucherService voucherService) {
+        this.paymentTransactionRepository = paymentTransactionRepository; this.orderRepository = orderRepository;
+        this.userRepository = userRepository; this.loyaltyService = loyaltyService;
+        this.sepayPaymentGateway = sepayPaymentGateway; this.momoPaymentGateway = momoPaymentGateway;
+        this.paymentRateLimiter = paymentRateLimiter; this.objectMapper = objectMapper;
+        this.vietQrHelper = vietQrHelper; this.sepayIpnHandler = sepayIpnHandler;
+        this.momoIpnHandler = momoIpnHandler; this.paymentGatewayService = paymentGatewayService;
+        this.tableService = tableService; this.customerGiftService = customerGiftService;
+        this.voucherService = voucherService;
     }
 
     @Transactional
@@ -119,10 +108,32 @@ public class PaymentService {
             throw new IllegalStateException("Quý khách đã gửi yêu cầu thanh toán quá nhiều lần. Vui lòng thử lại sau " + remaining + " giây!");
         }
 
+        // [SENTINEL & BLADE] Chốt chặn chống lạm dụng voucher (Zero-Dollar & Minimum Basket Guard)
+        boolean hasVoucherOrGift = StringUtils.hasText(request.getAppliedGiftId());
+        boolean hasItems = request.getItems() != null && !request.getItems().isEmpty();
+        if (hasItems) {
+            boolean hasPaidItem = request.getItems().stream()
+                    .anyMatch(i -> i.getUnitPrice() != null && i.getUnitPrice() > 0);
+            if (!hasPaidItem) {
+                throw new IllegalArgumentException(
+                        "Đơn hàng không hợp lệ. Quý khách cần chọn ít nhất 01 món ăn chính để áp dụng ưu đãi.");
+            }
+        } else if (hasVoucherOrGift) {
+            throw new IllegalArgumentException(
+                    "Ưu đãi chỉ áp dụng kèm theo món ăn. Vui lòng chọn ít nhất 01 món chính trong thực đơn.");
+        }
+
         // [BLADE & RAVEN] Chốt chặn kiểm tra bàn bị khóa (Table Lockout Guard)
         if (StringUtils.hasText(request.getTableNumber())) {
             tableService.validateTableAvailable(request.getTableNumber());
         }
+
+        String targetUserId = userId;
+        if (targetUserId == null && StringUtils.hasText(request.getPhone())) {
+            targetUserId = userRepository.findByPhone(request.getPhone().trim())
+                    .map(User::getId).orElse(null);
+        }
+        final String resolvedUserId = targetUserId;
 
         String method = request.getPaymentMethod().toUpperCase();
         Order order = orderRepository.findByOrderCode(request.getOrderCode())
@@ -138,12 +149,42 @@ public class PaymentService {
                     newOrder.setFinalAmount(initialAmount);
                     newOrder.setNotes(request.getNote());
                     newOrder.setTableNumber(request.getTableNumber());
-                    if (userId != null) {
-                        User user = userRepository.findById(userId).orElse(null);
-                        newOrder.setUser(user);
+                    if (StringUtils.hasText(request.getAppliedGiftId())) {
+                        newOrder.setVoucherCode(request.getAppliedGiftId().trim());
+                    }
+                    if (resolvedUserId != null) {
+                        userRepository.findById(resolvedUserId).ifPresent(newOrder::setUser);
+                    }
+                    if (request.getItems() != null) {
+                        for (CreateOrderItemRequest itemReq : request.getItems()) {
+                            Double uPrice = (itemReq.getUnitPrice() != null) ? itemReq.getUnitPrice() : 0.0;
+                            int qty = (itemReq.getQuantity() != null && itemReq.getQuantity() > 0) ? itemReq.getQuantity() : 1;
+                            newOrder.addItem(new OrderItem(itemReq.getDishId(), itemReq.getDishName(), uPrice, qty, uPrice * qty, itemReq.getCustomizedOptions()));
+                        }
                     }
                     return orderRepository.save(newOrder);
                 });
+
+        if (request.getItems() != null && !request.getItems().isEmpty() && order.getItems().isEmpty()) {
+            for (CreateOrderItemRequest itemReq : request.getItems()) {
+                Double uPrice = (itemReq.getUnitPrice() != null) ? itemReq.getUnitPrice() : 0.0;
+                int qty = (itemReq.getQuantity() != null && itemReq.getQuantity() > 0) ? itemReq.getQuantity() : 1;
+                order.addItem(new OrderItem(itemReq.getDishId(), itemReq.getDishName(), uPrice, qty, uPrice * qty, itemReq.getCustomizedOptions()));
+            }
+            orderRepository.save(order);
+        }
+
+        if (StringUtils.hasText(request.getAppliedGiftId())) {
+            order.setVoucherCode(request.getAppliedGiftId().trim());
+            if (resolvedUserId != null) {
+                customerGiftService.applyGiftToOrder(resolvedUserId, request.getAppliedGiftId(), order.getOrderCode());
+            }
+            voucherService.applyVoucherUsage(request.getAppliedGiftId());
+        }
+
+        if (StringUtils.hasText(order.getTableNumber())) {
+            tableService.markTableStatus(order.getTableNumber(), "RESERVED");
+        }
 
         Double amount = order.getFinalAmount();
 
@@ -208,17 +249,14 @@ public class PaymentService {
             order.setPaymentMethod("COD");
             order.setPaymentStatus("UNPAID");
             order.setStatus("CONFIRMED");
-
         } else if ("POST_PAID_AT_STORE".equals(method)) {
             transaction.setStatus("PENDING");
             response.setStatus("PENDING");
             response.setInstructions("Bàn của quý khách đã được giữ chỗ trong 30 phút. Quý khách vui lòng thanh toán tại quầy thu ngân sau khi dùng bữa.");
             response.setCompleted(true);
-
             order.setPaymentMethod("POST_PAID_AT_STORE");
             order.setPaymentStatus("UNPAID");
             order.setStatus("CONFIRMED");
-
         } else if ("MOMO".equals(method)) {
             transaction.setStatus("PENDING");
             response.setStatus("PENDING");
@@ -318,15 +356,7 @@ public class PaymentService {
         orderRepository.save(order);
 
         loyaltyService.awardLoyaltyPointsForOrder(order);
-
-        return new PaymentStatusResponse(
-                transaction.getPaymentCode(),
-                order.getOrderCode(),
-                transaction.getStatus(),
-                transaction.getPaymentMethod(),
-                transaction.getAmount(),
-                transaction.getPaidAt()
-        );
+        return toStatusResponse(transaction);
     }
 
     /**
@@ -336,6 +366,12 @@ public class PaymentService {
     public PaymentStatusResponse processSepayIpn(String authHeader, String secretHeader, SepayIpnPayload payload) {
         sepayIpnHandler.verifyIpnSecret(authHeader, secretHeader);
         String lookupCode = sepayIpnHandler.extractOrderCode(payload);
+
+        if (sepayIpnHandler.isTestPing(payload, lookupCode)) {
+            log.info("[SePay IPN] Nhận diện gói tin TEST Webhook từ SePay Dashboard. Phản hồi HTTP 200 OK.");
+            Double testAmt = payload.getTransferAmount() != null ? payload.getTransferAmount() : 10000.0;
+            return new PaymentStatusResponse("TEST-PAYMENT-CODE", "TEST-ORDER", "SUCCESS", "SEPAY", testAmt, LocalDateTime.now());
+        }
 
         PaymentTransaction transaction = paymentTransactionRepository.findTopByOrderOrderCodeOrderByCreatedAtDesc(lookupCode)
                 .orElse(null);
@@ -347,14 +383,7 @@ public class PaymentService {
 
         if ("SUCCESS".equals(transaction.getStatus())) {
             log.info("[SePay IPN] Giao dịch [{}] đã được xử lý trước đó (Idempotent OK).", transaction.getPaymentCode());
-            return new PaymentStatusResponse(
-                    transaction.getPaymentCode(),
-                    transaction.getOrder().getOrderCode(),
-                    transaction.getStatus(),
-                    transaction.getPaymentMethod(),
-                    transaction.getAmount(),
-                    transaction.getPaidAt()
-            );
+            return toStatusResponse(transaction);
         }
 
         sepayIpnHandler.validateAmount(payload.getTransferAmount(), transaction.getAmount());
@@ -378,14 +407,7 @@ public class PaymentService {
         loyaltyService.awardLoyaltyPointsForOrder(order);
         log.info("[SePay IPN] Xác nhận thanh toán thành công cho đơn hàng [{}]", order.getOrderCode());
 
-        return new PaymentStatusResponse(
-                transaction.getPaymentCode(),
-                order.getOrderCode(),
-                transaction.getStatus(),
-                transaction.getPaymentMethod(),
-                transaction.getAmount(),
-                transaction.getPaidAt()
-        );
+        return toStatusResponse(transaction);
     }
 
     /**
@@ -401,14 +423,7 @@ public class PaymentService {
 
         if ("SUCCESS".equals(transaction.getStatus())) {
             log.info("[MoMo IPN] Giao dịch [{}] đã được xử lý trước đó (Idempotent OK).", transaction.getPaymentCode());
-            return new PaymentStatusResponse(
-                    transaction.getPaymentCode(),
-                    transaction.getOrder().getOrderCode(),
-                    transaction.getStatus(),
-                    transaction.getPaymentMethod(),
-                    transaction.getAmount(),
-                    transaction.getPaidAt()
-            );
+            return toStatusResponse(transaction);
         }
 
         try {
@@ -439,14 +454,7 @@ public class PaymentService {
             log.warn("[MoMo IPN] Thanh toán đơn hàng [{}] thất bại: resultCode = {}, message = {}", orderCode, request.getResultCode(), request.getMessage());
         }
 
-        return new PaymentStatusResponse(
-                transaction.getPaymentCode(),
-                transaction.getOrder().getOrderCode(),
-                transaction.getStatus(),
-                transaction.getPaymentMethod(),
-                transaction.getAmount(),
-                transaction.getPaidAt()
-        );
+        return toStatusResponse(transaction);
     }
 
     /**
@@ -461,20 +469,24 @@ public class PaymentService {
         PaymentTransaction transaction = paymentTransactionRepository.findByPaymentCode(paymentCode)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy giao dịch với mã: " + paymentCode));
 
-        if ("PENDING".equals(transaction.getStatus()) && transaction.getExpiredAt() != null) {
-            if (LocalDateTime.now().isAfter(transaction.getExpiredAt())) {
-                transaction.setStatus("EXPIRED");
-                paymentTransactionRepository.save(transaction);
+        if ("PENDING".equals(transaction.getStatus()) && transaction.getExpiredAt() != null && LocalDateTime.now().isAfter(transaction.getExpiredAt())) {
+            transaction.setStatus("EXPIRED");
+            paymentTransactionRepository.save(transaction);
+            Order order = transaction.getOrder();
+            if (order != null && "PENDING".equals(order.getStatus())) {
+                order.setStatus("CANCELLED");
+                orderRepository.save(order);
+                if (StringUtils.hasText(order.getTableNumber())) {
+                    tableService.markTableStatus(order.getTableNumber(), "AVAILABLE");
+                }
             }
         }
 
-        return new PaymentStatusResponse(
-                transaction.getPaymentCode(),
-                transaction.getOrder().getOrderCode(),
-                transaction.getStatus(),
-                transaction.getPaymentMethod(),
-                transaction.getAmount(),
-                transaction.getPaidAt()
-        );
+        return toStatusResponse(transaction);
+    }
+
+    private PaymentStatusResponse toStatusResponse(PaymentTransaction tx) {
+        String code = tx.getOrder() != null ? tx.getOrder().getOrderCode() : null;
+        return new PaymentStatusResponse(tx.getPaymentCode(), code, tx.getStatus(), tx.getPaymentMethod(), tx.getAmount(), tx.getPaidAt());
     }
 }

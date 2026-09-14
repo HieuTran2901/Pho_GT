@@ -1,5 +1,6 @@
 package com.pho1986.backend.model.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -8,14 +9,16 @@ import java.time.LocalDateTime;
     @Index(name = "idx_dishes_menu", columnList = "is_available, is_signature DESC, price ASC"),
     @Index(name = "idx_dishes_category", columnList = "category_id, is_available")
 })
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Dish {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "dishes"})
     private Category category;
 
     @Column(nullable = false, length = 150)

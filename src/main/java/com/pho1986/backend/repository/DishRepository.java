@@ -11,6 +11,14 @@ import java.util.Optional;
 @Repository
 public interface DishRepository extends JpaRepository<Dish, String> {
 
+    @Override
+    @EntityGraph(attributePaths = {"category"})
+    List<Dish> findAll();
+
+    @Override
+    @EntityGraph(attributePaths = {"category"})
+    Optional<Dish> findById(String id);
+
     @EntityGraph(attributePaths = {"category"})
     Optional<Dish> findBySlug(String slug);
 

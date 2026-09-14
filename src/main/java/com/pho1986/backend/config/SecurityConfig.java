@@ -50,10 +50,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/dishes/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/tables/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/loyalty/rewards").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/vouchers/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/vouchers/validate").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/orders").permitAll() // Hỗ trợ Guest checkout
                         .requestMatchers(HttpMethod.GET, "/api/v1/orders/quick-reorder").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/orders/history").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/orders/*").permitAll() // Tra cứu theo mã đơn
+                        .requestMatchers(HttpMethod.POST, "/api/v1/chat/**").permitAll() // Trợ lý ẩm thực Tiểu Nhị 1986
                         .requestMatchers("/api/v1/payments/**").permitAll() // Hỗ trợ khởi tạo & kiểm tra thanh toán VietQR / COD
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN") // [SENTINEL] Bảo vệ tuyệt đối phân khu Admin
                         .anyRequest().authenticated()

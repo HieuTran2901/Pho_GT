@@ -4,7 +4,9 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "loyalty_rewards")
+@Table(name = "loyalty_rewards", indexes = {
+    @Index(name = "idx_loyalty_rewards_lookup", columnList = "is_active, points_required")
+})
 public class LoyaltyReward {
 
     @Id
@@ -28,6 +30,9 @@ public class LoyaltyReward {
 
     @Column(nullable = false)
     private Boolean isActive = true;
+
+    @Column(name = "validity_days", nullable = false)
+    private Integer validityDays = 30;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -58,5 +63,7 @@ public class LoyaltyReward {
     public void setDiscountValue(Double discountValue) { this.discountValue = discountValue; }
     public Boolean getIsActive() { return isActive; }
     public void setIsActive(Boolean isActive) { this.isActive = isActive; }
+    public Integer getValidityDays() { return (validityDays != null && validityDays > 0) ? validityDays : 30; }
+    public void setValidityDays(Integer validityDays) { this.validityDays = (validityDays != null && validityDays > 0) ? validityDays : 30; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 }

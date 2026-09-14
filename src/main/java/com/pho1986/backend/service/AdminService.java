@@ -24,6 +24,7 @@ public class AdminService {
     private final UserRepository userRepository;
     private final LoyaltyAccountRepository loyaltyAccountRepository;
     private final LoyaltyTransactionRepository loyaltyTransactionRepository;
+    private final TableService tableService;
 
     public AdminService(
             OrderRepository orderRepository,
@@ -31,13 +32,15 @@ public class AdminService {
             CategoryRepository categoryRepository,
             UserRepository userRepository,
             LoyaltyAccountRepository loyaltyAccountRepository,
-            LoyaltyTransactionRepository loyaltyTransactionRepository) {
+            LoyaltyTransactionRepository loyaltyTransactionRepository,
+            TableService tableService) {
         this.orderRepository = orderRepository;
         this.dishRepository = dishRepository;
         this.categoryRepository = categoryRepository;
         this.userRepository = userRepository;
         this.loyaltyAccountRepository = loyaltyAccountRepository;
         this.loyaltyTransactionRepository = loyaltyTransactionRepository;
+        this.tableService = tableService;
     }
 
     @Transactional(readOnly = true)
@@ -81,6 +84,12 @@ public class AdminService {
             String newStatus = request.getStatus().toUpperCase().trim();
             order.setStatus(newStatus);
 
+            // Tự động giải phóng bàn nếu đơn chuyển sang COMPLETED hoặc CANCELLED
+            if (("COMPLETED".equals(newStatus) || "CANCELLED".equals(newStatus))
+                    && order.getTableNumber() != null && !order.getTableNumber().isBlank()) {
+                tableService.markTableStatus(order.getTableNumber(), "AVAILABLE");
+            }
+
             // Tự động chuyển paymentStatus sang PAID nếu đơn hoàn tất
             if ("COMPLETED".equals(newStatus)) {
                 order.setPaymentStatus("PAID");
@@ -117,7 +126,7 @@ public class AdminService {
 
     @Transactional(readOnly = true)
     public List<Dish> getAllDishes() {
-        return dishRepository.findAll();
+        return dishRepository.findByOrderByIsAvailableDescIsSignatureDescPriceAsc();
     }
 
     @Transactional(readOnly = true)

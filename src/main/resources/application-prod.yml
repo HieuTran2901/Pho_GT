@@ -27,14 +27,21 @@ app:
       password: ${ADMIN_INIT_PASSWORD:}
       full-name: ${ADMIN_INIT_NAME:Quản Trị Viên 1986}
       email: ${ADMIN_INIT_EMAIL:admin@pho1986.vn}
+  payment:
+    webhook-secret: ${PAYMENT_WEBHOOK_SECRET:pho1986_webhook_secret_key_prod_auth_2026}
+    vietqr:
+      bank-bin: ${VIETQR_BANK_BIN:970422}
+      bank-name: ${VIETQR_BANK_NAME:MBBank - Ngân hàng Quân Đội}
+      account-no: ${VIETQR_ACCOUNT_NO:0384090045}
+      account-name: ${VIETQR_ACCOUNT_NAME:PHO GIA TRUYEN 1986}
 
 payment:
   sepay:
-    enabled: ${SEPAY_ENABLED:false}
-    environment: ${SEPAY_ENV:sandbox}
-    merchant-id: ${MERCHANTID:}
-    secret-key: ${SEPAY_SECRETKEY:}
-    ipn-secret: ${SEPAY_IPN_SECRET:}
+    enabled: ${SEPAY_ENABLED:true}
+    environment: ${SEPAY_ENV:production}
+    merchant-id: ${MERCHANTID_PRODUCTION:${MERCHANTID:}}
+    secret-key: ${SEPAY_SECRETKEY_PRODUCTION:${SEPAY_SECRETKEY:}}
+    ipn-secret: ${SEPAY_IPN_SECRET_PRODUCTION:${SEPAY_IPN_SECRET:}}
     ipn-url: ${SEPAY_IPN_URL:https://pho-gt.vercel.app/api/v1/payments/sepay/ipn}
     success-url: ${SEPAY_SUCCESS_URL:https://pho-gt.vercel.app/api/v1/payments/sepay/return/success}
     error-url: ${SEPAY_ERROR_URL:https://pho-gt.vercel.app/api/v1/payments/sepay/return/error}

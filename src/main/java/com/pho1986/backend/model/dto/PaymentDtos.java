@@ -18,6 +18,8 @@ public class PaymentDtos {
         private String address;
         private Double amount;
         private String tableNumber;
+        private String appliedGiftId;
+        private java.util.List<OrderDtos.CreateOrderItemRequest> items;
 
         public String getOrderCode() { return orderCode; }
         public void setOrderCode(String orderCode) { this.orderCode = orderCode; }
@@ -35,6 +37,10 @@ public class PaymentDtos {
         public void setAmount(Double amount) { this.amount = amount; }
         public String getTableNumber() { return tableNumber; }
         public void setTableNumber(String tableNumber) { this.tableNumber = tableNumber; }
+        public String getAppliedGiftId() { return appliedGiftId; }
+        public void setAppliedGiftId(String appliedGiftId) { this.appliedGiftId = appliedGiftId; }
+        public java.util.List<OrderDtos.CreateOrderItemRequest> getItems() { return items; }
+        public void setItems(java.util.List<OrderDtos.CreateOrderItemRequest> items) { this.items = items; }
     }
 
     public static class PaymentResponse {

@@ -40,6 +40,10 @@ class DataInitializerSecurityTest {
     @Mock
     private DiningTableRepository diningTableRepository;
     @Mock
+    private VoucherRepository voucherRepository;
+    @Mock
+    private com.pho1986.backend.service.CustomerGiftService customerGiftService;
+    @Mock
     private PasswordEncoder passwordEncoder;
     @Mock
     private Environment environment;
@@ -58,6 +62,8 @@ class DataInitializerSecurityTest {
                 loyaltyTransactionRepository,
                 paymentGatewayConfigRepository,
                 diningTableRepository,
+                voucherRepository,
+                customerGiftService,
                 passwordEncoder,
                 environment
         );

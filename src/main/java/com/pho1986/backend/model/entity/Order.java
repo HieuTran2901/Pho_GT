@@ -62,6 +62,9 @@ public class Order {
     @Column(name = "table_number", length = 50)
     private String tableNumber;
 
+    @Column(name = "voucher_code", length = 50)
+    private String voucherCode;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -108,6 +111,8 @@ public class Order {
     public void setNotes(String notes) { this.notes = notes; }
     public String getTableNumber() { return tableNumber; }
     public void setTableNumber(String tableNumber) { this.tableNumber = tableNumber; }
+    public String getVoucherCode() { return voucherCode; }
+    public void setVoucherCode(String voucherCode) { this.voucherCode = voucherCode; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public List<OrderItem> getItems() { return items; }

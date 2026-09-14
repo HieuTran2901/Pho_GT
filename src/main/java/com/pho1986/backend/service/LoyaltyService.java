@@ -1,5 +1,7 @@
 package com.pho1986.backend.service;
 
+import com.pho1986.backend.dto.CustomerGiftDto;
+import com.pho1986.backend.dto.RedeemRewardResponseDto;
 import com.pho1986.backend.model.dto.LoyaltyDtos.*;
 import com.pho1986.backend.model.entity.*;
 import com.pho1986.backend.repository.*;
@@ -16,16 +18,19 @@ public class LoyaltyService {
     private final LoyaltyTransactionRepository loyaltyTransactionRepository;
     private final LoyaltyRewardRepository loyaltyRewardRepository;
     private final UserRepository userRepository;
+    private final CustomerGiftService customerGiftService;
 
     public LoyaltyService(
             LoyaltyAccountRepository loyaltyAccountRepository,
             LoyaltyTransactionRepository loyaltyTransactionRepository,
             LoyaltyRewardRepository loyaltyRewardRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            CustomerGiftService customerGiftService) {
         this.loyaltyAccountRepository = loyaltyAccountRepository;
         this.loyaltyTransactionRepository = loyaltyTransactionRepository;
         this.loyaltyRewardRepository = loyaltyRewardRepository;
         this.userRepository = userRepository;
+        this.customerGiftService = customerGiftService;
     }
 
     @Transactional
@@ -61,18 +66,20 @@ public class LoyaltyService {
         return new SummaryResponse(account, tierDetails);
     }
 
+    @Transactional(readOnly = true)
     public List<LoyaltyTransaction> getLoyaltyLedger(String userId) {
         LoyaltyAccount account = loyaltyAccountRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản"));
         return loyaltyTransactionRepository.findByLoyaltyAccountIdOrderByCreatedAtDesc(account.getId());
     }
 
+    @Transactional(readOnly = true)
     public List<LoyaltyReward> getAvailableRewards() {
         return loyaltyRewardRepository.findByIsActiveTrueOrderByPointsRequiredAsc();
     }
 
     @Transactional
-    public LoyaltyAccount redeemReward(String userId, RedeemRequest request) {
+    public RedeemRewardResponseDto redeemReward(String userId, RedeemRequest request) {
         LoyaltyReward reward = loyaltyRewardRepository.findById(request.getRewardId())
                 .orElseThrow(() -> new IllegalArgumentException("Phần thưởng không tồn tại"));
 
@@ -101,7 +108,12 @@ public class LoyaltyService {
         );
         loyaltyTransactionRepository.save(transaction);
 
-        return account;
+        CustomerGiftDto issuedGift = customerGiftService.createRedeemedGift(account.getUser(), reward);
+        return new RedeemRewardResponseDto(
+                account,
+                issuedGift,
+                "Đổi thành công: \"" + reward.getTitle() + "\"! Đã thêm vào Kho quà của bạn."
+        );
     }
 
     @Transactional
