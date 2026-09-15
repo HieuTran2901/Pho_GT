@@ -35,3 +35,4 @@ target/
 
 # AI Context & Local Agent Workspace
 .ai/
+evidence/
