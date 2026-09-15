@@ -82,7 +82,7 @@
 | **Component cốt lõi** | `src/components/order/OrderStep3QrPayment.jsx`, `src/components/order/OrderStep3Success.jsx` |
 | **Cổng thanh toán** | Sinh mã VietQR động theo chuẩn EMVCo Napas 247 kết hợp xác nhận giao dịch thời gian thực qua Webhook SePay IPN |
 | **Bài toán kỹ thuật** | **Tự động chuyển trang không chạm (Zero-Click Transition)**: Tự động Polling endpoint `/api/v1/payments/status/{code}` mỗi 2.5 giây. Ngay khi ngân hàng ghi nhận biến động số dư, giao diện tự động chuyển sang màn hình vé xác nhận mà khách không cần chạm vào màn hình. |
-| **Kiến trúc chống gian lận (Zero-Trust Anti-Fraud)** | **Nút "Kiểm tra giao dịch 🔄" thay thế hoàn toàn nút bấm thủ công cũ**: Triệt tiêu cơ chế tự xác nhận ảo ở client. Bấm nút sẽ kích hoạt tra cứu trực tiếp từ máy chủ (Server-side lookup) kèm spinner đối soát; nếu trạng thái chưa `SUCCESS` sẽ bị chặn lại kèm chỉ dẫn rõ ràng. |
+| **Bảo mật & Chống gian lận (Zero-Trust Anti-Fraud)** | **Xác thực đối soát 2 chiều (On-Demand Server Reconciliation)**: Triệt tiêu hoàn toàn rủi ro giả mạo trạng thái ở Client (F12/DevTools). Chức năng "Kiểm tra giao dịch 🔄" kích hoạt truy vấn đối soát trực tiếp với máy chủ; hệ thống chỉ cấp vé và chuyển trạng thái khi giao dịch được xác thực `SUCCESS` từ hệ thống ngân hàng. |
 
 ---
 
