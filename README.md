@@ -1,55 +1,55 @@
-# Phở Gia Truyền 1986 — Backend Service Engine
+# Phở Gia Truyền 1986 — Dịch Vụ Máy Chủ Backend (Backend Service Engine)
 
 [![Java](https://img.shields.io/badge/Java-21-orange.svg?style=for-the-badge&logo=openjdk&logoColor=white)](https://openjdk.org/projects/jdk/21/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.3-brightgreen.svg?style=for-the-badge&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
-[![Security Standard](https://img.shields.io/badge/Security-IETF%20RFC%206819-blue.svg?style=for-the-badge)](https://datatracker.ietf.org/doc/html/rfc6819)
-[![Database](https://img.shields.io/badge/Database-MySQL%208.0%20InnoDB-00758F.svg?style=for-the-badge&logo=mysql&logoColor=white)](https://www.mysql.com/)
-[![AWS S3](https://img.shields.io/badge/Storage-AWS%20S3%20Bucket-232F3E.svg?style=for-the-badge&logo=amazon-aws&logoColor=white)](https://aws.amazon.com/s3/)
+[![Tiêu Chuẩn Bảo Mật](https://img.shields.io/badge/Bảo_Mật-IETF%20RFC%206819-blue.svg?style=for-the-badge)](https://datatracker.ietf.org/doc/html/rfc6819)
+[![Cơ Sở Dữ Liệu](https://img.shields.io/badge/Database-MySQL%208.0%20InnoDB-00758F.svg?style=for-the-badge&logo=mysql&logoColor=white)](https://www.mysql.com/)
+[![Lưu Trữ Đám Mây](https://img.shields.io/badge/Lưu_Trữ-AWS%20S3%20Bucket-232F3E.svg?style=for-the-badge&logo=amazon-aws&logoColor=white)](https://aws.amazon.com/s3/)
 
-Enterprise-grade Spring Boot 3.4.3 backend service powering the digital dining, table reservation, and automated payment coordination engine for **Phở Gia Truyền 1986**.
+Dịch vụ backend cấp doanh nghiệp (Enterprise-grade) phát triển trên nền tảng Spring Boot 3.4.3, cung cấp động cơ điều phối dịch vụ ẩm thực số, đặt bàn thời gian thực và thanh toán tự động cho **Phở Gia Truyền 1986**.
 
 ---
 
-## 🏛️ SYSTEM ARCHITECTURE & DATA FLOW
+## 🏛️ KIẾN TRÚC HỆ THỐNG & LUỒNG DỮ LIỆU
 
 ```
-[ Client Applications ] (React 18 SPA / Mobile Viewport)
+[ Ứng Dụng Client ] (React 18 SPA / Thiết bị Di Động)
          │
          │  TLS 1.3 / HTTPS (REST Endpoints + HttpOnly SameSite Cookies)
          ▼
-[ Spring Boot 3.4.3 Engine ]
- ├── Spring Security Filter Chain (HS512 JWT Auth & Role-Based Access Control)
- ├── Threat Defense & Rate Limiter (Sliding Window In-Memory Bucket)
- ├── Business Logic & Services Layer
- │    ├── OrderService & TableReservationService (Optimistic Locking & TTL Hold)
- │    ├── PaymentService & SepayIpnHandler (Webhook Idempotency & Replay Guard)
- │    ├── LoyaltyService & VoucherRuleEngine (Main-Dish Validation Policy)
- │    └── ChatService (Google Gemini AI Assistant Integration)
- └── Persistence Layer (Spring Data JPA / Hibernate 6)
+[ Động Cơ Spring Boot 3.4.3 ]
+ ├── Chuỗi Bộ Lọc Spring Security (HS512 JWT Auth & Kiểm Soát Truy Cập RBAC)
+ ├── Lớp Phòng Vệ Mối Đe Dọa & Giới Hạn Tần Suất (Sliding Window In-Memory Bucket)
+ ├── Lớp Dịch Vụ & Xử Lý Nghiệp Vụ
+ │    ├── OrderService & TableReservationService (Khóa Lạc Quan Optimistic Locking & TTL Hold)
+ │    ├── PaymentService & SepayIpnHandler (Bảo Đảm Tính Bất Biến Webhook & Chống Replay)
+ │    ├── LoyaltyService & VoucherRuleEngine (Quy Tắc Ràng Buộc Món Chính)
+ │    └── ChatService (Tích Hợp Trợ Lý Ẩm Thực Google Gemini)
+ └── Tầng Lưu Trữ Bền Vững (Spring Data JPA / Hibernate 6)
          │
          ├── HikariCP Connection Pool (Max: 10, Min-Idle: 5)
          ▼
-[ MySQL 8.0 Database ] ──► (Tables: orders, users, dining_tables, refresh_tokens, vouchers)
+[ Cơ Sở Dữ Liệu MySQL 8.0 ] ──► (Bảng: orders, users, dining_tables, refresh_tokens, vouchers)
          │
          ▼
-[ External Cloud Services ]
- ├── AWS S3 Bucket (Media Assets & Menu Images)
- ├── VietQR / SePay Payment Gateway (Webhook IPN Callback)
+[ Dịch Vụ Đám Mây Mở Rộng ]
+ ├── AWS S3 Bucket (Lưu Trữ Hình Ảnh & Tài Nguyên Thực Đơn)
+ ├── Cổng Thanh Toán VietQR / SePay (Webhook IPN Callback)
  └── Google Generative Language API (Gemini 2.5/3.0)
 ```
 
 ---
 
-## 🛡️ AUTHENTICATION & SESSION SECURITY (IETF RFC 6819 SPECIFICATION)
+## 🛡️ BẢO MẬT XÁC THỰC & QUẢN LÝ PHIÊN (ĐẶC TẢ CHUẨN IETF RFC 6819)
 
-This section documents the formal architectural specification of the JSON Web Token (JWT) subsystem, dual-cookie delivery model, and cryptographic session protection implemented in the core security layer.
+Mục này tài liệu hóa đặc tả kiến trúc chính thức của phân hệ JSON Web Token (JWT), mô hình vận chuyển qua cookie HttpOnly kép, và cơ chế bảo vệ phiên mã hóa được triển khai tại lớp bảo mật lõi.
 
 ---
 
-### 1. Cryptographic Header & Signing Algorithm
-- **Algorithm**: `HS512` (HMAC with SHA-512).
-- **Rationale**: Replaces common `HS256` with a 512-bit cryptographic hash to deliver maximum collision resistance and superior key-space entropy against brute-force attacks.
-- **Key Derivation**: Configured through external environment variable `${JWT_SECRET}` (strictly isolated from version control).
+### 1. Thuật Toán Ký & Tiêu Đề Mã Hóa
+- **Thuật toán**: `HS512` (HMAC với SHA-512).
+- **Lý do lựa chọn**: Thay thế `HS256` thông thường bằng hàm băm mật mã 512-bit nhằm mang lại khả năng kháng va chạm (collision resistance) tối đa và không gian khóa entropy vượt trội chống lại tấn công brute-force.
+- **Quản lý khóa bí mật**: Cấu hình thông qua biến môi trường độc lập `${JWT_SECRET}` (hoàn toàn tách biệt khỏi hệ thống quản lý mã nguồn).
 
 ```json
 {
@@ -60,10 +60,10 @@ This section documents the formal architectural specification of the JSON Web To
 
 ---
 
-### 2. Dual-Token Claims Architecture
+### 2. Kiến Trúc Token Kép (Dual-Token Claims Architecture)
 
-#### A. Short-Lived Access Token (Lifespan: 15 Minutes)
-Designed for stateless, high-throughput authorization across business REST endpoints (`/api/v1/orders`, `/api/v1/tables`, `/api/v1/menu`).
+#### A. Access Token Ngắn Hạn (Thời hạn: 15 Phút)
+Được thiết kế phục vụ ủy quyền phi trạng thái (stateless), đáp ứng thông lượng cao trên các REST endpoint nghiệp vụ (`/api/v1/orders`, `/api/v1/tables`, `/api/v1/menu`).
 
 ```json
 {
@@ -76,17 +76,17 @@ Designed for stateless, high-throughput authorization across business REST endpo
 }
 ```
 
-| Claim | Data Type | Description |
+| Khóa Claim | Kiểu dữ liệu | Ý nghĩa |
 |---|---|---|
-| `sub` | `UUID` | Subject identifier mapping directly to `users.id`. |
-| `role` | `String` | Role-Based Access Control claim (`CUSTOMER` or `ADMIN`). |
-| `type` | `String` | Static token discriminator (`ACCESS`) preventing token substitution. |
-| `jti` | `UUID` | JWT ID serving as an index key for the real-time $O(1)$ in-memory revocation blacklist. |
-| `iat` | `Epoch Sec` | Issued-at timestamp. |
-| `exp` | `Epoch Sec` | Expiration timestamp (15 minutes from issue). |
+| `sub` | `UUID` | Định danh người dùng tương ứng trực tiếp với `users.id`. |
+| `role` | `String` | Quyền hạn truy cập phân cấp RBAC (`CUSTOMER` hoặc `ADMIN`). |
+| `type` | `String` | Bộ phân loại token tĩnh (`ACCESS`), ngăn chặn giả mạo hoán đổi loại token. |
+| `jti` | `UUID` | Khóa định danh duy nhất của JWT, dùng làm index cho danh sách thu hồi blacklist trong bộ nhớ $O(1)$. |
+| `iat` | `Epoch Sec` | Dấu thời gian phát hành token. |
+| `exp` | `Epoch Sec` | Dấu thời gian hết hạn (15 phút kể từ thời điểm phát hành). |
 
-#### B. Long-Lived Refresh Token (Lifespan: 7 Days)
-Employed solely to rotate token pairs via `POST /api/v1/auth/refresh`.
+#### B. Refresh Token Dài Hạn (Thời hạn: 7 Ngày)
+Chỉ được sử dụng duy nhất cho mục đích xoay vòng cặp token thông qua endpoint `POST /api/v1/auth/refresh`.
 
 ```json
 {
@@ -101,94 +101,94 @@ Employed solely to rotate token pairs via `POST /api/v1/auth/refresh`.
 
 ---
 
-### 3. Transport Security: Dual HttpOnly Cookie Isolation
+### 3. Bảo Mật Vận Chuyển: Cô Lập Cookie HttpOnly Kép
 
-Tokens are never returned in raw JSON for client storage. Instead, they are transmitted via hardened `Set-Cookie` directives:
+Token không bao giờ được trả về dưới dạng JSON thô cho client tự lưu trữ. Thay vào đó, chúng được gửi qua các chỉ thị `Set-Cookie` được cấu hình chặt chẽ:
 
-| Directive | Access Token Cookie | Refresh Token Cookie | Security Benefit |
+| Chỉ thị | Cookie Access Token | Cookie Refresh Token | Lợi ích an ninh |
 |---|---|---|---|
-| **Cookie Name** | `accessToken` | `refreshToken` | Clear role separation. |
-| **HttpOnly** | `true` | `true` | **100% XSS Immunity**: Inaccessible to client-side `document.cookie`. |
-| **Path Scoping** | `Path=/` | **`Path=/api/v1/auth`** | **Attack Surface Reduction**: Refresh token is NEVER transmitted during regular browsing. |
-| **SameSite** | `Lax` | `Lax` | **CSRF Defense**: Blocks cross-site unauthorized requests. |
-| **Secure** | `true` (HTTPS) | `true` (HTTPS) | Enforces TLS wire encryption in production. |
-| **Max-Age** | `900` (15m) | `604800` (7d) | Strict lifecycle expiration. |
+| **Tên Cookie** | `accessToken` | `refreshToken` | Phân tách vai trò rõ ràng giữa các token. |
+| **HttpOnly** | `true` | `true` | **Miễn nhiễm 100% XSS**: JavaScript client (`document.cookie`) hoàn toàn không thể truy cập. |
+| **Phạm vi Path** | `Path=/` | **`Path=/api/v1/auth`** | **Thu hẹp bề mặt tấn công**: Refresh token KHÔNG BAO GIỜ bị gửi kèm trong các truy vấn duyệt web thông thường. |
+| **SameSite** | `Lax` | `Lax` | **Chống tấn công CSRF**: Ngăn chặn các truy vấn trái phép bắt nguồn từ trang web bên ngoài. |
+| **Secure** | `true` (HTTPS) | `true` (HTTPS) | Bắt buộc mã hóa đường truyền TLS trên môi trường production. |
+| **Max-Age** | `900` (15 phút) | `604800` (7 ngày) | Thực thi vòng đời token nghiêm ngặt. |
 
 ---
 
-### 4. Database Persistence: SHA-256 One-Way Hashing
+### 4. Lưu Trữ Cơ Sở Dữ Liệu: Băm Một Chiều Bằng SHA-256
 
-Unlike naive implementations that store raw JWT strings (`VARCHAR(512)`), the persistence layer enforces a **Zero-Knowledge Storage Policy**:
+Khác với các triển khai đơn giản thường lưu chuỗi JWT thô (`VARCHAR(512)`), tầng lưu trữ áp dụng **Chính Sách Lưu Trữ Không Kiến Thức (Zero-Knowledge Storage Policy)**:
 
-$$\text{Raw Token (Client)} \xrightarrow{\text{SHA-256}} \text{token\_hash (64 chars Hex in DB)}$$
+$$\text{Raw Token (Client)} \xrightarrow{\text{SHA-256}} \text{token\_hash (64 ký tự Hex trong CSDL)}$$
 
 - **Entity**: `RefreshToken.java`
-- **Database Schema**:
-  - `id`: `VARCHAR(36)` Primary Key (UUID).
-  - `family_id`: `VARCHAR(36)` Indexed foreign chain key.
-  - `token_hash`: `VARCHAR(64)` Unique indexed hash.
-  - `expiry_date`: `DATETIME` Indexed timestamp.
-  - `revoked`: `BOOLEAN` Status flag.
-- **Benefits**:
-  1. **RAM Efficiency**: Reduces B-Tree index memory footprint by **~87%** inside the InnoDB Buffer Pool.
-  2. **Leak Resilience**: Even if database backups are compromised, attackers cannot derive valid JWT strings from stored SHA-256 hashes.
+- **Cấu trúc Schema CSDL**:
+  - `id`: Khóa chính `VARCHAR(36)` (UUID).
+  - `family_id`: Khóa chuỗi phiên `VARCHAR(36)` (có đánh chỉ mục Index).
+  - `token_hash`: Chuỗi băm `VARCHAR(64)` (Unique Index).
+  - `expiry_date`: Thời điểm hết hạn `DATETIME` (có đánh chỉ mục Index).
+  - `revoked`: Trạng thái thu hồi `BOOLEAN`.
+- **Lợi ích kỹ thuật**:
+  1. **Tối ưu RAM**: Giảm dung lượng chỉ mục B-Tree tới **~87%** trong bộ nhớ đệm InnoDB Buffer Pool.
+  2. **Kháng rò rỉ dữ liệu**: Kể cả khi bản sao lưu CSDL bị rò rỉ, kẻ tấn công cũng không thể phục hồi chuỗi JWT hợp lệ từ các chuỗi băm SHA-256 một chiều.
 
 ---
 
-### 5. RFC 6819 Breach Containment (Automatic Replay Neutralization)
+### 5. Cơ Chế Khoanh Vùng Vi Phạm RFC 6819 (Chống Tấn Công Phát Lại Replay Attack)
 
-Adhering to **IETF RFC 6819 Section 5.2.2.3**, the server partitions client sessions into immutable token families (`family_id`):
+Tuân thủ nghiêm ngặt **IETF RFC 6819 Mục 5.2.2.3**, máy chủ nhóm các phiên làm việc của người dùng vào các họ token bất biến (`family_id`):
 
 ```text
-[Normal Rotation Flow]
-RT1 (Active) ──► Refresh Request ──► RT1 (Revoked) + RT2 (Active, same family)
-                                         │
-                                         ▼
-[Attacker Replays Compromised RT1]
-Replayed RT1 (Revoked) Detected!
+[Luồng Xoay Vòng Bình Thường]
+RT1 (Hiệu lực) ──► Yêu cầu Làm mới ──► RT1 (Thu hồi) + RT2 (Hiệu lực, cùng họ token)
+                                              │
+                                              ▼
+[Kẻ Tấn Công Phát Lại RT1 Đã Bị Thu Hồi]
+Phát hiện RT1 (Đã thu hồi) được gửi lại!
         │
         ▼
-[BREACH CONTAINMENT TRIGGERED]
-        ├── 1. Reject request with HTTP 401 Unauthorized
-        ├── 2. Atomically invalidate entire Family ID (kills RT2 held by attacker)
-        └── 3. Log high-severity Security Event & trigger Token Blacklist
+[KÍCH HOẠT QUY TRÌNH KHOANH VÙNG VI PHẠM]
+        ├── 1. Từ chối yêu cầu với mã lỗi HTTP 401 Unauthorized
+        ├── 2. Vô hiệu hóa nguyên tử (Atomically) toàn bộ Family ID (hủy RT2 của kẻ tấn công)
+        └── 3. Ghi nhật ký cảnh báo an ninh nghiêm trọng & đưa vào Danh sách đen Token
 ```
 
-- **Identity Disambiguation**: The server drops both sessions. The attacker is permanently locked out. The legitimate owner reclaims the account using primary credentials.
+- **Phân định danh tính**: Máy chủ lập tức chấm dứt toàn bộ phiên thuộc chuỗi đó. Kẻ tấn công bị chặn hoàn toàn. Người dùng hợp pháp chỉ cần xác thực lại bằng tài khoản chính để thiết lập chuỗi phiên mới an toàn.
 
 ---
 
-### 6. Scheduled Cleanup & Grace Period Invariant
-- **Grace Period**: Revoked tokens are preserved in MySQL until `expiry_date <= NOW()` to serve as active detection traps against replayed tokens.
-- **Chunked Housekeeping**: `RefreshTokenCleanupService.java` executes batched deletions (`LIMIT 5000`) on an hourly `@Scheduled` worker, preventing InnoDB table locks and Undo/Redo log contention.
+### 6. Tác Vụ Dọn Dẹp Định Kỳ & Bất Biến Thời Gian Chờ (Grace Period)
+- **Khoảng thời gian bảo lưu (Grace Period)**: Token đã thu hồi vẫn được lưu trữ tạm thời trong MySQL cho đến khi `expiry_date <= NOW()` để đóng vai trò làm "bẫy" phát hiện các truy vấn phát lại trái phép.
+- **Dọn dẹp phân đoạn**: `RefreshTokenCleanupService.java` thực thi lệnh xóa theo từng lô nhỏ (`LIMIT 5000`) qua tác vụ ngầm `@Scheduled` chạy mỗi giờ, ngăn ngừa tình trạng khóa bảng InnoDB và nghẽn bộ ghi nhật ký Undo/Redo.
 
 ---
 
-## ⚡ CORE REST API ENDPOINTS
+## ⚡ DANH SÁCH REST API CỐT LÕI
 
-| Category | Method | Endpoint | Access | Description |
+| Phân hệ | Phương thức | Đường dẫn Endpoint | Quyền truy cập | Mô tả chức năng |
 |---|:---:|---|:---:|---|
-| **Authentication** | `POST` | `/api/v1/auth/login` | Public | Authenticates credentials, sets dual HttpOnly cookies. |
-| | `POST` | `/api/v1/auth/refresh` | Cookie | Rotates token family and issues fresh access token. |
-| | `POST` | `/api/v1/auth/logout` | Authenticated | Clears cookies and revokes active token family. |
-| **Table Management**| `GET` | `/api/v1/tables` | Public | Retrieves real-time table layout and live reservation status. |
-| | `POST` | `/api/v1/tables/lock` | Authenticated | Acquires temporary 15-minute optimistic hold on a table. |
-| **Order & Payment** | `POST` | `/api/v1/orders` | Public / User | Creates new dining order with item customization. |
-| | `GET` | `/api/v1/orders/{code}` | Public / User | Retrieves order status with PII masking (`098****888`). |
-| | `POST` | `/api/v1/payments/sepay/ipn` | Webhook | Receives SePay payment notification with signature check. |
-| **Loyalty & Rewards**| `GET` | `/api/v1/loyalty/profile` | Authenticated | Fetches member tier points, history, and gift vouchers. |
-| | `POST` | `/api/v1/vouchers/validate`| Public / User | Validates voucher rules (including main-dish policy). |
+| **Xác Thực & Phiên** | `POST` | `/api/v1/auth/login` | Công khai | Xác thực thông tin đăng nhập, thiết lập cookie HttpOnly kép. |
+| | `POST` | `/api/v1/auth/refresh` | Qua Cookie | Xoay vòng họ token và cấp mới access token. |
+| | `POST` | `/api/v1/auth/logout` | Đã xác thực | Xóa sạch cookie và thu hồi toàn bộ họ token hoạt động. |
+| **Quản Lý Bàn Ăn**| `GET` | `/api/v1/tables` | Công khai | Lấy thông tin sơ đồ bàn ăn 2 tầng và trạng thái đặt chỗ trực tiếp. |
+| | `POST` | `/api/v1/tables/lock` | Đã xác thực | Khóa giữ bàn tạm thời 15 phút theo cơ chế khóa lạc quan. |
+| **Đơn Hàng & Thanh Toán** | `POST` | `/api/v1/orders` | Công khai / Người dùng | Khởi tạo đơn ăn uống mới kèm chi tiết tùy biến khẩu vị món. |
+| | `GET` | `/api/v1/orders/{code}` | Công khai / Người dùng | Truy vấn trạng thái đơn hàng kèm che số điện thoại PII (`098****888`). |
+| | `POST` | `/api/v1/payments/sepay/ipn` | Webhook SePay | Nhận tín hiệu thông báo thanh toán ngân hàng kèm kiểm tra chữ ký. |
+| **Hội Viên & Quà Tặng**| `GET` | `/api/v1/loyalty/profile` | Đã xác thực | Lấy điểm tích lũy thành viên, lịch sử đổi thưởng và két voucher. |
+| | `POST` | `/api/v1/vouchers/validate`| Công khai / Người dùng | Thẩm định điều kiện voucher (thực thi quy tắc món phở chính). |
 
 ---
 
-## 🚀 LOCAL DEVELOPMENT & VERIFICATION
+## 🚀 HƯỚNG DẪN CÀI ĐẶT & KIỂM THỬ TẠI LOCAL
 
-### Prerequisites
+### Yêu Cầu Môi Trường
 - **JDK**: Java 21 LTS (OpenJDK / Eclipse Temurin)
-- **Build Tool**: Maven 3.9+ (or use bundled `./mvnw.cmd`)
-- **Database**: MySQL 8.0 running on `localhost:3306`
+- **Công cụ build**: Maven 3.9+ (hoặc sử dụng script đính kèm `./mvnw.cmd`)
+- **Cơ sở dữ liệu**: MySQL 8.0 đang hoạt động tại cổng `localhost:3306`
 
-### Start Backend Service
+### Khởi Chạy Dịch Vụ Backend
 ```powershell
 # Windows PowerShell
 .\mvnw.cmd spring-boot:run
@@ -197,10 +197,10 @@ Replayed RT1 (Revoked) Detected!
 ./mvnw spring-boot:run
 ```
 
-The backend starts with default profile `dev` listening on: [`http://localhost:8080`](http://localhost:8080)
+Dịch vụ backend sẽ khởi chạy với cấu hình `dev` mặc định tại địa chỉ: [`http://localhost:8080`](http://localhost:8080)
 
-### Automated Test Suite
+### Chạy Bộ Kiểm Thử Tự Động
 ```powershell
-# Run unit and integration tests
+# Thực thi toàn bộ unit test và integration test
 .\mvnw.cmd clean test
 ```
