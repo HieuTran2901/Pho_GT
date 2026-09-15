@@ -1,3 +1,9 @@
+> [!IMPORTANT]
+> ### 🧭 SƠ ĐỒ PHÂN NHÁNH REPOSITORY (DUAL-ROOT ARCHITECTURE)
+> Dự án triển khai kiến trúc Fullstack hoàn chỉnh qua 2 phân hệ độc lập:
+> * ⚙️ **Backend (Spring Boot 3.4, Java 21, MySQL, VietQR)**: Đang xem tại nhánh 👉 **[`master`](https://github.com/HieuTran2901/Pho_GT/tree/master)**
+> * 🌐 **Frontend (React 18, Tailwind CSS, Vite)**: Xem toàn bộ mã nguồn giao diện tại nhánh 👉 **[`main`](https://github.com/HieuTran2901/Pho_GT/tree/main)** *(Nhánh phát triển: [`develop`](https://github.com/HieuTran2901/Pho_GT/tree/develop))*
+
 # Phở Gia Truyền 1986 — Dịch Vụ Máy Chủ Backend (Backend Service Engine)
 
 [![Java](https://img.shields.io/badge/Java-21-orange.svg?style=for-the-badge&logo=openjdk&logoColor=white)](https://openjdk.org/projects/jdk/21/)
