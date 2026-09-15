@@ -72,7 +72,7 @@
 
 ---
 
-### 3. Thanh Toán Tự Động Không Chạm VietQR Napas 247
+### 3. Thanh Toán Tự Động Không Chạm VietQR Napas 247 & Đối Soát Chống Gian Lận
 <p align="center">
   <img src="docs/screenshots/vietqr-payment.png" alt="Thanh Toán Tự Động VietQR Napas 247" width="94%" style="border-radius: 14px; border: 1px solid rgba(212, 175, 55, 0.4); box-shadow: 0 10px 30px rgba(0,0,0,0.25);" />
 </p>
@@ -80,9 +80,9 @@
 | Khía cạnh kỹ thuật | Chi tiết hiện thực |
 |---|---|
 | **Component cốt lõi** | `src/components/order/OrderStep3QrPayment.jsx`, `src/components/order/OrderStep3Success.jsx` |
-| **Cổng thanh toán** | Sinh mã VietQR động theo chuẩn EMVCo kết hợp xác nhận giao dịch qua Webhook SePay IPN |
-| **Bài toán kỹ thuật** | **Tự động chuyển trang không cần bấm (Zero-Click)**: Polling liên tục endpoint `/api/v1/payments/status/{code}` mỗi 2.5 giây. Ngay khi ngân hàng báo có biến động số dư, giao diện tự động chuyển sang màn hình vé xác nhận. |
-| **Bảo mật & Chống gian lận** | Cơ chế đối soát tức thì (Verify Transaction) truy vấn trực tiếp trạng thái từ máy chủ, ngăn chặn hoàn toàn việc can thiệp giả lập ở Client-side. |
+| **Cổng thanh toán** | Sinh mã VietQR động theo chuẩn EMVCo Napas 247 kết hợp xác nhận giao dịch thời gian thực qua Webhook SePay IPN |
+| **Bài toán kỹ thuật** | **Tự động chuyển trang không chạm (Zero-Click Transition)**: Tự động Polling endpoint `/api/v1/payments/status/{code}` mỗi 2.5 giây. Ngay khi ngân hàng ghi nhận biến động số dư, giao diện tự động chuyển sang màn hình vé xác nhận mà khách không cần chạm vào màn hình. |
+| **Kiến trúc chống gian lận (Zero-Trust Anti-Fraud)** | **Nút "Kiểm tra giao dịch 🔄" thay thế hoàn toàn nút bấm thủ công cũ**: Triệt tiêu cơ chế tự xác nhận ảo ở client. Bấm nút sẽ kích hoạt tra cứu trực tiếp từ máy chủ (Server-side lookup) kèm spinner đối soát; nếu trạng thái chưa `SUCCESS` sẽ bị chặn lại kèm chỉ dẫn rõ ràng. |
 
 ---
 
