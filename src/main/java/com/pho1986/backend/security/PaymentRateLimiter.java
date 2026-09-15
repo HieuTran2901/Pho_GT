@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * [SECURITY_AGENT] Payment Creation Rate Limiter
+ * Payment Creation Rate Limiter
  * Ngăn chặn tấn công DDoS / brute-force tạo giao dịch rác:
  * Giới hạn tối đa 15 yêu cầu tạo thanh toán trong vòng 60 giây cho mỗi Client IP / User ID.
  */

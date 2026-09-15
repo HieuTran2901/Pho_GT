@@ -39,21 +39,21 @@ public class AwsS3Config {
         AwsCredentialsProvider credentialsProvider;
 
         if (StringUtils.hasText(accessKey) && StringUtils.hasText(secretKey)) {
-            log.info("[CLOUD & SENTINEL] Khởi tạo S3Client với Static Credentials (Region: {}, Bucket: {})", region, bucketName);
+            log.info("[S3Config] Khởi tạo S3Client với Static Credentials (Region: {}, Bucket: {})", region, bucketName);
             credentialsProvider = StaticCredentialsProvider.create(
                     AwsBasicCredentials.create(accessKey.trim(), secretKey.trim())
             );
         } else if (StringUtils.hasText(profile)) {
             try {
-                log.info("[CLOUD & SENTINEL] Khởi tạo S3Client với Profile Credentials Provider (Profile: {}, Region: {}, Bucket: {})", profile, region, bucketName);
+                log.info("[S3Config] Khởi tạo S3Client với Profile Credentials Provider (Profile: {}, Region: {}, Bucket: {})", profile, region, bucketName);
                 credentialsProvider = ProfileCredentialsProvider.create(profile.trim());
                 credentialsProvider.resolveCredentials();
             } catch (Exception ex) {
-                log.warn("[CLOUD & SENTINEL] Không thể nạp profile '{}', chuyển sang DefaultCredentialsProvider: {}", profile, ex.getMessage());
+                log.warn("[S3Config] Không thể nạp profile '{}', chuyển sang DefaultCredentialsProvider: {}", profile, ex.getMessage());
                 credentialsProvider = DefaultCredentialsProvider.create();
             }
         } else {
-            log.info("[CLOUD & SENTINEL] Khởi tạo S3Client với DefaultCredentialsProvider (Region: {}, Bucket: {})", region, bucketName);
+            log.info("[S3Config] Khởi tạo S3Client với DefaultCredentialsProvider (Region: {}, Bucket: {})", region, bucketName);
             credentialsProvider = DefaultCredentialsProvider.create();
         }
 

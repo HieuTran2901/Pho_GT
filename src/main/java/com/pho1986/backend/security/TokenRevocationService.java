@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * [SECURITY_AGENT] Token Revocation Service
+ * Token Revocation Service
  * Manages an in-memory, thread-safe token blacklist for immediate token revocation upon logout.
  * Expired entries are automatically pruned to maintain constant memory overhead.
  */
@@ -44,10 +44,10 @@ public class TokenRevocationService {
                 lockedUsers.put(u.getId(), reason);
             }
             org.slf4j.LoggerFactory.getLogger(TokenRevocationService.class)
-                    .info("[SENTINEL] Đã nạp {} tài khoản bị khóa vào In-Memory Kill Switch Cache.", locked.size());
+                    .info("[Security] Đã nạp {} tài khoản bị khóa vào In-Memory Kill Switch Cache.", locked.size());
         } catch (Exception e) {
             org.slf4j.LoggerFactory.getLogger(TokenRevocationService.class)
-                    .warn("[SENTINEL] Không thể nạp tài khoản bị khóa khi khởi động: {}", e.getMessage());
+                    .warn("[Security] Không thể nạp tài khoản bị khóa khi khởi động: {}", e.getMessage());
         }
     }
 

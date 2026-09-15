@@ -251,7 +251,7 @@ public class TableService {
     }
 
     /**
-     * [BLADE & RAVEN] Validate whether a requested table is available for new orders.
+     * Validate whether a requested table is available for new orders.
      * Throws IllegalStateException if the table is locked (MAINTENANCE) by admin.
      */
     @Transactional(readOnly = true)
@@ -312,7 +312,7 @@ public class TableService {
             return true;
         }
 
-        // [BLADE & RAVEN] Chỉ match theo số khi input thực sự là bàn tầng 1 ("bàn 3", "ban 3", "3")
+        // Chỉ match theo số khi input thực sự là bàn tầng 1 ("bàn 3", "ban 3", "3")
         // Tuyệt đối không match nếu input thuộc tầng 2 ("ban công 03", "gian tranh 02", "vip")
         boolean isFloor2OrSpecial = normRaw.contains("cong") || normRaw.contains("tranh") || normRaw.contains("vip") || normRaw.contains("tra");
         if (!isFloor2OrSpecial && table.getFloor() == 1 && normName.startsWith("ban")) {

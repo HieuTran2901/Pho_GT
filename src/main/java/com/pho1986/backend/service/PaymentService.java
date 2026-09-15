@@ -81,7 +81,7 @@ public class PaymentService {
 
     @Transactional
     public PaymentResponse createPayment(String userId, CreatePaymentRequest request) {
-        // [SENTINEL & BLADE] Chốt chặn tài khoản bị khóa (Account Lockout Guard)
+        // Chốt chặn tài khoản bị khóa (Account Lockout Guard)
         if (userId != null) {
             User user = userRepository.findById(userId).orElse(null);
             if (user != null && (user.isAccountLocked() || "LOCKED".equalsIgnoreCase(user.getStatus()))) {
@@ -108,7 +108,7 @@ public class PaymentService {
             throw new IllegalStateException("Quý khách đã gửi yêu cầu thanh toán quá nhiều lần. Vui lòng thử lại sau " + remaining + " giây!");
         }
 
-        // [SENTINEL & BLADE] Chốt chặn chống lạm dụng voucher (Zero-Dollar & Minimum Basket Guard)
+        // Chốt chặn chống lạm dụng voucher (Zero-Dollar & Minimum Basket Guard)
         boolean hasVoucherOrGift = StringUtils.hasText(request.getAppliedGiftId());
         boolean hasItems = request.getItems() != null && !request.getItems().isEmpty();
         if (hasItems) {
@@ -123,7 +123,7 @@ public class PaymentService {
                     "Ưu đãi chỉ áp dụng kèm theo món ăn. Vui lòng chọn ít nhất 01 món chính trong thực đơn.");
         }
 
-        // [BLADE & RAVEN] Chốt chặn kiểm tra bàn bị khóa (Table Lockout Guard)
+        // Chốt chặn kiểm tra bàn bị khóa (Table Lockout Guard)
         if (StringUtils.hasText(request.getTableNumber())) {
             tableService.validateTableAvailable(request.getTableNumber());
         }

@@ -58,7 +58,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/orders/*").permitAll() // Tra cứu theo mã đơn
                         .requestMatchers(HttpMethod.POST, "/api/v1/chat/**").permitAll() // Trợ lý ẩm thực Tiểu Nhị 1986
                         .requestMatchers("/api/v1/payments/**").permitAll() // Hỗ trợ khởi tạo & kiểm tra thanh toán VietQR / COD
-                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN") // [SENTINEL] Bảo vệ tuyệt đối phân khu Admin
+                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN") // Bảo vệ tuyệt đối phân khu Admin
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(threatDefenseFilter, org.springframework.security.web.authentication.logout.LogoutFilter.class)

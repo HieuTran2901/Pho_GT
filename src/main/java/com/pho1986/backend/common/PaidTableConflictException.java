@@ -1,7 +1,7 @@
 package com.pho1986.backend.common;
 
 /**
- * [SENTINEL & BLADE] Ngoại lệ kích hoạt khi can thiệp vào bàn đang có đơn hàng ĐÃ THANH TOÁN.
+ * Ngoại lệ kích hoạt khi can thiệp vào bàn đang có đơn hàng ĐÃ THANH TOÁN.
  * Trả về HTTP 409 Conflict yêu cầu Quản trị viên đưa ra phương án xử lý rõ ràng.
  */
 public class PaidTableConflictException extends RuntimeException {

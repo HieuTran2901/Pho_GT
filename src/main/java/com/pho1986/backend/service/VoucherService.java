@@ -22,7 +22,7 @@ public class VoucherService {
 
     private final VoucherRepository voucherRepository;
 
-    // In-Memory Cache (TTL 60s) tuân thủ TEST-R015
+    // In-Memory Cache (TTL 60s) tối ưu hiệu năng truy vấn
     private volatile List<Voucher> cachedActiveVouchers = null;
     private volatile long lastCacheTime = 0L;
     private static final long CACHE_TTL_MS = 60_000L;

@@ -45,7 +45,7 @@ public class AdminService {
 
     @Transactional(readOnly = true)
     public AdminStatsResponse getDashboardStats() {
-        // [DRAGON & BLADE] Tối ưu hóa truy vấn CSDL:
+        // Tối ưu hóa truy vấn CSDL:
         // Thay vì kéo toàn bộ hàng chục ngàn Order vào RAM JVM (gây lag & nguy cơ OutOfMemory),
         // thực thi các câu lệnh Aggregate siêu tốc trực tiếp trên Index của MySQL.
         long totalOrders = orderRepository.count();

@@ -26,7 +26,7 @@ WHERE image_url LIKE '/images/%'
    OR tag IS NULL 
    OR description IS NULL 
    OR description = ''
-   OR slug LIKE 'pho-bo-tai-lan-truc-chuan-sentinel%'
+   OR slug LIKE 'pho-bo-tai-lan-truc-chuan%'
    OR slug LIKE 'pho-uoi-bo-tho-a-1986%'
    OR slug LIKE 'pho-ga-oi-chat%'
    OR slug LIKE 'tra-a-giai-khat%'

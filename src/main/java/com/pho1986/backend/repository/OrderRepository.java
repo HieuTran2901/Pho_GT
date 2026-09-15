@@ -38,7 +38,7 @@ public interface OrderRepository extends JpaRepository<Order, String> {
     @EntityGraph(attributePaths = {"items", "user"})
     List<Order> findByStatusInOrderByCreatedAtDesc(List<String> statuses);
 
-    // --- CÁC TRUY VẤN TỔNG HỢP SIÊU TỐC TRÊN CSDL (DRAGON AGGREGATIONS) ---
+    // --- CÁC TRUY VẤN TỔNG HỢP SIÊU TỐC TRÊN CSDL (DATABASE AGGREGATIONS) ---
 
     long countByStatus(String status);
 

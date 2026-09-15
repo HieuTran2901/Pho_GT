@@ -18,7 +18,7 @@ public class ChatController {
 
     private final ChatService chatService;
 
-    // SENTINEL Rate Limiter: Tối đa 25 requests / phút / IP
+    // Rate Limiter: Tối đa 25 requests / phút / IP
     private final Map<String, IpRateBucket> rateLimitMap = new ConcurrentHashMap<>();
     private static final int MAX_REQUESTS_PER_MINUTE = 25;
 
@@ -46,7 +46,7 @@ public class ChatController {
     private boolean isAllowed(String ip) {
         long now = System.currentTimeMillis();
 
-        // [SENTINEL] Tự động dọn dẹp các IP đã hết hạn khi kích thước map vượt 500 mục (Chống memory leak)
+        // Tự động dọn dẹp các IP đã hết hạn khi kích thước map vượt 500 mục (Chống memory leak)
         if (rateLimitMap.size() > 500) {
             rateLimitMap.entrySet().removeIf(entry -> (now - entry.getValue().windowStartTime) > 120000L);
         }

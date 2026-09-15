@@ -5,7 +5,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 /**
- * [SENTINEL & BLADE] Utility for cryptographic one-way hashing of Refresh Tokens.
+ * Utility for cryptographic one-way hashing of Refresh Tokens.
  * Converts raw JWT refresh tokens into standard 64-character SHA-256 hex hashes.
  */
 public final class TokenHashUtil {

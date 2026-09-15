@@ -70,7 +70,7 @@ public class OrderController {
     }
 
     /**
-     * [SENTINEL & BLADE] Pre-flight check tính hợp lệ của tài khoản / SĐT trước khi đặt bàn
+     * Pre-flight check tính hợp lệ của tài khoản / SĐT trước khi đặt bàn
      */
     @GetMapping("/eligibility")
     public ResponseEntity<ApiResponse<Boolean>> checkEligibility(

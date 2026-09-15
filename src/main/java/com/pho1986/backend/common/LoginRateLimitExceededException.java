@@ -1,7 +1,7 @@
 package com.pho1986.backend.common;
 
 /**
- * [SECURITY_AGENT] LoginRateLimitExceededException
+ * LoginRateLimitExceededException
  * Ném ra khi người dùng nhập sai quá 5 lần trong một vòng thử,
  * kích hoạt cơ chế tạm khóa lũy tiến (Tiered Cooldown).
  */

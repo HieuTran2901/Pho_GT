@@ -88,7 +88,7 @@ public class OrderDtos {
     }
 
     /**
-     * [SECURITY_AGENT & BLADE] DTO che giấu thông tin cá nhân (PII Masking) cho đơn hàng công khai
+     * DTO che giấu thông tin cá nhân (PII Masking) cho đơn hàng công khai
      */
     public static class PublicOrderResponse {
         private String id;

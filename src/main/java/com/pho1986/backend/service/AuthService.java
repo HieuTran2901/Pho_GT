@@ -82,7 +82,7 @@ public class AuthService {
 
     @Transactional
     public AuthResponse register(RegisterRequest request, String clientIp, String deviceId) {
-        // [SENTINEL] Kiểm tra Blacklist SĐT và Thiết Bị
+        // Kiểm tra Blacklist SĐT và Thiết Bị
         if (threatDefenseService.isPhoneBlocked(request.getPhone())) {
             String reason = threatDefenseService.getPhoneBanReason(request.getPhone());
             throw new IllegalArgumentException("Số điện thoại này đã bị đưa vào Danh Sách Cấm của quán: " + (reason != null ? reason : "Vi phạm quy chế."));
@@ -278,7 +278,7 @@ public class AuthService {
     }
 
     /**
-     * [SECURITY_AGENT] Mở khóa tài khoản người dùng bởi Quản trị viên
+     * Mở khóa tài khoản người dùng bởi Quản trị viên
      */
     @Transactional
     public User unlockUserAccount(String userId) {
@@ -299,13 +299,13 @@ public class AuthService {
         RefreshToken refreshToken = refreshTokenRepository.findByTokenHash(tokenHash)
                 .orElseThrow(() -> new BadCredentialsException("Phiên đăng nhập không hợp lệ hoặc đã hết hiệu lực."));
 
-        // [SENTINEL & BLADE] BREACH CONTAINMENT (RFC 6819 Section 5.2.2.3):
+        // BREACH CONTAINMENT (RFC 6819 Section 5.2.2.3):
         // Phát hiện tái sử dụng token đã thu hồi (Token Reuse / Theft Attempt)
         if (refreshToken.isRevoked()) {
             String familyId = refreshToken.getFamilyId();
             refreshTokenRepository.revokeFamilyTokens(familyId);
             org.slf4j.LoggerFactory.getLogger(AuthService.class)
-                    .warn("[SENTINEL THREAT ALERT] Phát hiện tái sử dụng RefreshToken đã thu hồi! User: {}, FamilyId: {}. Kích hoạt Breach Containment (thu hồi toàn bộ dòng token của phiên).",
+                    .warn("[Security Alert] Phát hiện tái sử dụng RefreshToken đã thu hồi! User: {}, FamilyId: {}. Kích hoạt Breach Containment (thu hồi toàn bộ dòng token của phiên).",
                             refreshToken.getUser().getId(), familyId);
             throw new BadCredentialsException("CẢNH BÁO BẢO MẬT: Phát hiện dấu hiệu phiên đăng nhập bất thường. Để bảo vệ an toàn tài khoản, toàn bộ phiên của thiết bị này đã được ngắt kết nối.");
         }
@@ -314,13 +314,13 @@ public class AuthService {
             throw new BadCredentialsException("Phiên đăng nhập đã hết hạn, quý khách vui lòng đăng nhập lại nhé!");
         }
 
-        // [SECURITY_AGENT] Refresh Token Rotation: Revoke old token and issue a fresh one in the same family
+        // Refresh Token Rotation: Revoke old token and issue a fresh one in the same family
         refreshToken.setRevoked(true);
         refreshTokenRepository.save(refreshToken);
 
         User user = userRepository.findById(refreshToken.getUser().getId()).orElse(refreshToken.getUser());
 
-        // [SENTINEL & BLADE] Chặn triệt để cấp mới token cho tài khoản đã bị khóa
+        // Chặn triệt để cấp mới token cho tài khoản đã bị khóa
         if (user.isAccountLocked() || "LOCKED".equalsIgnoreCase(user.getStatus())) {
             refreshTokenRepository.revokeAllUserTokens(user);
             throw new AccountLockedException(
@@ -339,7 +339,7 @@ public class AuthService {
 
     @Transactional
     public void logout(String accessToken, String refreshTokenString) {
-        // [SECURITY_AGENT] Immediate Access Token Revocation via Blacklist
+        // Immediate Access Token Revocation via Blacklist
         if (accessToken != null && !accessToken.isBlank()) {
             Date expiry = tokenProvider.getExpirationDateFromToken(accessToken);
             long expiryMs = (expiry != null) ? expiry.getTime() : System.currentTimeMillis() + tokenProvider.getExpirationMs();
@@ -350,7 +350,7 @@ public class AuthService {
             }
         }
 
-        // [SECURITY_AGENT] Revoke Refresh Token in persistent store
+        // Revoke Refresh Token in persistent store
         if (refreshTokenString != null && !refreshTokenString.isBlank()) {
             String tokenHash = TokenHashUtil.sha256Hex(refreshTokenString);
             refreshTokenRepository.findByTokenHash(tokenHash).ifPresent(rt -> {
@@ -384,7 +384,7 @@ public class AuthService {
             throw new IllegalArgumentException("Đơn hàng này đã được gắn vào tài khoản");
         }
 
-        // [SECURITY_AGENT] Chống chiếm đoạt đơn hàng: Bắt buộc số điện thoại claim phải khớp với số điện thoại người đặt
+        // Chống chiếm đoạt đơn hàng: Bắt buộc số điện thoại claim phải khớp với số điện thoại người đặt
         String cleanClaimPhone = (request.getPhone() != null) ? request.getPhone().replaceAll("[\\s.-]+", "") : "";
         String cleanGuestPhone = (order.getGuestPhone() != null) ? order.getGuestPhone().replaceAll("[\\s.-]+", "") : "";
         if (!cleanClaimPhone.equals(cleanGuestPhone)) {

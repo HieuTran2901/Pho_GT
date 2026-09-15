@@ -71,7 +71,7 @@ class DataInitializerSecurityTest {
     }
 
     @Test
-    @DisplayName("SENTINEL-SEC-01: Profile PROD - Mặc định KHÔNG gieo admin123")
+    @DisplayName("Security-: Profile PROD - Mặc định KHÔNG gieo admin123")
     void testProdDefaultBlocksAdminSeed() {
         when(environment.getActiveProfiles()).thenReturn(new String[]{"prod"});
         ReflectionTestUtils.setField(dataInitializer, "adminSeedEnabled", false);
@@ -82,7 +82,7 @@ class DataInitializerSecurityTest {
     }
 
     @Test
-    @DisplayName("SENTINEL-SEC-02: Profile PROD - Từ chối mật khẩu yếu hoặc admin123")
+    @DisplayName("Security-: Profile PROD - Từ chối mật khẩu yếu hoặc admin123")
     void testProdRejectsWeakOrAdmin123Password() {
         when(environment.getActiveProfiles()).thenReturn(new String[]{"prod"});
         ReflectionTestUtils.setField(dataInitializer, "adminSeedEnabled", true);
@@ -95,7 +95,7 @@ class DataInitializerSecurityTest {
     }
 
     @Test
-    @DisplayName("SENTINEL-SEC-03: Profile PROD - Chấp nhận mật khẩu mạnh qua biến môi trường")
+    @DisplayName("Security-: Profile PROD - Chấp nhận mật khẩu mạnh qua biến môi trường")
     void testProdAcceptsStrongPasswordFromEnv() {
         when(environment.getActiveProfiles()).thenReturn(new String[]{"prod"});
         ReflectionTestUtils.setField(dataInitializer, "adminSeedEnabled", true);
@@ -110,7 +110,7 @@ class DataInitializerSecurityTest {
     }
 
     @Test
-    @DisplayName("SENTINEL-SEC-04: Profile DEV - Tự động gieo tài khoản dev để tiện kiểm thử")
+    @DisplayName("Security-: Profile DEV - Tự động gieo tài khoản dev để tiện kiểm thử")
     void testDevProfileSeedsAdminByDefault() {
         when(environment.getActiveProfiles()).thenReturn(new String[]{"dev"});
         when(userRepository.findByPhone("0999999999")).thenReturn(Optional.empty());

@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * [SECURITY_AGENT] Enhanced Login & Registration Rate Limiter
+ * Enhanced Login & Registration Rate Limiter
  * - Login: Tối đa 5 lần thử sai cho mỗi Số điện thoại / Địa chỉ IP trong 60 giây (Chống Brute-force & Password Spraying).
  * - Registration: Tối đa 5 lần tạo tài khoản từ cùng 1 IP trong 10 phút (Chống DoS / Spam tài khoản rác).
  */

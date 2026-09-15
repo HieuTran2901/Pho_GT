@@ -37,7 +37,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (StringUtils.hasText(token) && tokenProvider.validateToken(token)) {
             String userId = tokenProvider.getUserIdFromToken(token);
 
-            // [SENTINEL & BLADE] Real-Time Kill Switch: Chặn đứng mọi request tiếp theo của tài khoản bị khóa
+            // Real-Time Kill Switch: Chặn đứng mọi request tiếp theo của tài khoản bị khóa
             String path = request.getRequestURI();
             boolean isAuthBypass = path != null && (path.endsWith("/login") || path.endsWith("/register") || path.endsWith("/logout"));
 
@@ -46,7 +46,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 return;
             }
 
-            // [SECURITY_AGENT] Check if token or its JTI has been revoked upon logout
+            // Check if token or its JTI has been revoked upon logout
             String jti = tokenProvider.getJtiFromToken(token);
             if (!revocationService.isRevoked(token) && (jti == null || !revocationService.isRevoked(jti))) {
                 String role = tokenProvider.getRoleFromToken(token);
@@ -67,7 +67,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         response.setStatus(423); // HttpStatus.LOCKED (RFC 4918)
         response.setContentType("application/json;charset=UTF-8");
 
-        // [SENTINEL & BLADE] Thu hồi và xóa sạch HttpOnly Cookie khỏi trình duyệt để chấm dứt phiên ngay lập tức
+        // Thu hồi và xóa sạch HttpOnly Cookie khỏi trình duyệt để chấm dứt phiên ngay lập tức
         boolean isSecure = request.isSecure();
         ResponseCookie deleteAccess = ResponseCookie.from("accessToken", "")
                 .httpOnly(true).secure(isSecure).path("/").maxAge(0).sameSite("Lax").build();

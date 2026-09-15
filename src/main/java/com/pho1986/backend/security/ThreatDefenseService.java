@@ -16,7 +16,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * [SENTINEL & BLADE] Hệ thống Phòng thủ Mối đe dọa (Threat Defense Service)
+ * Hệ thống Phòng thủ Mối đe dọa (Threat Defense Service)
  * Quản lý danh sách cấm đa tầng (SĐT + IP + Device ID) với In-Memory Cache O(1).
  */
 @Service
@@ -69,10 +69,10 @@ public class ThreatDefenseService {
                 }
             }
 
-            log.info("[SENTINEL] Đã nạp Threat Defense Cache thành công: {} SĐT, {} IP, {} Thiết bị.",
+            log.info("[Security] Đã nạp Threat Defense Cache thành công: {} SĐT, {} IP, {} Thiết bị.",
                     phonesCount, ipsCount, devicesCount);
         } catch (Exception e) {
-            log.warn("[SENTINEL] Không thể nạp Threat Defense Cache lúc khởi động: {}", e.getMessage());
+            log.warn("[Security] Không thể nạp Threat Defense Cache lúc khởi động: {}", e.getMessage());
         }
     }
 
@@ -128,7 +128,7 @@ public class ThreatDefenseService {
 
         // Không bao giờ cấm IP nằm trong Whitelist
         if ("IP".equals(type) && isWhitelistedIp(val)) {
-            log.warn("[SENTINEL] Từ chối cấm IP {} vì nằm trong danh sách Whitelist an toàn của quán!", val);
+            log.warn("[Security] Từ chối cấm IP {} vì nằm trong danh sách Whitelist an toàn của quán!", val);
             return;
         }
 
@@ -153,7 +153,7 @@ public class ThreatDefenseService {
             bannedDevices.put(val, reason != null ? reason : "Thiết bị bị hạn chế truy cập");
         }
 
-        log.info("[SENTINEL] Đã kích hoạt lệnh cấm {} [{}]: {}", type, val, reason);
+        log.info("[Security] Đã kích hoạt lệnh cấm {} [{}]: {}", type, val, reason);
     }
 
     @Transactional
@@ -169,6 +169,6 @@ public class ThreatDefenseService {
         else if ("IP".equals(type)) bannedIps.remove(val);
         else if ("DEVICE_ID".equals(type)) bannedDevices.remove(val);
 
-        log.info("[SENTINEL] Đã dỡ bỏ lệnh cấm {} [{}]", type, val);
+        log.info("[Security] Đã dỡ bỏ lệnh cấm {} [{}]", type, val);
     }
 }

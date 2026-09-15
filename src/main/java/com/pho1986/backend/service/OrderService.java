@@ -50,7 +50,7 @@ public class OrderService {
     }
 
     /**
-     * [SECURITY_AGENT & BLADE] Sinh mã đơn an toàn mật mã học chống đoán mò / quét vét (enumeration)
+     * Sinh mã đơn an toàn mật mã học chống đoán mò / quét vét (enumeration)
      */
     private String generateOrderCode() {
         for (int attempt = 0; attempt < 10; attempt++) {
@@ -103,7 +103,7 @@ public class OrderService {
             tableService.validateTableAvailable(request.getTableNumber());
         }
 
-        // [TEST-R015 & BLADE] Batch fetch all dishes to avoid N+1 SELECT queries
+        // [Performance Guard] Batch fetch all dishes to avoid N+1 SELECT queries
         List<String> dishIds = request.getItems().stream()
                 .map(CreateOrderItemRequest::getDishId)
                 .filter(StringUtils::hasText)
@@ -206,7 +206,7 @@ public class OrderService {
     }
 
     /**
-     * [SENTINEL & BLADE] Pre-flight check kiểm tra tính hợp lệ của tài khoản / SĐT trước khi đặt bàn
+     * Pre-flight check kiểm tra tính hợp lệ của tài khoản / SĐT trước khi đặt bàn
      */
     @Transactional(readOnly = true)
     public void checkEligibility(String userId, String phone) {

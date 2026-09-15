@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * [DRAGON & BLADE] Automated Housekeeping Worker for Refresh Tokens.
+ * Automated Housekeeping Worker for Refresh Tokens.
  * - Performs chunked batch deletion (LIMIT 5000) to protect InnoDB Buffer Pool, undo/redo logs,
  *   and avoid lock contention on high-volume production databases.
  * - Strictly respects the Grace Period: Only deletes tokens whose natural expiration has elapsed (expiry_date <= NOW()).
@@ -36,7 +36,7 @@ public class RefreshTokenCleanupService {
     @Scheduled(cron = "${app.security.token-cleanup-cron:0 0 * * * *}")
     public void scheduleCleanup() {
         if (!isRunning.compareAndSet(false, true)) {
-            log.warn("[DRAGON DB HOUSEKEEPING] Tác vụ dọn dẹp token phiên trước vẫn đang chạy. Bỏ qua lượt này.");
+            log.warn("[DB Housekeeping] Tác vụ dọn dẹp token phiên trước vẫn đang chạy. Bỏ qua lượt này.");
             return;
         }
 
@@ -64,11 +64,11 @@ public class RefreshTokenCleanupService {
             } while (batchDeleted == BATCH_SIZE);
 
             if (totalDeleted > 0) {
-                log.info("[DRAGON DB HOUSEKEEPING] Đã dọn dẹp thành công {} refresh token hết hạn theo từng lô (Batch Size: {}).",
+                log.info("[DB Housekeeping] Đã dọn dẹp thành công {} refresh token hết hạn theo từng lô (Batch Size: {}).",
                         totalDeleted, BATCH_SIZE);
             }
         } catch (Exception e) {
-            log.error("[DRAGON DB HOUSEKEEPING] Lỗi trong quá trình dọn dẹp token hết hạn: {}", e.getMessage(), e);
+            log.error("[DB Housekeeping] Lỗi trong quá trình dọn dẹp token hết hạn: {}", e.getMessage(), e);
         }
 
         return totalDeleted;

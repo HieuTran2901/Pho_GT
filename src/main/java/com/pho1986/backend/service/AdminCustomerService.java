@@ -85,7 +85,7 @@ public class AdminCustomerService {
                 })
                 .collect(Collectors.toList());
 
-        // [DRAGON & BLADE] Batch fetch món yêu thích để triệt tiêu toàn bộ vòng lặp N+1 queries
+        // Batch fetch món yêu thích để triệt tiêu toàn bộ vòng lặp N+1 queries
         Set<String> dishIds = filteredUsers.stream()
                 .map(User::getTasteProfile)
                 .filter(Objects::nonNull)
@@ -104,7 +104,7 @@ public class AdminCustomerService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> getCustomerMetrics() {
-        // [DRAGON & BLADE] Tối ưu hóa truy vấn CSDL:
+        // Tối ưu hóa truy vấn CSDL:
         // Thay vì kéo toàn bộ hàng chục ngàn User vào RAM JVM, thực thi các câu lệnh Aggregate COUNT trực tiếp trên Index MySQL.
         LocalDateTime now = LocalDateTime.now();
 
@@ -195,12 +195,12 @@ public class AdminCustomerService {
         User user = userRepository.findById(customerId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy khách hàng với ID: " + customerId));
 
-        // [SENTINEL SECURITY GUARD] 1. Tuyệt đối không cho phép Quản trị viên tự khóa hoặc thay đổi trạng thái chính mình
+        // 1. Tuyệt đối không cho phép Quản trị viên tự khóa hoặc thay đổi trạng thái chính mình
         if (adminPhone != null && (adminPhone.equals(user.getPhone()) || adminPhone.equals(user.getId()))) {
             throw new IllegalArgumentException("Hành động bị từ chối: Quản trị viên không thể tự thay đổi trạng thái hoặc khóa chính tài khoản của mình!");
         }
 
-        // [SENTINEL SECURITY GUARD] 2. Không cho phép thao tác trên tài khoản Quản trị viên qua phân khu Khách hàng
+        // 2. Không cho phép thao tác trên tài khoản Quản trị viên qua phân khu Khách hàng
         if ("ADMIN".equalsIgnoreCase(user.getRole())) {
             throw new IllegalArgumentException("Hành động bị từ chối: Không được phép thay đổi trạng thái của tài khoản Quản trị viên qua phân khu Khách hàng!");
         }
@@ -216,7 +216,7 @@ public class AdminCustomerService {
             user.setLockType("ADMIN_MANUAL");
             user.setLockReason(request.getReason() != null ? request.getReason() : "Quản trị viên " + adminPhone + " chủ động khóa");
 
-            // [SENTINEL & BLADE] Kích hoạt Real-Time Kill Switch:
+            // Kích hoạt Real-Time Kill Switch:
             // 1. Chặn đứng O(1) in-memory mọi request tiếp theo từ client
             tokenRevocationService.lockUser(user.getId(), user.getLockReason());
             // 2. Thu hồi toàn bộ Refresh Token trong database để triệt tiêu silent refresh
@@ -229,7 +229,7 @@ public class AdminCustomerService {
             user.setLockReason(null);
             user.setLockType(null);
 
-            // [SENTINEL & BLADE] Mở khóa khỏi in-memory kill switch
+            // Mở khóa khỏi in-memory kill switch
             tokenRevocationService.unlockUser(user.getId());
         }
 

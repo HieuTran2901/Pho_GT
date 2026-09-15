@@ -3,7 +3,7 @@ package com.pho1986.backend.common;
 import java.time.LocalDateTime;
 
 /**
- * [SECURITY_AGENT] AccountLockedException
+ * AccountLockedException
  * Ném ra khi tài khoản người dùng đã vượt quá 5 vòng thử (25 lần nhập sai mật khẩu)
  * và bị khóa cứng ở trạng thái LOCKED cấp cơ sở dữ liệu.
  */

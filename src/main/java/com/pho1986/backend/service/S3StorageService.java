@@ -72,7 +72,7 @@ public class S3StorageService {
         String region = awsS3Config.getRegion();
         String contentType = file.getContentType() != null ? file.getContentType() : "image/jpeg";
 
-        log.info("[CLOUD] Bắt đầu upload ảnh lên S3: bucket={}, key={}, size={} bytes, contentType={}",
+        log.info("[S3Storage] Bắt đầu upload ảnh lên S3: bucket={}, key={}, size={} bytes, contentType={}",
                 bucketName, s3Key, file.getSize(), contentType);
 
         try (InputStream inputStream = file.getInputStream()) {
@@ -85,16 +85,16 @@ public class S3StorageService {
             s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(inputStream, file.getSize()));
 
             String publicUrl = String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, s3Key);
-            log.info("[CLOUD] Upload ảnh lên S3 thành công! URL: {}", publicUrl);
+            log.info("[S3Storage] Upload ảnh lên S3 thành công! URL: {}", publicUrl);
             return publicUrl;
         } catch (S3Exception e) {
-            log.error("[CLOUD] Lỗi AWS S3 khi upload: code={}, message={}", e.awsErrorDetails().errorCode(), e.getMessage());
+            log.error("[S3Storage] Lỗi AWS S3 khi upload: code={}, message={}", e.awsErrorDetails().errorCode(), e.getMessage());
             throw new IllegalStateException("Lỗi từ Amazon S3: " + e.awsErrorDetails().errorMessage(), e);
         } catch (SdkClientException e) {
-            log.error("[CLOUD] Lỗi AWS SDK Client (chưa cấu hình credentials hoặc không có kết nối mạng): {}", e.getMessage());
+            log.error("[S3Storage] Lỗi AWS SDK Client (chưa cấu hình credentials hoặc không có kết nối mạng): {}", e.getMessage());
             throw new IllegalStateException("Không thể kết nối tới Amazon S3. Vui lòng kiểm tra AWS Credentials (AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY) hoặc kết nối mạng.", e);
         } catch (IOException e) {
-            log.error("[CLOUD] Lỗi đọc luồng dữ liệu file: {}", e.getMessage());
+            log.error("[S3Storage] Lỗi đọc luồng dữ liệu file: {}", e.getMessage());
             throw new IllegalStateException("Lỗi đọc dữ liệu tệp ảnh tải lên: " + e.getMessage(), e);
         }
     }

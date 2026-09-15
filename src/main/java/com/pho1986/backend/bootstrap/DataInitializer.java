@@ -83,10 +83,10 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        // [DRAGON - DB_AGENT] Tự động tương thích schema chuyển đổi Refresh Token
+        // Tự động tương thích schema chuyển đổi Refresh Token
         migrateRefreshTokenSchema();
 
-        // Gieo tài khoản Quản trị viên ADMIN theo chuẩn an ninh SENTINEL
+        // Gieo tài khoản Quản trị viên ADMIN theo chuẩn an ninh
         seedAdminUser();
 
         // Gieo tài khoản thực khách thân thiết mẫu (Chỉ gieo trên môi trường dev/non-prod)
@@ -95,15 +95,15 @@ public class DataInitializer implements CommandLineRunner {
         // Gieo cấu hình các Cổng Thanh Toán (M5.4 - Payment Maintenance Control Hub)
         seedPaymentGateways();
 
-        // Gieo 22 bàn ăn di sản 2 tầng (DRAGON - DB_AGENT)
+        // Gieo 22 bàn ăn di sản 2 tầng 
         seedDiningTables();
 
-        // Gieo Tem Phiếu Giảm Giá & Tri Kỷ 1986 (DRAGON - DB_AGENT)
+        // Gieo Tem Phiếu Giảm Giá & Tri Kỷ 1986 
         seedVouchers();
 
         long catCount = categoryRepository.count();
 
-        // 1. Đồng bộ 25 món ăn & 100% ảnh Unsplash độc bản (DRAGON - DB_AGENT)
+        // 1. Đồng bộ 25 món ăn & 100% ảnh Unsplash độc bản 
         syncMockDishes(catCount);
 
         if (catCount > 0) {
@@ -137,17 +137,17 @@ public class DataInitializer implements CommandLineRunner {
             }
 
             if (shouldPopulate) {
-                System.out.println("🐉 [DRAGON - DB_AGENT] Bắt đầu đồng bộ 25 món ăn gia truyền & 100% ảnh Unsplash độc bản vào Database...");
+                System.out.println("🚀 [DataInitializer] Bắt đầu đồng bộ 25 món ăn gia truyền & 100% ảnh Unsplash độc bản vào Database...");
                 ResourceDatabasePopulator populator = new ResourceDatabasePopulator(
                         new ClassPathResource("seed_mock_dishes.sql")
                 );
                 populator.setIgnoreFailedDrops(true);
                 populator.setContinueOnError(true);
                 populator.execute(dataSource);
-                System.out.println("🐉 [DRAGON - DB_AGENT] Đồng bộ thành công 25 món ăn gia truyền lên Database!");
+                System.out.println("🚀 [DataInitializer] Đồng bộ thành công 25 món ăn gia truyền lên Database!");
             }
         } catch (Exception ex) {
-            System.err.println("⚠️ [DRAGON - DB_AGENT] Lỗi đồng bộ SQL: " + ex.getMessage());
+            System.err.println("⚠️ [DataInitializer] Lỗi đồng bộ SQL: " + ex.getMessage());
         }
     }
 
@@ -213,7 +213,7 @@ public class DataInitializer implements CommandLineRunner {
 
         if (!shouldSeed) {
             if (isProd) {
-                System.out.println("🛡️ [SENTINEL] Profile PROD phát hiện: ĐÃ CHẶN tự động gieo tài khoản Admin mặc định.");
+                System.out.println("🛡️ [Security] Profile PROD phát hiện: ĐÃ CHẶN tự động gieo tài khoản Admin mặc định.");
             }
             return;
         }
@@ -226,17 +226,17 @@ public class DataInitializer implements CommandLineRunner {
                 : (isProd ? null : "admin123");
 
         if (phone == null || password == null) {
-            System.out.println("🛡️ [SENTINEL] Bỏ qua gieo tài khoản Admin vì chưa thiết lập ADMIN_INIT_PHONE hoặc ADMIN_INIT_PASSWORD.");
+            System.out.println("🛡️ [Security] Bỏ qua gieo tài khoản Admin vì chưa thiết lập ADMIN_INIT_PHONE hoặc ADMIN_INIT_PASSWORD.");
             return;
         }
 
-        // SENTINEL SECURITY RULE: Trên PROD, cấm tiệt mật khẩu yếu hoặc trùng mật khẩu mặc định "admin123"
+        // Security Rule: Trên PROD, cấm tiệt mật khẩu yếu hoặc trùng mật khẩu mặc định "admin123"
         if (isProd) {
             if ("admin123".equalsIgnoreCase(password)
                     || "123456".equals(password)
                     || "admin".equalsIgnoreCase(password)
                     || password.length() < 8) {
-                System.err.println("🚨 [SENTINEL - SECURITY BLOCK] TỪ CHỐI gieo tài khoản Admin trên PROD: Mật khẩu không an toàn (quá ngắn < 8 ký tự hoặc trùng mật khẩu mặc định).");
+                System.err.println("🚨 [Security Block] TỪ CHỐI gieo tài khoản Admin trên PROD: Mật khẩu không an toàn (quá ngắn < 8 ký tự hoặc trùng mật khẩu mặc định).");
                 return;
             }
         }
@@ -251,7 +251,7 @@ public class DataInitializer implements CommandLineRunner {
             adminUser.setRole("ADMIN");
             userRepository.save(adminUser);
             // Tuân thủ CWE-532: Tuyệt đối không log password ra console/log
-            System.out.println("🛡️ [SENTINEL] Khởi tạo tài khoản quản trị viên ADMIN [" + phone + "] thành công!");
+            System.out.println("🛡️ [Security] Khởi tạo tài khoản quản trị viên ADMIN [" + phone + "] thành công!");
         }
     }
 
@@ -266,7 +266,7 @@ public class DataInitializer implements CommandLineRunner {
                     new PaymentGatewayConfig("CASH", "Tiền mặt tại quán", "ACTIVE", "", "SYSTEM")
             );
             paymentGatewayConfigRepository.saveAll(defaultGateways);
-            System.out.println("💳 [DRAGON & BLADE] Đã khởi tạo 6 cổng thanh toán mặc định (M5.4 Payment Hub) thành công!");
+            System.out.println("💳 [PaymentHub] Đã khởi tạo 6 cổng thanh toán mặc định (M5.4 Payment Hub) thành công!");
         }
     }
 
@@ -300,13 +300,13 @@ public class DataInitializer implements CommandLineRunner {
                     new DiningTable("t2-10", "Thưởng Trà 02", 2, "thuongtra", "Khu Thưởng Trà & Đọc Sách", 2, "Không gian thư thái tĩnh lặng tầng 2", false)
             );
             diningTableRepository.saveAll(defaultTables);
-            System.out.println("🏮 [DRAGON] Đã khởi tạo 22 bàn ăn di sản 2 tầng chuẩn Phở Gia Truyền 1986 thành công!");
+            System.out.println("🏮 [TableInit] Đã khởi tạo 22 bàn ăn di sản 2 tầng chuẩn Phở Gia Truyền 1986 thành công!");
         }
     }
 
     private void seedVouchers() {
         if (voucherRepository.count() == 0) {
-            System.out.println("🐉 [DRAGON - DB_AGENT] Bắt đầu khởi tạo Tem Phiếu Giảm Giá & Tri Kỷ 1986 vào Database...");
+            System.out.println("🚀 [DataInitializer] Bắt đầu khởi tạo Tem Phiếu Giảm Giá & Tri Kỷ 1986 vào Database...");
             LocalDateTime now = LocalDateTime.now();
             List<Voucher> seedList = List.of(
                     new Voucher(
@@ -339,7 +339,7 @@ public class DataInitializer implements CommandLineRunner {
                     )
             );
             voucherRepository.saveAll(seedList);
-            System.out.println("✅ [DRAGON - DB_AGENT] Đã khởi tạo thành công 2 mã tem phiếu chuẩn vào Database!");
+            System.out.println("✅ [DataInitializer] Đã khởi tạo thành công 2 mã tem phiếu chuẩn vào Database!");
         }
     }
 

@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 /**
- * [DRAGON & BLADE] RefreshToken Entity adhering to RFC 6819 Production-Grade Blueprint.
+ * RefreshToken Entity adhering to RFC 6819 Production-Grade Blueprint.
  * - Stores SHA-256 token_hash instead of raw JWT string.
  * - Contains family_id to link rotating token generations for breach containment.
  * - Explicit column mappings and dedicated B-Tree indexes for fast lookups and chunked cleanup.

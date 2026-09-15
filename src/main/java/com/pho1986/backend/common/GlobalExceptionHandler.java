@@ -44,7 +44,7 @@ public class GlobalExceptionHandler {
         lockData.put("lockedAt", ex.getLockedAt() != null ? ex.getLockedAt().toString() : null);
         lockData.put("lockReason", ex.getLockReason());
 
-        // [SENTINEL & BLADE] Thu hồi và xóa sạch HttpOnly Cookie khỏi trình duyệt để chấm dứt phiên ngay lập tức
+        // Thu hồi và xóa sạch HttpOnly Cookie khỏi trình duyệt để chấm dứt phiên ngay lập tức
         boolean isSecure = request != null && request.isSecure();
         ResponseCookie deleteAccess = ResponseCookie.from("accessToken", "")
                 .httpOnly(true).secure(isSecure).path("/").maxAge(0).sameSite("Lax").build();

@@ -122,7 +122,7 @@ public class AdminController {
     }
 
     /**
-     * [SECURITY_AGENT] Mở khóa tài khoản bị khóa do vượt quá số vòng thử đăng nhập
+     * Mở khóa tài khoản bị khóa do vượt quá số vòng thử đăng nhập
      */
     @PostMapping("/users/{userId}/unlock")
     public ResponseEntity<ApiResponse<Map<String, Object>>> unlockUser(@PathVariable String userId) {

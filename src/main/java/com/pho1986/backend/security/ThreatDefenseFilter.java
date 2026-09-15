@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 import java.util.Map;
 
 /**
- * [SENTINEL] Bộ lọc Phòng thủ Mối đe dọa (Threat Defense Gate)
+ * Bộ lọc Phòng thủ Mối đe dọa (Threat Defense Gate)
  * Chạy ngay tại cổng vào của Servlet Filter để kiểm tra IP và Device ID bị cấm.
  */
 @Component

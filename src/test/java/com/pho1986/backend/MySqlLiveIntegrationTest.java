@@ -44,14 +44,14 @@ public class MySqlLiveIntegrationTest {
         try (Connection conn = dataSource.getConnection()) {
             DatabaseMetaData meta = conn.getMetaData();
             System.out.println("==================================================");
-            System.out.println("✅ [DB_AGENT] KẾT NỐI MYSQL THÀNH CÔNG RỰC RỠ!");
+            System.out.println("✅ [DatabaseTest] KẾT NỐI MYSQL THÀNH CÔNG RỰC RỠ!");
             System.out.println("   - DB Product : " + meta.getDatabaseProductName() + " " + meta.getDatabaseProductVersion());
             System.out.println("   - URL        : " + meta.getURL());
             System.out.println("   - User       : " + meta.getUserName());
             System.out.println("==================================================");
 
             try (ResultSet tables = meta.getTables("pho_1986_db", null, "%", new String[]{"TABLE"})) {
-                System.out.println("📋 [DB_AGENT] Danh sách bảng được sinh ra trong pho_1986_db:");
+                System.out.println("📋 [DatabaseTest] Danh sách bảng được sinh ra trong pho_1986_db:");
                 int count = 0;
                 while (tables.next()) {
                     count++;
