@@ -11,3 +11,7 @@ Thumbs.db
 
 # AI Context & Local Agent Workspace
 .ai/
+
+# Documentation Screenshots & Test Evidence
+docs/screenshots/
+evidence/
