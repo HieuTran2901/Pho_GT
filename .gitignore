@@ -32,3 +32,6 @@ target/
 .env
 .env.local
 *.log
+
+# AI Context & Local Agent Workspace
+.ai/
