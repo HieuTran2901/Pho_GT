@@ -1,5 +1,5 @@
 /**
- * [BLADE / BACKEND_AGENT] Dish API Client for Pho Gia Truyen 1986
+ * Dish API Client for Pho Gia Truyen 1986
  * Connects frontend customer views to Spring Boot Public REST endpoints (/api/v1/dishes)
  */
 

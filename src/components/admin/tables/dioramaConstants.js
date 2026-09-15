@@ -1,5 +1,5 @@
 /**
- * [URBAN & RAVEN] Hằng số & Cấu hình Phối cảnh 2.5D Isometric Diorama
+ * Hằng số & Cấu hình Phối cảnh 2.5D Isometric Diorama
  * Phở Gia Truyền 1986 — Sơ Đồ Bàn 2 Tầng
  */
 

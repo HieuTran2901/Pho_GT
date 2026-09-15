@@ -1,5 +1,5 @@
 /**
- * [REACT_AGENT & RAVEN] Loyalty API Client
+ * Loyalty API Client
  * Phở Gia Truyền 1986 - Kho Quà Tri Kỷ
  *
  * Kết nối REST API /api/v1/loyalty để tra cứu phần thưởng, điểm tích lũy và đổi quà.

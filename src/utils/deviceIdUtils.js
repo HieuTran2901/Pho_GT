@@ -1,5 +1,5 @@
 /**
- * [SECURITY_AGENT] Device Identification Utility
+ * Device Identification Utility
  * Persistent identifier stored in both localStorage and long-lived cookie.
  * Transmitted via X-Device-Id header to enforce 3-layer threat defense.
  */
@@ -57,7 +57,7 @@ export function getOrCreateDeviceId() {
 }
 
 /**
- * [SECURITY_AGENT] Global Fetch Interceptor to attach X-Device-Id header on all API calls
+ * Global Fetch Interceptor to attach X-Device-Id header on all API calls
  */
 export function installGlobalDeviceInterceptor() {
   if (typeof window === 'undefined' || window.__pho1986_device_interceptor) return;

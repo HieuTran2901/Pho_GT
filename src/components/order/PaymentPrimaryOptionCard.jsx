@@ -2,7 +2,7 @@ import React from 'react';
 import { Wrench } from 'lucide-react';
 
 /**
- * [URBAN & RAVEN] PaymentPrimaryOptionCard
+ * PaymentPrimaryOptionCard
  * Thẻ hiển thị phương thức thanh toán chính (VietQR, Tiền mặt tại quán, COD)
  */
 function PaymentPrimaryOptionCard({

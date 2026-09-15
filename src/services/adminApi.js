@@ -1,5 +1,5 @@
 /**
- * [REACT_AGENT & TITAN] Admin API Client for Phở Gia Truyền 1986
+ * Admin API Client for Phở Gia Truyền 1986
  * Connects frontend to Spring Boot Admin REST endpoints (/api/v1/admin)
  * Enforces HttpOnly Cookie credentials: include.
  * Equipped with Layer 2 Silent Refresh Interceptor & Transparent Request Retry.
@@ -29,7 +29,7 @@ async function handleAdminResponse(response) {
 }
 
 /**
- * [TITAN & RAVEN] Layer 2 Interceptor: Transparent Auto-Refresh & Retry.
+ * Layer 2 Interceptor: Transparent Auto-Refresh & Retry.
  * Intercepts HTTP 401 Unauthorized errors on any admin endpoint,
  * triggers authApi.refreshToken() in the background, and seamlessly retries the original request.
  */

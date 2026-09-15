@@ -1,5 +1,5 @@
 /**
- * [REACT_AGENT] SePay Checkout POST Form Submission
+ * SePay Checkout POST Form Submission
  * Mirrors the production pattern from ai-travel-marketplace/src/utils/submitSePayCheckout.ts.
  * Dispatches 'sepay:redirect_start' event so the UI immediately renders the SePayRedirectOverlay,
  * then safely executes form.submit() to transition to SePay gateway.

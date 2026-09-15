@@ -1,5 +1,5 @@
 /**
- * [RAVEN & BLADE] Table API Client for Phở Gia Truyền 1986
+ * Table API Client for Phở Gia Truyền 1986
  * Tích hợp đồng bộ trạng thái 22 bàn di sản và đơn hàng đang phục vụ trực tiếp từ backend.
  */
 

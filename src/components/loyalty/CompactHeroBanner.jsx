@@ -5,7 +5,7 @@ const currencyFormatter = new Intl.NumberFormat('vi-VN', { style: 'currency', cu
 const formatPrice = (price) => currencyFormatter.format(price);
 
 /**
- * [RAVEN & URBAN] CompactHeroBanner
+ * CompactHeroBanner
  * Phở Gia Truyền 1986
  *
  * Dải lụa tâm điểm mini siêu tinh gọn (~62px) dành riêng cho Mobile.

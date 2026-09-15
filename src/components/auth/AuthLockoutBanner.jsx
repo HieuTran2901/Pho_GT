@@ -3,7 +3,7 @@ import { Clock, Phone, AlertTriangle, Utensils, ArrowRight, KeyRound, RotateCcw 
 import PhoMascotExpression from './PhoMascotExpression';
 
 /**
- * [SENTINEL, URBAN & RAVEN] AuthLockoutBanner
+ * AuthLockoutBanner
  * Banner thông báo bảo mật đa tầng mang đậm phong vị Quán Phở Gia Truyền 1986:
  * - Thay vì thông báo kỹ thuật khô khan (HTTP 429/423), dùng giọng văn dí dỏm, ấm áp của Bác Chủ Quán.
  * - Tích hợp Mascot Bé Tô Phở 1986 phản ánh đúng tâm lý và biểu cảm qua từng vòng.

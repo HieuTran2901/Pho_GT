@@ -1,5 +1,5 @@
 /**
- * [RAVEN & URBAN] Customer Order API Client for Phở Gia Truyền 1986
+ * Customer Order API Client for Phở Gia Truyền 1986
  * Tích hợp kết nối tới /api/v1/orders đồng thời hỗ trợ lưu trữ & đồng bộ cục bộ (Local Sync).
  */
 
@@ -264,7 +264,7 @@ export const orderApi = {
   },
 
   /**
-   * [SENTINEL & RAVEN] Pre-flight kiểm tra tính hợp lệ của tài khoản / SĐT trước khi đặt bàn
+   * Pre-flight kiểm tra tính hợp lệ của tài khoản / SĐT trước khi đặt bàn
    */
   async checkEligibility(phone = '') {
     try {

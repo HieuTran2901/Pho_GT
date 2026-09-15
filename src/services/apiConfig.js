@@ -1,5 +1,5 @@
 /**
- * [REACT_AGENT & DEVOPS] Centralized API Base URL Resolver
+ * Centralized API Base URL Resolver
  * Phở Gia Truyền 1986
  *
  * Tự động phát hiện môi trường:
@@ -28,7 +28,7 @@ export const getApiBaseUrl = (endpoint) => {
 };
 
 /**
- * [SENTINEL & RAVEN] Tự động phát hiện lỗi HTTP 423 / ACCOUNT_LOCKED và phát tín hiệu toàn cục
+ * Tự động phát hiện lỗi HTTP 423 / ACCOUNT_LOCKED và phát tín hiệu toàn cục
  */
 export const notifyIfAccountLocked = (status, data) => {
   if (status === 423 || data?.code === 'ACCOUNT_LOCKED' || (data?.locked && data?.permanent)) {

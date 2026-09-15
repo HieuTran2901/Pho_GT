@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 
 /**
- * [RAVEN] useAnimatedNumber hook
+ * useAnimatedNumber hook
  * Odometer count-down mượt mà 60fps với cơ chế Continuous Interpolation.
  * Khi giá trị thay đổi liên tục (nhanh), animation mới sẽ tiếp nối mượt mà từ số đang hiển thị, không bị giật số.
  */

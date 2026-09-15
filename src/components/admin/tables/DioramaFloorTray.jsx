@@ -4,7 +4,7 @@ import DioramaTablePod from './DioramaTablePod';
 import { FLOOR_CONFIGS } from './dioramaConstants';
 
 /**
- * [URBAN] Khung Sa Bàn Nổi 2.5D Diorama Tray (Tầng 1 / Tầng 2)
+ * Khung Sa Bàn Nổi 2.5D Diorama Tray (Tầng 1 / Tầng 2)
  * Bao gồm cột thông tin di sản bên trái, ma trận bàn 2.5D ở giữa với hành lang thông thoáng, và cầu thang / ban công bên phải.
  */
 function DioramaFloorTray({

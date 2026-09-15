@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ShieldCheck, QrCode, X, Clock, AlertCircle } from 'lucide-react';
 
 /**
- * [URBAN & RAVEN] SePay Redirect Overlay Component
+ * SePay Redirect Overlay Component
  * Provides a reassuring, heritage-styled fullscreen loading transition
  * while waiting for SePay Gateway origin server to initialize the session.
  */

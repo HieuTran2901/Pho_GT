@@ -1,5 +1,5 @@
 /**
- * [REACT_AGENT] Payment API Client for Phở Gia Truyền 1986
+ * Payment API Client for Phở Gia Truyền 1986
  * Connects frontend to Spring Boot backend (/api/v1/payments) with resilient offline fallback.
  */
 
@@ -50,7 +50,7 @@ export const paymentApi = {
 
       const json = await response.json().catch(() => null);
 
-      // [SENTINEL & RAVEN] Chốt chặn tài khoản bị khóa: Tuyệt đối không fallback mã QR tĩnh
+      // Chốt chặn tài khoản bị khóa: Tuyệt đối không fallback mã QR tĩnh
       if (response.status === 423 || json?.data?.code === 'ACCOUNT_LOCKED') {
         notifyIfAccountLocked(response.status, json);
         const err = new Error(json?.message || 'Tài khoản hoặc số điện thoại này hiện đang bị tạm khóa. Không thể thanh toán.');
@@ -75,7 +75,7 @@ export const paymentApi = {
         throw err;
       }
     } catch (e) {
-      // [SENTINEL & RAVEN] Chốt chặn tài khoản bị khóa hoặc phản hồi lỗi từ backend (4xx, 5xx)
+      // Chốt chặn tài khoản bị khóa hoặc phản hồi lỗi từ backend (4xx, 5xx)
       // Tuyệt đối không fallback mã QR tĩnh nếu backend đã phản hồi lỗi cụ thể (bảo trì bàn, gateway maintenance, rate limit)
       if (e.isLocked || e.status) {
         throw e;

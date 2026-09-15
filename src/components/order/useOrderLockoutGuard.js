@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { orderApi } from '../../services/orderApi';
 
 /**
- * [RAVEN & URBAN] Hook quản lý chốt chặn tài khoản bị khóa trong luồng Đặt bàn & Thanh toán
+ * Hook quản lý chốt chặn tài khoản bị khóa trong luồng Đặt bàn & Thanh toán
  * - Pre-flight check tính hợp lệ trước khi chuyển bước
  * - Lắng nghe sự kiện toàn cục 'pho1986:account-locked'
  * - Cung cấp cơ chế phục hồi nhanh (Đổi SĐT)

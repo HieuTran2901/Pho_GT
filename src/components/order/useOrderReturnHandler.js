@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { getOrderSession } from './orderConstants';
 
 /**
- * [RAVEN] Hook handling return URL parameters (MOMO, SePay, VietQR callbacks)
+ * Hook handling return URL parameters (MOMO, SePay, VietQR callbacks)
  * Supports full page reload, hashchange, and popstate without causing redirect loops.
  */
 export function useOrderReturnHandler({

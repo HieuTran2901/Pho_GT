@@ -56,8 +56,7 @@ function AdminPaymentGatewayCard({
     }
   }, [isModified, isDisabled]);
 
-  // [URBAN & RAVEN - Phương án 1]:
-  // Khi TẮT:
+  // Phương án 1: // Khi TẮT:
   // - Nếu Admin chủ động bấm mũi tên (manualExpand !== null): tôn trọng thao tác thủ công
   // - Mặc định khi còn thay đổi chưa lưu (isModified === true): GIỮ MỞ để thấy nút "Lưu thay đổi"
   // - Mặc định khi đã lưu xong vào hệ thống (isModified === false): TỰ ĐỘNG THU GỌN thành thẻ mini

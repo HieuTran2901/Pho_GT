@@ -11,7 +11,7 @@ const AUTH_TOKEN_KEY = 'pho1986_access_token';
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     try {
-      // [SECURITY_AGENT] Tự động dọn sạch token trần khỏi localStorage nếu còn sót lại từ trước
+      // Tự động dọn sạch token trần khỏi localStorage nếu còn sót lại từ trước
       localStorage.removeItem(AUTH_TOKEN_KEY);
 
       const saved = localStorage.getItem(AUTH_STORAGE_KEY);
@@ -167,7 +167,7 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  // [TITAN & RAVEN] Layer 1: Proactive Background Silent Refresh Heartbeat
+  // Layer 1: Proactive Background Silent Refresh Heartbeat
   // Tự động gia hạn Access Token cứ mỗi 10 phút (trước mốc hết hạn 15 phút) khi người dùng đang đăng nhập
   useEffect(() => {
     if (!user) return;
@@ -220,7 +220,7 @@ export function AuthProvider({ children }) {
   const login = useCallback(async (phone, password) => {
     const data = await authApi.login({ phone, password });
     const authenticatedUser = data.user || data;
-    // [SECURITY_AGENT] Tuân thủ chuẩn OWASP: KHÔNG lưu secret token vào localStorage!
+    // Tuân thủ chuẩn OWASP: KHÔNG lưu secret token vào localStorage!
     // Trình duyệt tự động nhận và bảo vệ accessToken trong HttpOnly Cookie.
     localStorage.removeItem(AUTH_TOKEN_KEY);
     setUser(authenticatedUser);
@@ -237,7 +237,7 @@ export function AuthProvider({ children }) {
       saveTasteProfile
     });
     const registeredUser = data.user || data;
-    // [SECURITY_AGENT] Tuân thủ chuẩn OWASP: KHÔNG lưu secret token vào localStorage!
+    // Tuân thủ chuẩn OWASP: KHÔNG lưu secret token vào localStorage!
     localStorage.removeItem(AUTH_TOKEN_KEY);
     setUser(registeredUser);
     setAuthModalOpen(false);

@@ -41,7 +41,7 @@ function CartDrawer({ isOpen, onClose, cartItems, onUpdateQuantity, onRemoveItem
 
   const animatedTotalAmount = useAnimatedNumber(totalAmount, 400);
 
-  // [URBAN & RAVEN] Finite State Machine (FSM) cho quy trình Docking:
+  // Finite State Machine (FSM) cho quy trình Docking:
   // 'idle' -> 'gliding' -> 'bursting' -> 'applied' -> 'idle'
   const [dockStage, setDockStage] = useState('idle');
   const [targetRect, setTargetRect] = useState(null);
@@ -470,7 +470,7 @@ function CartDrawer({ isOpen, onClose, cartItems, onUpdateQuantity, onRemoveItem
         </div>
       </div>
 
-      {/* [RAVEN & URBAN] HIỆU ỨNG LƯỚT NHẸ VÀO MÓN ĐI KÈM (GLIDE & DOCK) */}
+      {/* HIỆU ỨNG LƯỚT NHẸ VÀO MÓN ĐI KÈM (GLIDE & DOCK) */}
       {isGliding && freeGift && targetRect && (
         <GlidingGiftRibbon
           targetRect={targetRect}

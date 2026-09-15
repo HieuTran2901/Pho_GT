@@ -1,7 +1,7 @@
 import React from 'react';
 
 /**
- * [URBAN & RAVEN] PhoMascotExpression
+ * PhoMascotExpression
  * Mascot Bé Tô Phở 1986 với các biểu cảm tương tác giàu cảm xúc:
  * - 'tea': Mời trà thư thái (Vòng 1 - 60s)
  * - 'crying': Khóc rơm rớm, đồng cảm & lo lắng (Vòng 2 - 180s)

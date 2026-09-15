@@ -4,7 +4,7 @@ import { X, Sparkles } from 'lucide-react';
 import AnimatedPhoMascot from './AnimatedPhoMascot';
 
 /**
- * [URBAN & RAVEN] PaymentMaintenancePopover
+ * PaymentMaintenancePopover
  * Khung thông báo nhỏ phong cách "Bong bóng suy nghĩ" (Thought Bubble):
  * - Linh vật Chibi Phở hoạt họa SVG sống động (Khói bốc, chớp mắt, xoay bánh răng, cờ lê)
  * - Bong bóng suy nghĩ thông minh với các chấm tròn nối (thought dots) định vị chuẩn xác

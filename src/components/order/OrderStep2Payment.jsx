@@ -67,7 +67,7 @@ function OrderStep2Payment({
     setMaintenancePopover(null);
   }, []);
 
-  // [URBAN & RAVEN - Cách 1]: Ẩn hoàn toàn các cổng bị Tắt (DISABLED)
+  // Cách 1: Ẩn hoàn toàn các cổng bị Tắt (DISABLED)
   const visibleExtendedMethods = EXTENDED_PAYMENT_METHODS.filter(
     (method) => !(typeof isDisabled === 'function' && isDisabled(method.id))
   );
@@ -383,7 +383,7 @@ function OrderStep2Payment({
         )}
       </div>
 
-      {/* [URBAN & RAVEN] Banner Niêm Phong Đặt Bàn khi SĐT hoặc tài khoản bị khóa */}
+      {/* Banner Niêm Phong Đặt Bàn khi SĐT hoặc tài khoản bị khóa */}
       {isOrderLocked && (
         <OrderLockoutBanner
           reason={lockoutReason}

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 
 /**
- * [RAVEN & URBAN] FlyingGiftRibbon
+ * FlyingGiftRibbon
  * Phở Gia Truyền 1986
  *
  * Hiệu ứng dải vé voucher gấm đỏ viền vàng kim bay theo đường cong Parabol

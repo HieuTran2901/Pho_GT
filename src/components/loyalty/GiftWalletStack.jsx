@@ -18,7 +18,7 @@ const getProjectedExpiry = (days = 30) => {
 };
 
 /**
- * [RAVEN & URBAN] GiftWalletStack
+ * GiftWalletStack
  * Phở Gia Truyền 1986
  *
  * Giao diện "Ví Gấm Tri Kỷ Xếp Lớp" dành riêng cho Mobile (Apple Wallet style).

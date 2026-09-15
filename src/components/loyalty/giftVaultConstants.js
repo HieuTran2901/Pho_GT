@@ -1,5 +1,5 @@
 /**
- * [URBAN & RAVEN] Gift Vault Constants
+ * Gift Vault Constants
  * Phở Gia Truyền 1986
  */
 

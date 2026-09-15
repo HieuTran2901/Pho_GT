@@ -424,7 +424,7 @@ function OrderStep1Booking({
         )}
       </div>
 
-      {/* [URBAN & RAVEN] Banner Niêm Phong Đặt Bàn khi SĐT hoặc tài khoản bị khóa */}
+      {/* Banner Niêm Phong Đặt Bàn khi SĐT hoặc tài khoản bị khóa */}
       {isOrderLocked && (
         <OrderLockoutBanner
           reason={lockoutReason}

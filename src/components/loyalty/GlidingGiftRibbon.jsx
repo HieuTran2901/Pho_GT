@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 
 /**
- * [RAVEN & URBAN] GlidingGiftRibbon
+ * GlidingGiftRibbon
  * Phở Gia Truyền 1986
  *
  * Hiệu ứng dải lụa vé gấm lướt nhẹ (glide & dock) từ đỉnh giỏ hàng

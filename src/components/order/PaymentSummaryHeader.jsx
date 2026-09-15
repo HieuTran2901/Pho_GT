@@ -3,7 +3,7 @@ import { AlertTriangle } from 'lucide-react';
 import { BRANCH_LABELS } from './orderConstants';
 
 /**
- * [URBAN & RAVEN] PaymentSummaryHeader
+ * PaymentSummaryHeader
  * Khung tóm tắt đơn hàng & thông báo lỗi/hủy thanh toán tại Bước 2
  */
 function PaymentSummaryHeader({

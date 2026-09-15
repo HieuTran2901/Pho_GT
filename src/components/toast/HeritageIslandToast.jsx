@@ -2,7 +2,7 @@ import React from 'react';
 import { X } from 'lucide-react';
 
 /**
- * [RAVEN & URBAN] HeritageIslandToast
+ * HeritageIslandToast
  * Phở Gia Truyền 1986
  *
  * Thanh thông báo dạng viên nang (Island Capsule Toast) phong cách Sơn Mài Thượng Khách

@@ -3,7 +3,7 @@ import { ShieldAlert, Phone, X, AlertCircle } from 'lucide-react';
 import PhoMascotExpression from './PhoMascotExpression';
 
 /**
- * [SENTINEL, URBAN & RAVEN] AccountLockedNoticeModal
+ * AccountLockedNoticeModal
  * Modal thông báo khóa tài khoản văn minh, trang nhã theo phong cách Di Sản Phở 1986.
  * Kích hoạt ngay lập tức khi phát hiện tài khoản bị khóa trong thời gian thực.
  */

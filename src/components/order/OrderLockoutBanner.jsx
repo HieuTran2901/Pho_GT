@@ -2,7 +2,7 @@ import React from 'react';
 import { ShieldAlert, RotateCcw, PhoneCall, Utensils, Lock } from 'lucide-react';
 
 /**
- * [URBAN & RAVEN] OrderLockoutBanner — Banner Niêm Phong Đặt Bàn Di Sản 1986
+ * OrderLockoutBanner — Banner Niêm Phong Đặt Bàn Di Sản 1986
  * Hiển thị thân tình, ấm áp khi phát hiện số điện thoại hoặc tài khoản bị khóa trong luồng đặt bàn
  */
 function OrderLockoutBanner({

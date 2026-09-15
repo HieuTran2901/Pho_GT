@@ -32,7 +32,7 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart, 
   const submitTimerRef = useRef(null), copyTimerRef = useRef(null);
   const hasAutoFilledRef = useRef(Boolean(user?.fullName || user?.phone));
 
-  // [SENTINEL & RAVEN] Chốt chặn tài khoản bị khóa trong luồng đặt bàn & thanh toán
+  // Chốt chặn tài khoản bị khóa trong luồng đặt bàn & thanh toán
   const {
     isOrderLocked,
     lockoutReason,
@@ -326,7 +326,7 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart, 
     if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
       document.activeElement.blur();
     }
-    // [RAVEN & SENTINEL] Kiểm tra ràng buộc món chính khi dùng voucher/quà tặng
+    // Kiểm tra ràng buộc món chính khi dùng voucher/quà tặng
     const hasFreeGift = (cartItems || []).some((i) => i.isFreeGift);
     const hasPaidItems = (cartItems || []).some((i) => !i.isFreeGift && (i.price || 0) > 0);
     if (hasFreeGift && !hasPaidItems) {
@@ -432,7 +432,7 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart, 
       if (onClearCart) onClearCart();
       loyaltyApi.getLoyaltySummary().then((s) => s?.account && window.dispatchEvent(new CustomEvent('pho1986:loyalty-updated', { detail: s.account }))).catch(() => {});
 
-      // [RAVEN & BLADE] SePay: Chuyển sang Bước 3 hiển thị mã QR VietQR Napas 247 (Tự động khớp đơn qua SePay Webhook)
+      // SePay: Chuyển sang Bước 3 hiển thị mã QR VietQR Napas 247 (Tự động khớp đơn qua SePay Webhook)
       // Tránh form POST tự động sang pay.sepay.vn gây redirect loop 302 hoặc tự reset trang
       if (selectedPaymentMethod === 'MOMO' && paymentRes?.payUrl) {
         setDirection('forward'); setStep(3); scrollToOrderSection();
@@ -447,7 +447,7 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart, 
         setIsOrderLocked(true);
         setLockoutReason(err.message || 'Số điện thoại này hiện đang bị tạm khóa dịch vụ.');
       } else if (err.status === 400 && err.message && (err.message.includes('bảo trì') || err.message.includes('tạm khóa') || err.message.includes('khóa') || err.message.includes('chọn bàn khác'))) {
-        // [RAVEN & BLADE] Chốt chặn bàn bị khóa: Không cho trôi sang Step 3! Quay về Step 1 & cảnh báo đỏ
+        // Chốt chặn bàn bị khóa: Không cho trôi sang Step 3! Quay về Step 1 & cảnh báo đỏ
         setSelectedTable(null);
         setTableLockWarning(err.message);
         setDirection('backward');

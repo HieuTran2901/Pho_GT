@@ -7,7 +7,7 @@ import { getApiBaseUrl } from '../../services/apiConfig';
 
 const STORAGE_KEY = 'pho1986_chat_history';
 
-// [RAVEN & URBAN] Heritage Portal Bloom Architecture (Tối ưu GPU Transform 60fps thuần khiết)
+// Heritage Portal Bloom Architecture (Tối ưu GPU Transform 60fps thuần khiết)
 const smoothEase = [0.16, 1, 0.3, 1];
 const exitEase = [0.4, 0, 0.2, 1];
 
@@ -61,14 +61,14 @@ export default function HeritageChatbox({
   const [isMobile, setIsMobile] = useState(() => (typeof window !== 'undefined' ? window.innerWidth < 640 : false));
   const fallbackTimerRef = useRef(null);
 
-  // [RAVEN & URBAN] Lắng nghe thay đổi kích thước viewport phản ứng linh hoạt
+  // Lắng nghe thay đổi kích thước viewport phản ứng linh hoạt
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 640);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // [RAVEN] Cleanup timer khi component unmount tránh memory leak
+  // Cleanup timer khi component unmount tránh memory leak
   useEffect(() => {
     return () => {
       if (fallbackTimerRef.current) {
@@ -77,7 +77,7 @@ export default function HeritageChatbox({
     };
   }, []);
 
-  // [RAVEN & URBAN] Khóa cuộn trang nền khi mở Native Chatbox trên Mobile (Triệt tiêu Zero Scroll Yanking)
+  // Khóa cuộn trang nền khi mở Native Chatbox trên Mobile (Triệt tiêu Zero Scroll Stuttering)
   useEffect(() => {
     if (isOpen && isMobile) {
       if (typeof window !== 'undefined') {
@@ -86,7 +86,7 @@ export default function HeritageChatbox({
     }
   }, [isOpen, isMobile]);
 
-  // [RAVEN & URBAN] Chỉ mở khóa cuộn sau khi Animation đóng đã hoàn tất 100% (Tránh reflow khi đang exit)
+  // Chỉ mở khóa cuộn sau khi Animation đóng đã hoàn tất 100% (Tránh reflow khi đang exit)
   const handleExitComplete = useCallback(() => {
     if (typeof window !== 'undefined' && document.body.style.overflow === 'hidden') {
       document.body.style.overflow = '';
@@ -118,7 +118,7 @@ export default function HeritageChatbox({
 
   const [isTyping, setIsTyping] = useState(false);
 
-  // [RAVEN] Ổn định hóa tham chiếu bằng useRef tránh hook churn và re-render liên đới
+  // Ổn định hóa tham chiếu bằng useRef tránh hook churn và re-render liên đới
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
   const isTypingRef = useRef(isTyping);

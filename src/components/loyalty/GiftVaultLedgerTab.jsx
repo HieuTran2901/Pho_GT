@@ -1,7 +1,7 @@
 import React from 'react';
 
 /**
- * [URBAN & RAVEN] GiftVaultLedgerTab
+ * GiftVaultLedgerTab
  * Phở Gia Truyền 1986
  *
  * Tab nhật ký điểm thưởng và giao dịch tích điểm của hội viên Tri Kỷ.

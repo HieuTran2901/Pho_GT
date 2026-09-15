@@ -2,7 +2,7 @@ import { tableApi } from '../services/tableApi';
 import { MOCK_TABLES } from '../components/seatmap/mockTables';
 
 /**
- * [RAVEN & BLADE] Random Table Selection Helper
+ * Random Table Selection Helper
  * Selects an available table matching the party size without opening the 3D map.
  */
 export function pickRandomAvailableTable(tables = [], guestCount = 2, currentTableId = null) {
@@ -16,7 +16,7 @@ export function pickRandomAvailableTable(tables = [], guestCount = 2, currentTab
   });
 
   if (availableTables.length === 0) {
-    // [RAVEN & BLADE] Tuyệt đối không fallback sang bàn đang bảo trì/đã đặt
+    // Tuyệt đối không fallback sang bàn đang bảo trì/đã đặt
     return null;
   }
 
@@ -53,7 +53,7 @@ export async function fetchAndPickRandomTable(guestCount = 2, currentTableId = n
 }
 
 /**
- * [RAVEN & BLADE] Checks whether a given table is still available (not maintenance/occupied/reserved)
+ * Checks whether a given table is still available (not maintenance/occupied/reserved)
  */
 export async function checkTableStillAvailable(tableIdOrName) {
   if (!tableIdOrName) return true;

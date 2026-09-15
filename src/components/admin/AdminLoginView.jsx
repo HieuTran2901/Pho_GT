@@ -300,7 +300,7 @@ export default function AdminLoginView({ onBackToHome }) {
           </p>
         </div>
 
-        {/* Multi-Tier Lockout & Cooldown Banner (SENTINEL & URBAN) */}
+        {/* Multi-Tier Lockout & Cooldown Banner */}
         {(isPermanentLocked || lockoutSeconds > 0) ? (
           <AuthLockoutBanner
             isPermanent={isPermanentLocked}

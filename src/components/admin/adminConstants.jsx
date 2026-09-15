@@ -102,7 +102,7 @@ export function renderPreviewTagIcon(icon) {
 }
 
 /**
- * Component LazyDishImage - Kiến trúc tối ưu hiệu năng (RAVEN) & Trải nghiệm thị giác di sản (URBAN)
+ * Component LazyDishImage - Kiến trúc tối ưu hiệu năng kết xuất và trải nghiệm thị giác di sản
  * - Tự động kích hoạt IntersectionObserver: Chỉ nạp ảnh khi người dùng thực sự cuộn tới vị trí thẻ.
  * - Khung xương giả lập (Heritage Shimmer Skeleton) ấm cúng màu hổ phách/giấy bồi với nhịp thở nhẹ nhàng (animate-pulse).
  * - Hiệu ứng xuất hiện mượt mà (Smooth Fade-in & Scale 500ms) khi ảnh tải xong, ngăn chặn nhảy layout (Zero CLS).

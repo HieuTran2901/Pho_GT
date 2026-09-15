@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { DIORAMA_STATUS_CONFIG } from './dioramaConstants';
 
 /**
- * [URBAN] Buồng bàn 2.5D Isometric Diorama Pod
+ * Buồng bàn 2.5D Isometric Diorama Pod
  * Phỏng dựng sa bàn thu nhỏ: bàn gỗ lim, ghế tựa, chậu cây bonsai, hiệu ứng đèn vàng ấm cúng.
  */
 function DioramaTablePod({

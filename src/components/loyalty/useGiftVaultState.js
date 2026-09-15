@@ -204,7 +204,7 @@ export function useGiftVaultState({
       const result = await loyaltyApi.redeemReward(reward.id);
       let createdGift = result?.issuedGift;
 
-      // [RAVEN & BLADE] CẬP NHẬT ĐIỂM TRI KỶ REALTIME (0ms)
+      // CẬP NHẬT ĐIỂM TRI KỶ REALTIME (0ms)
       if (result?.loyaltyAccount) {
         setLocalPoints(result.loyaltyAccount.availablePoints);
         if (updateLoyaltyAccount) {

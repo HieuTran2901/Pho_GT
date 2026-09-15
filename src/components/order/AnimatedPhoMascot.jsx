@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 /**
- * [URBAN & RAVEN] AnimatedPhoMascot
+ * AnimatedPhoMascot
  * Linh vật Chibi Phở 1986 dạng Vector SVG sinh động:
  * - 3 làn khói phở thơm lượn sóng & tan biến mượt mà (Loop 60fps)
  * - Đôi mắt Chibi chớp nháy đáng yêu & má hồng e ấp

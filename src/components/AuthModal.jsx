@@ -68,7 +68,7 @@ function AuthModal({ onToast }) {
     };
   }, [mounted, isClosing, handleClose]);
 
-  // [RAVEN & BLADE] Countdown timer khi bị tạm khóa đăng nhập (Rate Limit / Brute-force lockout)
+  // Countdown timer khi bị tạm khóa đăng nhập (Rate Limit / Brute-force lockout)
   useEffect(() => {
     if (lockoutSeconds <= 0) return;
     const interval = setInterval(() => {
@@ -87,7 +87,7 @@ function AuthModal({ onToast }) {
 
   const phoneInputRef = useRef(null);
 
-  // [RAVEN & URBAN] Cơ chế 1-click đổi số điện thoại & reset trạng thái khóa form
+  // Cơ chế 1-click đổi số điện thoại & reset trạng thái khóa form
   const handleChangePhone = useCallback(() => {
     setIsPermanentLocked(false);
     setErrorMessage('');
@@ -256,7 +256,7 @@ function AuthModal({ onToast }) {
         {/* Form Body */}
         <div className="p-6 pt-2 overflow-y-auto flex-1">
           
-          {/* Multi-Tier Lockout & Cooldown Banner (SENTINEL & URBAN) */}
+          {/* Multi-Tier Lockout & Cooldown Banner */}
           {(isPermanentLocked || lockoutSeconds > 0) ? (
             <AuthLockoutBanner
               isPermanent={isPermanentLocked}

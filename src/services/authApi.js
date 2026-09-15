@@ -1,5 +1,5 @@
 /**
- * [REACT_AGENT] Auth API Client for Phở Gia Truyền 1986
+ * Auth API Client for Phở Gia Truyền 1986
  * Connects frontend to Spring Boot backend (/api/v1/auth) with resilient fallback.
  */
 
@@ -53,7 +53,7 @@ async function handleResponse(response, isLoginAttempt = false) {
   return json?.data !== undefined ? json.data : json;
 }
 
-// [SECURITY_AGENT] Singleton Promise chống Double Refresh (Mutex / Request Deduplication)
+// Singleton Promise chống Double Refresh (Mutex / Request Deduplication)
 // Đảm bảo tại một thời điểm chỉ có DUY NHẤT 1 request /refresh được gửi lên server,
 // bảo vệ Refresh Token Rotation khỏi việc thu hồi token oan do React StrictMode hoặc race condition.
 let refreshPromise = null;

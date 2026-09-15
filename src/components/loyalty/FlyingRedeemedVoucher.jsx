@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 
 /**
- * [RAVEN & URBAN] FlyingRedeemedVoucher
+ * FlyingRedeemedVoucher
  * Phở Gia Truyền 1986
  *
  * Hiệu ứng khung voucher thu nhỏ bay theo đường cong Parabol từ nút 'Đổi quà'

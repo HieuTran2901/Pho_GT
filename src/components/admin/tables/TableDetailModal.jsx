@@ -14,7 +14,7 @@ import { formatVND } from '../adminConstants';
 import { DIORAMA_STATUS_CONFIG } from './dioramaConstants';
 
 /**
- * [RAVEN & URBAN] Modal Chi Tiết & Điều Phối Bàn Ăn
+ * Modal Chi Tiết & Điều Phối Bàn Ăn
  * Cho phép Quản trị viên xem thông tin đơn hàng đang phục vụ, đổi bàn cho khách hoặc chuyển đổi trạng thái bàn.
  */
 function TableDetailModal({

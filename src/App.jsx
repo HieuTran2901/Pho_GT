@@ -20,7 +20,7 @@ import { getCartStorageKey, loadCartFromStorage } from './utils/cartStorage';
 import { useAppRouting } from './hooks/useAppRouting';
 import HeritageRouteLoading from './components/common/HeritageRouteLoading';
 
-// [RAVEN & TITAN] Code-Splitting: Tải lười các phân khu nặng để tối ưu dung lượng Bundle ban đầu
+// Code-Splitting: Tải lười các phân khu nặng để tối ưu dung lượng Bundle ban đầu
 const AdminPortal = lazy(() => import('./components/admin/AdminPortal'));
 const AdminLoginView = lazy(() => import('./components/admin/AdminLoginView'));
 const MarketingPage = lazy(() => import('./marketing/MarketingPage'));
@@ -31,7 +31,7 @@ export default function App() {
   const { user, openAuthModal } = useAuth();
   const { isAdminRoute, isMarketingRoute, navigateToHome } = useAppRouting();
 
-  // [RAVEN & BLADE] Phương án 1: User-Scoped Cart Partitioning
+  // Phương án 1: User-Scoped Cart Partitioning
   // Mỗi tài khoản (hoặc khách vãng lai) sở hữu một giỏ hàng riêng biệt
   const currentCartKey = useMemo(() => getCartStorageKey(user), [user]);
   const activeCartKeyRef = useRef(currentCartKey);
@@ -127,7 +127,7 @@ export default function App() {
     };
   }, []);
 
-  // [RAVEN & URBAN] Xác định tọa độ giỏ hàng chuẩn xác cho cả Desktop & Mobile
+  // Xác định tọa độ giỏ hàng chuẩn xác cho cả Desktop & Mobile
   const getCartTargetCoordinates = useCallback(() => {
     if (typeof window === 'undefined') return { endX: 0, endY: 0 };
     // Mobile (< 768px): Nhắm đúng nút Giỏ hàng nổi trung tâm ở Bottom Nav
@@ -186,7 +186,7 @@ export default function App() {
     showToast({ type: 'dish', name: item.name, image: item.image, price: item.price });
   }, [showToast, getCartTargetCoordinates]);
 
-  // [RAVEN & URBAN] Thêm quà tặng Tri Kỷ (0đ) vào giỏ hàng với quỹ đạo Parabol bay vào giỏ
+  // Thêm quà tặng Tri Kỷ (0đ) vào giỏ hàng với quỹ đạo Parabol bay vào giỏ
   const handleApplyGiftToCart = useCallback((gift, coords) => {
     const giftItem = {
       id: `gift_${gift.dishId || gift.id}`,

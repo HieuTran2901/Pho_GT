@@ -20,7 +20,7 @@ function ChatWindow({
   const [input, setInput] = useState('');
   const [showActionSheet, setShowActionSheet] = useState(false);
 
-  // [RAVEN & URBAN] Tối ưu hóa cuộn cô lập: Cuộn mượt trong container nội bộ, triệt tiêu Scroll Yanking trên mobile
+  // Tối ưu hóa cuộn cô lập: Cuộn mượt trong container nội bộ, triệt tiêu Scroll Stuttering trên mobile
   useEffect(() => {
     if (isOpen && messagesContainerRef.current) {
       messagesContainerRef.current.scrollTo({

@@ -6,7 +6,7 @@ import { tableApi } from '../../../services/tableApi';
 import { MOCK_TABLES } from '../../seatmap/mockTables';
 
 /**
- * [URBAN & RAVEN] Giám Sát Sơ Đồ Bàn 2 Tầng — Phối Cảnh 2.5D Isometric Diorama
+ * Giám Sát Sơ Đồ Bàn 2 Tầng — Phối Cảnh 2.5D Isometric Diorama
  * Chuẩn phong cách di sản Phở Gia Truyền 1986 với sa bàn nổi đèn vàng ấm áp và đồng bộ CSDL realtime.
  */
 function AdminTablesTab({

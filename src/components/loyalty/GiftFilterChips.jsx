@@ -1,7 +1,7 @@
 import React from 'react';
 
 /**
- * [RAVEN & URBAN] GiftFilterChips
+ * GiftFilterChips
  * Phở Gia Truyền 1986
  *
  * Hàng chip lọc nhanh danh mục voucher:

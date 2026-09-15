@@ -17,7 +17,7 @@ const getRewardImage = (reward) => {
 };
 
 /**
- * [URBAN & RAVEN] GiftVaultRedeemTab
+ * GiftVaultRedeemTab
  * Phở Gia Truyền 1986
  *
  * Tab đổi điểm Tri Kỷ lấy các quà tặng, voucher phở truyền thống.

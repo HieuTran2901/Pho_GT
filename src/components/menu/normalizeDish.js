@@ -1,5 +1,5 @@
 /**
- * [RAVEN & URBAN] Adapter chuẩn hóa dữ liệu món ăn từ Spring Boot sang giao diện khách hàng
+ * Adapter chuẩn hóa dữ liệu món ăn từ Spring Boot sang giao diện khách hàng
  */
 export function normalizeBackendDish(dish) {
   // 1. Phân tách danh sách nguyên liệu
