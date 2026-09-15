@@ -30,8 +30,9 @@ function MenuFilterBar({
 }) {
   return (
     <div
+      id="menu-catalog"
       ref={controlsRef}
-      className={`sticky top-[78px] sm:top-[104px] lg:top-[112px] z-30 bg-[#faf6ef]/95 backdrop-blur-md py-2.5 sm:py-3.5 -mx-4 px-4 sm:mx-0 sm:px-0 mb-6 sm:mb-12 border-b border-stone-300/60 shadow-xs flex flex-col lg:flex-row items-center justify-between gap-2.5 lg:gap-5 transition-all duration-700 ${
+      className={`sticky top-[78px] sm:top-[104px] lg:top-[112px] z-30 bg-[#faf6ef]/95 backdrop-blur-md py-2.5 sm:py-3.5 -mx-4 px-4 sm:mx-0 sm:px-0 mb-6 sm:mb-12 border-b border-stone-300/60 shadow-xs flex flex-col lg:flex-row items-center justify-between gap-2.5 lg:gap-5 scroll-mt-20 sm:scroll-mt-28 transition-all duration-700 ${
         isControlsVisible ? 'reveal-fade-up' : 'opacity-0'
       }`}
     >

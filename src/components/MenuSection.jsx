@@ -10,6 +10,7 @@ import FlyingHeart from './FlyingHeart';
 import MenuCard from './menu/MenuCard';
 import MenuFilterBar from './menu/MenuFilterBar';
 import DishDetailModal from './menu/DishDetailModal';
+import MenuQuickNavigator from './menu/MenuQuickNavigator';
 import { useMenuSectionState } from './menu/useMenuSectionState';
 import { FOOD_GROUPS, GROUP_HEADER_CONFIG, INITIAL_GROUP_LIMIT } from './menu/menuConstants';
 
@@ -297,7 +298,7 @@ function MenuSection({ onAddToCart }) {
                 onClick={() => {
                   setActiveCategory('all');
                   setSearchQuery('');
-                  const el = document.getElementById('menu');
+                  const el = document.getElementById('menu-catalog') || document.getElementById('menu');
                   if (el) el.scrollIntoView({ behavior: 'smooth' });
                 }}
                 className="inline-flex items-center gap-3 px-8 py-3.5 rounded-full bg-[#fbf6ee] hover:bg-[#f3e9dc] text-stone-800 font-bold text-sm border border-[#e8ddce] transition-all shadow-sm hover:shadow-md active:scale-95 group cursor-pointer"
@@ -329,6 +330,14 @@ function MenuSection({ onAddToCart }) {
           onComplete={handleFlyHeartComplete}
         />
       ))}
+
+      {/* Floating Quick Category Navigator (GrabFood/ShopeeFood UX) */}
+      <MenuQuickNavigator
+        activeCategory={activeCategory}
+        onSelectCategory={handleCategoryClick}
+        groupedItems={groupedItems}
+        favoriteIds={favoriteIds}
+      />
     </section>
   );
 }

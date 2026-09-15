@@ -42,8 +42,17 @@ function NavbarMobileBottomNav({
 
         {/* Tab 2: Thực đơn */}
         <a
-          href="#menu"
-          onClick={() => setActiveTab('menu')}
+          href="#menu-catalog"
+          onClick={(e) => {
+            setActiveTab('menu');
+            const target = document.getElementById('menu-catalog');
+            if (target) {
+              e.preventDefault();
+              const yOffset = -76;
+              const y = target.getBoundingClientRect().top + window.pageYOffset + yOffset;
+              window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+            }
+          }}
           className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all ${
             activeTab === 'menu' ? 'text-[#9b2a1f]' : 'text-stone-600 hover:text-stone-900'
           }`}

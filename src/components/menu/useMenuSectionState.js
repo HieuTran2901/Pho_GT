@@ -304,11 +304,11 @@ export function useMenuSectionState(onAddToCart) {
     setActiveCategory(catId);
 
     if (catId === 'all') {
-      const menuEl = document.getElementById('menu');
-      if (menuEl) {
-        const yOffset = -75;
-        const y = menuEl.getBoundingClientRect().top + window.pageYOffset + yOffset;
-        window.scrollTo({ top: y, behavior: 'smooth' });
+      const catalogEl = document.getElementById('menu-catalog') || document.getElementById('menu');
+      if (catalogEl) {
+        const yOffset = window.innerWidth >= 1024 ? -115 : -85;
+        const y = catalogEl.getBoundingClientRect().top + window.pageYOffset + yOffset;
+        window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
       }
     } else {
       scrollToCategorySection(catId);
