@@ -2,7 +2,7 @@
 > ### 🧭 SƠ ĐỒ PHÂN NHÁNH REPOSITORY (DUAL-ROOT ARCHITECTURE)
 > Dự án triển khai kiến trúc Fullstack hoàn chỉnh qua 2 phân hệ độc lập:
 > * 🌐 **Frontend (React 18, Tailwind CSS, Vite)**: Đang xem tại nhánh [`main`](https://github.com/HieuTran2901/Pho_GT/tree/main) *(Nhánh phát triển: [`develop`](https://github.com/HieuTran2901/Pho_GT/tree/develop))*
-> * ⚙️ **Backend (Spring Boot 3.4, Java 21, MySQL, VietQR)**: Xem toàn bộ mã nguồn máy chủ tại nhánh 👉 **[`master`](https://github.com/HieuTran2901/Pho_GT/tree/master)**
+> * ⚙️ **Backend (Spring Boot 3.4, Java 21, MySQL, VietQR)**: Xem toàn bộ mã nguồn máy chủ tại nhánh **[`master`](https://github.com/HieuTran2901/Pho_GT/tree/master)**
 
 <div align="center">
 
