@@ -83,6 +83,8 @@ function NavbarMobileBottomNav({
 
         {/* Tab 4: Hội viên / Bát quen */}
         <button
+          id="mobile-bottom-member-btn"
+          data-tour="navbar-gift-vault-btn"
           onClick={() => {
             if (!isInitialized) return;
             if (isAuthenticated && user) {

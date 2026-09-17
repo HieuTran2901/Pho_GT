@@ -207,8 +207,12 @@ function MenuSection({ onAddToCart }) {
           )
         ) : (
           /* Normal Continuous Catalog View: Grouped by Category with ScrollSpy & Progressive Load More */
-          <div className="space-y-12 sm:space-y-16">
-            {FOOD_GROUPS.map((grp) => {
+          <div
+            id="menu-dish-showcase"
+            data-tour="menu-dish-showcase"
+            className="space-y-12 sm:space-y-16"
+          >
+            {FOOD_GROUPS.map((grp, grpIndex) => {
               const headerConfig = GROUP_HEADER_CONFIG[grp.id];
               const groupItems = groupedItems[grp.id] || [];
               const isExpanded = !!expandedGroups[grp.id];
@@ -257,6 +261,7 @@ function MenuSection({ onAddToCart }) {
                         key={`${grp.id}-${item.id}`}
                         item={item}
                         index={index}
+                        isFirstDish={grpIndex === 0 && index === 0}
                         isAdded={addedItemIdsSet.has(item.id)}
                         onAdd={handleAdd}
                         isLiked={favoriteIdsSet.has(item.id)}

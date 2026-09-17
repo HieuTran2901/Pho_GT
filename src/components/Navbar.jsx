@@ -1,19 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { 
-  Clock, 
-  Gift, 
-  MapPin, 
-  Utensils, 
-  ChevronDown, 
-  Sparkles, 
-  User, 
-  Phone, 
-  ShoppingBag, 
-  Menu, 
-  X,
-  FileText
+  Clock, Gift, MapPin, Utensils, ChevronDown, Sparkles, 
+  User, Phone, ShoppingBag, Menu, X, FileText, Compass 
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useOnboardingTour } from '../context/OnboardingTourContext';
 import {
   NAV_ITEMS,
   TIER_CONFIG,
@@ -37,6 +28,7 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
   const dropdownRef = useRef(null);
 
   const { user, isAuthenticated, isInitialized, openAuthModal, logout } = useAuth();
+  const { startTour } = useOnboardingTour();
   const navItems = NAV_ITEMS;
 
   // Memoized membership calculations
@@ -320,6 +312,19 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
                 </a>
               )}
 
+              {/* Nút Khám Phá Tour Tiểu Nhị 1986 */}
+              <button
+                type="button"
+                onClick={() => startTour(0)}
+                id="navbar-tour-guide-btn"
+                title="Hướng dẫn khám phá quán (Tiểu Nhị 1986)"
+                aria-label="Hướng dẫn khám phá quán"
+                className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-amber-500/50 bg-amber-50/80 hover:bg-amber-100/90 text-[#8a1e14] hover:border-[#8a1e14] text-xs font-serif font-bold tracking-wide transition-all shadow-xs hover:shadow-md active:scale-95 group cursor-pointer whitespace-nowrap"
+              >
+                <Compass className="w-3.5 h-3.5 text-[#8a1e14] group-hover:rotate-45 transition-transform duration-300" />
+                <span className="text-[11px]">Khám phá quán</span>
+              </button>
+
               {/* Kho quà button: Nằm cạnh giỏ hàng bên phải */}
               <button
                 type="button"
@@ -464,6 +469,7 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
         openAuthModal={openAuthModal}
         logout={logout}
         onToast={onToast}
+        onStartTour={startTour}
       />
     </>
   );
