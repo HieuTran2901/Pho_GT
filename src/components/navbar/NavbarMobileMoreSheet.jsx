@@ -26,7 +26,8 @@ function NavbarMobileMoreSheet({
   tierInfo,
   openAuthModal,
   logout,
-  onToast
+  onToast,
+  onStartTour
 }) {
   // Lock body scroll when sheet is open
   useEffect(() => {
@@ -180,6 +181,33 @@ function NavbarMobileMoreSheet({
               Tiện ích & Quyền lợi
             </div>
             <div className="bg-white rounded-2xl border border-stone-200/80 divide-y divide-stone-100 shadow-xs overflow-hidden">
+              {/* Tour Khám Phá Quán */}
+              <div
+                id="more-sheet-tour-guide-btn"
+                onClick={() => {
+                  onClose();
+                  if (onStartTour) {
+                    setTimeout(() => onStartTour(0), 300);
+                  }
+                }}
+                className="p-3 flex items-center justify-between hover:bg-stone-50 cursor-pointer transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-amber-100 text-[#8a1e14] flex items-center justify-center shrink-0">
+                    <Compass className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="font-serif font-bold text-xs text-stone-800">
+                      Hướng Dẫn Khám Phá Quán
+                    </div>
+                    <div className="text-[10px] text-stone-500">
+                      Cùng Tiểu Nhị 1986 khám phá nét văn hóa & tính năng
+                    </div>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-stone-400 shrink-0" />
+              </div>
+
               {/* Kho quà */}
               <div
                 id="more-sheet-gift-vault-btn"

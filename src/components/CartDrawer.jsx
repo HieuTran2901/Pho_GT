@@ -2,19 +2,23 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { X, Trash2, Plus, Minus, ArrowRight, ShoppingBag, Utensils } from 'lucide-react';
 import useAnimatedNumber from '../hooks/useAnimatedNumber';
 import GlidingGiftRibbon from './loyalty/GlidingGiftRibbon';
+import { useOnboardingTour } from '../context/OnboardingTourContext';
 
 const currencyFormatter = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
 const formatPrice = (price) => currencyFormatter.format(price);
 
 function CartDrawer({ isOpen, onClose, cartItems, onUpdateQuantity, onRemoveItem, onCheckout, onNavigateToMenu }) {
+  const tourCtx = useOnboardingTour();
+  const isTourActive = Boolean(tourCtx?.isTourActive);
+
   // ESC key listener to close drawer gracefully
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isOpen) onClose();
+      if (e.key === 'Escape' && isOpen && !isTourActive) onClose();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, isTourActive]);
 
   // Lock body scroll when drawer is open
   useEffect(() => {
@@ -119,7 +123,7 @@ function CartDrawer({ isOpen, onClose, cartItems, onUpdateQuantity, onRemoveItem
 
   return (
     <div
-      className={`fixed inset-0 z-50 overflow-hidden transition-all duration-500 ${
+      className={`fixed inset-0 z-[9985] overflow-hidden transition-all duration-500 ${
         isOpen ? 'pointer-events-auto' : 'pointer-events-none'
       }`}
       aria-modal="true"
@@ -127,7 +131,7 @@ function CartDrawer({ isOpen, onClose, cartItems, onUpdateQuantity, onRemoveItem
     >
       {/* Backdrop with smooth Fade & Blur */}
       <div
-        onClick={onClose}
+        onClick={isTourActive ? undefined : onClose}
         className={`fixed inset-0 bg-stone-950/60 backdrop-blur-xs transition-opacity duration-500 ease-out ${
           isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
@@ -450,7 +454,14 @@ function CartDrawer({ isOpen, onClose, cartItems, onUpdateQuantity, onRemoveItem
 
               {hasPaidItems ? (
                 <button
-                  onClick={onCheckout}
+                  id="cart-drawer-checkout-btn"
+                  data-tour="cart-checkout-btn"
+                  onClick={(e) => {
+                    onCheckout(e);
+                    if (typeof window !== 'undefined') {
+                      window.dispatchEvent(new CustomEvent('pho1986:tour-action', { detail: { action: 'CLICK_CHECKOUT' } }));
+                    }
+                  }}
                   className="w-full py-3.5 rounded-xl bg-brand-red hover:bg-brand-redhover text-white font-bold text-sm shadow-lg flex items-center justify-center gap-2 transition-colors cursor-pointer"
                 >
                   <span>Gửi Yêu Cầu Đặt Món Ngay</span>
@@ -483,4 +494,3 @@ function CartDrawer({ isOpen, onClose, cartItems, onUpdateQuantity, onRemoveItem
 }
 
 export default React.memo(CartDrawer);
-

@@ -13,6 +13,7 @@ import HeritageIslandToast from './components/toast/HeritageIslandToast';
 import AuthModal from './components/AuthModal';
 import MemberWelcome3DCard from './components/auth/MemberWelcome3DCard';
 import HeritageChatbox from './components/chat/HeritageChatbox';
+import SpotlightTour from './components/onboarding/SpotlightTour';
 import { useAuth } from './context/AuthContext';
 import { TIER_CONFIG } from './components/navbar/navbarConstants';
 import { getCartStorageKey, loadCartFromStorage } from './utils/cartStorage';
@@ -430,22 +431,12 @@ export default function App() {
           </Suspense>
         )}
 
-        {/* Flying Parabolic Pho Bowls */}
+        {/* Flying Parabolic Pho Bowls & Gift Ribbons */}
         {flyingBowls.map((fly) => (
-          <FlyingPhoBowl
-            key={fly.id}
-            fly={fly}
-            onComplete={handleFlightComplete}
-          />
+          <FlyingPhoBowl key={fly.id} fly={fly} onComplete={handleFlightComplete} />
         ))}
-
-        {/* Flying Parabolic Gift Ribbons */}
         {flyingGifts.map((fly) => (
-          <FlyingGiftRibbon
-            key={fly.id}
-            fly={fly}
-            onComplete={handleGiftFlightComplete}
-          />
+          <FlyingGiftRibbon key={fly.id} fly={fly} onComplete={handleGiftFlightComplete} />
         ))}
 
         {/* Main Sections */}
@@ -483,6 +474,9 @@ export default function App() {
           onExploreMenu={handleExploreMenu}
           onToast={showToast}
         />
+
+        {/* Heritage Onboarding Spotlight Tour (Tiểu Nhị 1986) */}
+        <SpotlightTour />
 
         {/* Footer */}
         <Footer />

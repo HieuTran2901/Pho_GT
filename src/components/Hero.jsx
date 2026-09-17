@@ -35,7 +35,11 @@ function Hero({ onExploreMenu, onBookTable }) {
         </div>
 
         {/* 2. Vintage Parchment Letter Card (Bức Thư Tay Giấy Dó Cổ Điển) */}
-        <div className="relative z-10 -mt-7 sm:-mt-9 mx-3 sm:mx-6 rounded-3xl bg-[#faf6ef] border border-amber-900/15 shadow-[0_-8px_25px_rgba(0,0,0,0.06),0_15px_35px_rgba(0,0,0,0.08)] p-5 sm:p-7 space-y-3.5 mb-8">
+        <div
+          id="hero-story-banner-mobile"
+          data-tour="hero-story-banner"
+          className="relative z-10 -mt-7 sm:-mt-9 mx-3 sm:mx-6 rounded-3xl bg-[#faf6ef] border border-amber-900/15 shadow-[0_-8px_25px_rgba(0,0,0,0.06),0_15px_35px_rgba(0,0,0,0.08)] p-5 sm:p-7 space-y-3.5 mb-8"
+        >
           
           {/* Heading Group */}
           <div className="space-y-1">
@@ -116,8 +120,10 @@ function Hero({ onExploreMenu, onBookTable }) {
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-1">
             <button
+              id="hero-explore-menu-btn-mobile"
+              data-tour="hero-explore-menu-btn"
               onClick={onExploreMenu}
-              className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[#96281b] hover:bg-[#7e1f14] text-white font-bold text-xs tracking-wider shadow-md transition-all flex items-center justify-center gap-2 active:scale-98"
+              className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[#96281b] hover:bg-[#7e1f14] text-white font-bold text-xs tracking-wider shadow-md transition-all flex items-center justify-center gap-2 active:scale-98 cursor-pointer"
             >
               <Soup className="w-4 h-4" />
               <span>XEM THỰC ĐƠN TINH HOA</span>
@@ -125,8 +131,10 @@ function Hero({ onExploreMenu, onBookTable }) {
             </button>
 
             <button
+              id="hero-book-table-btn-mobile"
+              data-tour="hero-book-table-btn"
               onClick={onBookTable}
-              className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-white hover:bg-stone-50 text-stone-800 font-bold text-xs tracking-wider border border-stone-300 shadow-xs transition-all flex items-center justify-center gap-2 active:scale-98"
+              className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-white hover:bg-stone-50 text-stone-800 font-bold text-xs tracking-wider border border-stone-300 shadow-xs transition-all flex items-center justify-center gap-2 active:scale-98 cursor-pointer"
             >
               <Calendar className="w-4 h-4 text-stone-700" />
               <span>ĐẶT BÀN GIỮ CHỖ</span>
@@ -153,7 +161,11 @@ function Hero({ onExploreMenu, onBookTable }) {
         <SteamEffect />
 
         {/* 3. Fluid & Percentage-Locked Interactive Text Container */}
-        <div className="relative z-20 lg:absolute lg:left-[8%] lg:top-[31%] lg:w-[36%] lg:max-w-[470px] text-left">
+        <div
+          id="hero-story-banner"
+          data-tour="hero-story-banner"
+          className="relative z-20 lg:absolute lg:left-[8%] lg:top-[31%] lg:w-[36%] lg:max-w-[470px] text-left"
+        >
           {/* Heading Group */}
           <div className="space-y-1 sm:space-y-1.5">
             <div
@@ -258,8 +270,10 @@ function Hero({ onExploreMenu, onBookTable }) {
             style={{ animationDelay: '1150ms' }}
           >
             <button
+              id="hero-explore-menu-btn"
+              data-tour="hero-explore-menu-btn"
               onClick={onExploreMenu}
-              className="w-full sm:w-auto px-[clamp(0.85rem,1.3vw,1.4rem)] py-[clamp(0.42rem,0.65vw,0.68rem)] rounded-full bg-[#96281b] hover:bg-[#7e1f14] text-white font-bold text-[clamp(0.62rem,0.78vw,0.78rem)] tracking-wider shadow-md shadow-red-950/20 transition-all flex items-center justify-center gap-1.5 group shrink-0"
+              className="w-full sm:w-auto px-[clamp(0.85rem,1.3vw,1.4rem)] py-[clamp(0.42rem,0.65vw,0.68rem)] rounded-full bg-[#96281b] hover:bg-[#7e1f14] text-white font-bold text-[clamp(0.62rem,0.78vw,0.78rem)] tracking-wider shadow-md shadow-red-950/20 transition-all flex items-center justify-center gap-1.5 group shrink-0 cursor-pointer"
             >
               <Soup className="w-[clamp(0.8rem,1vw,1rem)] h-[clamp(0.8rem,1vw,1rem)]" />
               <span>XEM THỰC ĐƠN TINH HOA</span>
@@ -267,8 +281,10 @@ function Hero({ onExploreMenu, onBookTable }) {
             </button>
 
             <button
+              id="hero-book-table-btn"
+              data-tour="hero-book-table-btn"
               onClick={onBookTable}
-              className="w-full sm:w-auto px-[clamp(0.85rem,1.3vw,1.4rem)] py-[clamp(0.42rem,0.65vw,0.68rem)] rounded-full bg-white/80 hover:bg-white text-stone-800 font-bold text-[clamp(0.62rem,0.78vw,0.78rem)] tracking-wider border border-stone-400 shadow-sm transition-all flex items-center justify-center gap-1.5 shrink-0 backdrop-blur-xs"
+              className="w-full sm:w-auto px-[clamp(0.85rem,1.3vw,1.4rem)] py-[clamp(0.42rem,0.65vw,0.68rem)] rounded-full bg-white/80 hover:bg-white text-stone-800 font-bold text-[clamp(0.62rem,0.78vw,0.78rem)] tracking-wider border border-stone-400 shadow-sm transition-all flex items-center justify-center gap-1.5 shrink-0 backdrop-blur-xs cursor-pointer"
             >
               <Calendar className="w-[clamp(0.8rem,1vw,1rem)] h-[clamp(0.8rem,1vw,1rem)] text-stone-700" />
               <span>ĐẶT BÀN GIỮ CHỖ</span>

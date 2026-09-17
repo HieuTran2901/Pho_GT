@@ -15,6 +15,7 @@ import { FeatureIcon, TagBadgeIcon, formatPrice } from './menuConstants';
 const MenuCard = React.memo(function MenuCard({
   item,
   index,
+  isFirstDish,
   isAdded,
   onAdd,
   isLiked,
@@ -47,6 +48,15 @@ const MenuCard = React.memo(function MenuCard({
     if (plusOneTimerRef.current) clearTimeout(plusOneTimerRef.current);
     plusOneTimerRef.current = setTimeout(() => setFloatingPlusOne(false), 950);
     onAdd(item, e);
+
+    // Kích hoạt thông báo cho Spotlight Tour nếu đang ở trạm thêm món
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('pho1986:tour-action', {
+          detail: { action: 'ADD_TO_CART', item }
+        })
+      );
+    }
   };
 
   const handleToggleHeart = (e) => {
@@ -74,6 +84,8 @@ const MenuCard = React.memo(function MenuCard({
   return (
     <div
       ref={cardRef}
+      id={isFirstDish ? 'tour-first-dish-card' : undefined}
+      data-tour={isFirstDish ? 'tour-first-dish-card' : undefined}
       className={`group bg-white rounded-2xl md:rounded-3xl overflow-hidden border border-stone-200/90 shadow-2xs md:shadow-sm hover:shadow-xl md:hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between h-full ${
         isVisible ? 'animate-card-reveal' : 'opacity-0'
       }`}
@@ -187,6 +199,8 @@ const MenuCard = React.memo(function MenuCard({
           ) : (
             <button
               type="button"
+              id={isFirstDish ? 'tour-first-dish-add-btn-mobile' : undefined}
+              data-tour={isFirstDish ? 'dish-add-btn' : undefined}
               onClick={(e) => {
                 e.stopPropagation();
                 handleCardClick(e);
@@ -384,6 +398,8 @@ const MenuCard = React.memo(function MenuCard({
             ) : (
               <button
                 type="button"
+                id={isFirstDish ? 'tour-first-dish-add-btn' : undefined}
+                data-tour={isFirstDish ? 'dish-add-btn' : undefined}
                 onClick={handleCardClick}
                 className={`relative overflow-hidden w-full py-3.5 px-5 rounded-2xl font-bold text-xs sm:text-sm tracking-wide transition-all duration-300 flex items-center justify-center gap-2 group/btn shadow-sm active:scale-[0.98] ${
                   isAdded
