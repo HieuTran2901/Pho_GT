@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useRef, memo } from 'react';
-import { 
-  X, User, Phone, Lock, Eye, EyeOff, Sparkles, Gift, 
-  CheckCircle2, Utensils, ShieldCheck, ArrowRight, Heart, Clock, RotateCcw 
-} from 'lucide-react';
+import { X, User, Lock, Eye, EyeOff, Sparkles, ShieldCheck, ArrowRight, Heart, Clock, RotateCcw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import AuthLockoutBanner from './auth/AuthLockoutBanner';
+import AuthModalHeader from './auth/AuthModalHeader';
+import AuthPhoneOtpField from './auth/AuthPhoneOtpField';
+import AuthTasteLoyaltyBox from './auth/AuthTasteLoyaltyBox';
+import { auth, formatVietnamPhoneE164, createRecaptchaVerifier, resetRecaptchaVerifier, clearRecaptchaVerifier, signInWithPhoneNumber } from '../config/firebase';
 
 function AuthModal({ onToast }) {
   const { authModalOpen, closeAuthModal, authTab, setAuthTab, login, register } = useAuth();
@@ -20,11 +21,18 @@ function AuthModal({ onToast }) {
   const [lockoutSeconds, setLockoutSeconds] = useState(0);
   const [isPermanentLocked, setIsPermanentLocked] = useState(false);
   const [currentRound, setCurrentRound] = useState(1);
-  const maxLockoutRef = useRef(60);
   const [mounted, setMounted] = useState(authModalOpen);
   const [isClosing, setIsClosing] = useState(false);
+  const maxLockoutRef = useRef(60);
   const closeTimerRef = useRef(null);
   const isFirstRender = useRef(true);
+
+  // Phone OTP states for registration
+  const [otpCode, setOtpCode] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [isOtpSending, setIsOtpSending] = useState(false);
+  const [otpCooldown, setOtpCooldown] = useState(0);
+  const [confirmationResult, setConfirmationResult] = useState(null);
 
   // Immediate mount synchronization to avoid 1-frame blank tick
   if (authModalOpen && !mounted) {
@@ -85,19 +93,58 @@ function AuthModal({ onToast }) {
     return () => clearInterval(interval);
   }, [lockoutSeconds]);
 
+  // Đếm ngược cooldown 60s gửi mã OTP
+  useEffect(() => {
+    if (otpCooldown <= 0) return;
+    const timer = setTimeout(() => setOtpCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [otpCooldown]);
+
   const phoneInputRef = useRef(null);
+
+  const handleTabChange = useCallback((tab) => {
+    setAuthTab(tab); setErrorMessage(''); setPassword(''); setIsPermanentLocked(false);
+    setOtpSent(false); setOtpCode(''); setOtpCooldown(0); setConfirmationResult(null);
+  }, [setAuthTab]);
+
+  // Gửi mã OTP qua Firebase khi đăng ký
+  const handleSendOtp = useCallback(async () => {
+    const cleanPhone = phone.replace(/[\s.-]+/g, '');
+    const vnPhoneRegex = /^(0[35789])[0-9]{8}$/;
+    if (!vnPhoneRegex.test(cleanPhone)) {
+      setErrorMessage('Số điện thoại không hợp lệ (cần 10 chữ số, bắt đầu 03, 05, 07, 08, 09)');
+      return;
+    }
+    setErrorMessage('');
+    setIsOtpSending(true);
+    try {
+      const phoneE164 = formatVietnamPhoneE164(cleanPhone);
+      const appVerifier = await createRecaptchaVerifier('recaptcha-container');
+      const confirmation = await signInWithPhoneNumber(auth, phoneE164, appVerifier);
+      setConfirmationResult(confirmation);
+      setOtpSent(true);
+      setOtpCooldown(60);
+      if (onToast) onToast(`Đã gửi mã xác thực tới số ${cleanPhone}.`);
+    } catch (err) {
+      console.error('[FIREBASE_OTP]', err);
+      resetRecaptchaVerifier();
+      if (err.code === 'auth/too-many-requests') {
+        setErrorMessage('Đã gửi mã quá nhiều lần từ thiết bị này. Vui lòng thử lại sau.');
+      } else if (err.code === 'auth/operation-not-allowed') {
+        setErrorMessage('Vùng gửi SMS (+84) đang được kích hoạt. Bác vui lòng thử lại sau ít phút.');
+      } else {
+        setErrorMessage(err.message || 'Không thể gửi mã OTP. Bác vui lòng thử lại.');
+      }
+    } finally {
+      setIsOtpSending(false);
+    }
+  }, [phone, onToast]);
 
   // Cơ chế 1-click đổi số điện thoại & reset trạng thái khóa form
   const handleChangePhone = useCallback(() => {
-    setIsPermanentLocked(false);
-    setErrorMessage('');
-    setPhone('');
-    setPassword('');
-    setTimeout(() => {
-      if (phoneInputRef.current) {
-        phoneInputRef.current.focus();
-      }
-    }, 50);
+    setIsPermanentLocked(false); setErrorMessage(''); setPhone(''); setPassword('');
+    setOtpSent(false); setOtpCode(''); setOtpCooldown(0); setConfirmationResult(null);
+    setTimeout(() => { if (phoneInputRef.current) phoneInputRef.current.focus(); }, 50);
   }, []);
 
   const handleSubmit = useCallback(async (e) => {
@@ -125,7 +172,18 @@ function AuthModal({ onToast }) {
     }
     if (!password.trim()) { setErrorMessage('Vui lòng nhập mật khẩu'); return; }
     if (password.trim().length < 6) { setErrorMessage('Mật khẩu phải có tối thiểu 6 ký tự'); return; }
-    if (authTab === 'register' && !fullName.trim()) { setErrorMessage('Vui lòng nhập họ và tên của bạn'); return; }
+    if (authTab === 'register') {
+      if (!fullName.trim()) { setErrorMessage('Vui lòng nhập họ và tên của bạn'); return; }
+      if (otpSent && confirmationResult) {
+        if (!otpCode || otpCode.length < 6) { setErrorMessage('Vui lòng nhập đủ 6 số mã xác thực OTP'); return; }
+        try {
+          await confirmationResult.confirm(otpCode);
+        } catch (otpErr) {
+          setErrorMessage('Mã OTP không chính xác hoặc đã hết hiệu lực.');
+          return;
+        }
+      }
+    }
 
     setIsLoading(true);
     try {
@@ -137,6 +195,7 @@ function AuthModal({ onToast }) {
         if (onToast) onToast({ type: 'member_welcome', user, isNew: true, points: 50 });
       }
       setPassword(''); setLockoutSeconds(0); setIsPermanentLocked(false);
+      setOtpSent(false); setOtpCode(''); setOtpCooldown(0); setConfirmationResult(null);
     } catch (err) {
       if (err.isPermanent || err.status === 423) {
         setIsPermanentLocked(true); setLockoutSeconds(0);
@@ -150,25 +209,24 @@ function AuthModal({ onToast }) {
       } else if (err.message && err.message.includes('thử lại sau')) {
         const match = err.message.match(/(\d+)\s*giây/);
         if (match && match[1]) {
-          const sec = parseInt(match[1], 10);
-          maxLockoutRef.current = Math.max(sec, 60);
-          setLockoutSeconds(sec);
+          maxLockoutRef.current = Math.max(parseInt(match[1], 10), 60);
+          setLockoutSeconds(parseInt(match[1], 10));
         }
       }
       setErrorMessage(err.message || 'Đã xảy ra lỗi, vui lòng thử lại');
     } finally {
       setIsLoading(false);
     }
-  }, [phone, password, fullName, authTab, saveTasteProfile, login, register, onToast, lockoutSeconds, isPermanentLocked, handleChangePhone]);
+  }, [phone, password, fullName, authTab, saveTasteProfile, login, register, onToast, lockoutSeconds, isPermanentLocked, handleChangePhone, otpSent, confirmationResult, otpCode]);
 
   // Demo fill quick login
   const handleQuickDemo = useCallback((type) => {
     if (type === 'member') {
-      setPhone('0988888888'); setPassword('123456'); setAuthTab('login');
+      setPhone('0988888888'); setPassword('123456'); handleTabChange('login');
     } else {
-      setPhone('0912345678'); setFullName('Bác Hai Phố Cổ'); setPassword('123456'); setAuthTab('register');
+      setPhone('0912345678'); setFullName('Bác Hai Phố Cổ'); setPassword('123456'); handleTabChange('register');
     }
-  }, [setAuthTab]);
+  }, [handleTabChange]);
 
   if (!mounted) return null;
 
@@ -195,7 +253,7 @@ function AuthModal({ onToast }) {
       }`}>
         
         {/* Đường chỉ vàng hoàng gia & vân góc truyền thống với hiệu ứng ánh kim */}
-        <div className="absolute inset-1.5 border border-[#d4af37]/60 rounded-xl pointer-events-none z-20 animate-golden-shimmer"></div>
+        <div className="absolute inset-1.5 border border-[#d4af37]/60 rounded-xl pointer-events-none z-20 animate-golden-shimmer" />
 
         {/* Nút Đóng (X) Phong Cách Đồng Vintage */}
         <button
@@ -208,44 +266,22 @@ function AuthModal({ onToast }) {
         </button>
 
         {/* Header: Dấu Mộc & Tiêu Đề Cổ Kính */}
-        <div className="bg-gradient-to-b from-[#f2e7d5] via-[#f7f0e3] to-[#fbf9f4] pt-7 pb-4 px-6 text-center border-b border-[#e2d5be] relative overflow-hidden shrink-0">
-          <div className="absolute top-2 left-1/2 -translate-x-1/2 pointer-events-none flex justify-center w-24 h-10 overflow-visible z-10">
-            <span className="w-1.5 h-6 bg-gradient-to-t from-[#8a1e14]/20 via-[#d4af37]/25 to-transparent rounded-full blur-[1px] animate-seal-steam-1 inline-block mr-1.5"></span>
-            <span className="w-2 h-7 bg-gradient-to-t from-[#8a1e14]/25 via-[#f59e0b]/20 to-transparent rounded-full blur-[1px] animate-seal-steam-2 inline-block ml-1.5"></span>
-          </div>
-
-          <div className="mx-auto w-14 h-14 rounded-full border-2 border-[#8a1e14] p-0.5 flex items-center justify-center bg-white shadow-md mb-2.5 animate-seal-stamp origin-center relative z-20">
-            <div className="w-full h-full rounded-full border border-dashed border-[#8a1e14] flex flex-col items-center justify-center text-[#8a1e14]">
-              <span className="text-[7px] font-bold uppercase tracking-tighter">TRI KỶ</span>
-              <Utensils className="w-4 h-4 text-[#8a1e14] my-0.5" />
-              <span className="text-[8px] font-serif font-bold">1986</span>
-            </div>
-          </div>
-
-          <h2 id="auth-modal-title" className="font-serif text-2xl sm:text-3xl font-bold text-[#2b1810] tracking-tight relative z-20">
-            PHỞ GIA TRUYỀN 1986
-          </h2>
-          <p className="text-xs text-[#8a1e14] font-serif font-medium tracking-wide uppercase mt-1 flex items-center justify-center gap-2">
-            <span className="w-6 h-px bg-[#8a1e14]/40"></span>
-            <span>Bát Phở Tri Kỷ • Khẩu Vị Thân Quen</span>
-            <span className="w-6 h-px bg-[#8a1e14]/40"></span>
-          </p>
-        </div>
+        <AuthModalHeader />
 
         {/* Tabs Điều Hướng: Đăng Nhập / Đăng Ký */}
         <div className="px-6 pt-4 pb-2 shrink-0">
           <div className="flex rounded-xl bg-[#ede3cf] p-1 border border-[#d6c7ac]">
             <button
               type="button"
-              onClick={() => { setAuthTab('login'); setErrorMessage(''); setPassword(''); setIsPermanentLocked(false); }}
-              className={`flex-1 py-2.5 text-xs sm:text-sm font-serif font-bold rounded-lg transition-all ${authTab === 'login' ? 'bg-white text-[#8a1e14] shadow-sm border border-[#cbb898]' : 'text-[#6b584c] hover:text-[#2b1810]'}`}
+              onClick={() => handleTabChange('login')}
+              className={`flex-1 py-2.5 text-xs sm:text-sm font-serif font-bold rounded-lg transition-all ${authTab === 'login' ? 'bg-white text-[#8a1e14] shadow-xs border border-[#cbb898]' : 'text-[#6b584c] hover:text-[#2b1810]'}`}
             >
               ĐĂNG NHẬP (KHÁCH QUEN)
             </button>
             <button
               type="button"
-              onClick={() => { setAuthTab('register'); setErrorMessage(''); setPassword(''); setIsPermanentLocked(false); }}
-              className={`flex-1 py-2.5 text-xs sm:text-sm font-serif font-bold rounded-lg transition-all relative flex items-center justify-center gap-1.5 ${authTab === 'register' ? 'bg-white text-[#8a1e14] shadow-sm border border-[#cbb898]' : 'text-[#6b584c] hover:text-[#2b1810]'}`}
+              onClick={() => handleTabChange('register')}
+              className={`flex-1 py-2.5 text-xs sm:text-sm font-serif font-bold rounded-lg transition-all relative flex items-center justify-center gap-1.5 ${authTab === 'register' ? 'bg-white text-[#8a1e14] shadow-xs border border-[#cbb898]' : 'text-[#6b584c] hover:text-[#2b1810]'}`}
             >
               <span>ĐĂNG KÝ MỚI</span>
               <span className="bg-gradient-to-r from-amber-500 to-red-600 text-white text-[9px] font-sans font-bold px-1.5 py-0.5 rounded-full shadow-xs animate-pulse">+50Đ</span>
@@ -255,7 +291,9 @@ function AuthModal({ onToast }) {
 
         {/* Form Body */}
         <div className="p-6 pt-2 overflow-y-auto flex-1">
-          
+          {/* Invisible reCAPTCHA Anchor */}
+          <div id="recaptcha-container" />
+
           {/* Multi-Tier Lockout & Cooldown Banner */}
           {(isPermanentLocked || lockoutSeconds > 0) ? (
             <AuthLockoutBanner
@@ -276,7 +314,7 @@ function AuthModal({ onToast }) {
             />
           ) : errorMessage ? (
             <div className="mb-4 p-2.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2 animate-shake">
-              <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0"></span>
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
               <span>{errorMessage}</span>
             </div>
           ) : null}
@@ -306,46 +344,26 @@ function AuthModal({ onToast }) {
               </div>
             )}
 
-            {/* Trường Số điện thoại */}
-            <div>
-              <div className="flex justify-between items-center mb-1">
-                <label htmlFor="auth-phone" className="block text-xs font-serif font-bold text-[#3a251b]">
-                  Số Điện Thoại <span className="text-[#8a1e14]">*</span>
-                </label>
-                {isPermanentLocked && (
-                  <button
-                    type="button"
-                    onClick={handleChangePhone}
-                    className="text-[11px] text-amber-700 hover:text-[#8a1e14] font-serif font-semibold inline-flex items-center gap-1 cursor-pointer"
-                  >
-                    <RotateCcw className="w-3 h-3" />
-                    <span>Đổi số khác</span>
-                  </button>
-                )}
-              </div>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-500">
-                  <Phone className="w-4 h-4" />
-                </div>
-                <input
-                  ref={phoneInputRef}
-                  id="auth-phone"
-                  type="tel"
-                  disabled={lockoutSeconds > 0}
-                  value={phone}
-                  onChange={(e) => {
-                    setPhone(e.target.value);
-                    if (isPermanentLocked || errorMessage) {
-                      setIsPermanentLocked(false);
-                      setErrorMessage('');
-                    }
-                  }}
-                  placeholder="0988 888 888"
-                  className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-white border border-[#d6c7ac] text-[#2b1810] text-sm placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-[#8a1e14] focus:border-[#8a1e14] transition-all shadow-xs disabled:opacity-60 disabled:bg-stone-100 disabled:cursor-not-allowed"
-                  required
-                />
-              </div>
-            </div>
+            {/* Trường Số điện thoại & Nút Gửi mã OTP bên cạnh khi đăng ký */}
+            <AuthPhoneOtpField
+              phone={phone}
+              setPhone={setPhone}
+              phoneInputRef={phoneInputRef}
+              lockoutSeconds={lockoutSeconds}
+              isPermanentLocked={isPermanentLocked}
+              errorMessage={errorMessage}
+              setErrorMessage={setErrorMessage}
+              setIsPermanentLocked={setIsPermanentLocked}
+              handleChangePhone={handleChangePhone}
+              authTab={authTab}
+              isOtpSending={isOtpSending}
+              otpCooldown={otpCooldown}
+              otpSent={otpSent}
+              handleSendOtp={handleSendOtp}
+              otpCode={otpCode}
+              setOtpCode={setOtpCode}
+              isLoading={isLoading}
+            />
 
             {/* Trường Mật khẩu */}
             <div>
@@ -399,20 +417,10 @@ function AuthModal({ onToast }) {
 
             {/* Lợi quyền hội viên: Box Tem Phiếu Khách Quen */}
             {authTab === 'register' && (
-              <div className="p-3 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50/70 border border-dashed border-amber-400/80 my-2">
-                <div className="flex items-start gap-2.5">
-                  <div className="w-8 h-8 rounded-full bg-amber-500/15 text-[#8a1e14] flex items-center justify-center shrink-0 mt-0.5"><Gift className="w-4 h-4" /></div>
-                  <div className="text-[11px] text-[#4a3528] leading-snug">
-                    <div className="font-serif font-bold text-[#8a1e14] text-xs">Đặc quyền Bát Phở Tri Kỷ 1986</div>
-                    <div className="mt-1 flex items-center gap-1.5 text-stone-700"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" /><span>Tặng ngay <strong>50 điểm Tri Kỷ</strong> để đổi quẩy giòn</span></div>
-                    <div className="mt-0.5 flex items-center gap-1.5 text-stone-700"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" /><span>1-Click <strong>"Gọi lại bát quen"</strong> chuẩn vị ruột</span></div>
-                  </div>
-                </div>
-                <label className="flex items-center gap-2 mt-2 pt-2 border-t border-amber-300/40 cursor-pointer">
-                  <input type="checkbox" checked={saveTasteProfile} onChange={(e) => setSaveTasteProfile(e.target.checked)} className="w-3.5 h-3.5 accent-[#8a1e14] rounded" />
-                  <span className="text-[11px] text-stone-700 font-medium">Tự động ghi nhớ Gu Ăn Phở của tôi cho lần gọi sau</span>
-                </label>
-              </div>
+              <AuthTasteLoyaltyBox
+                saveTasteProfile={saveTasteProfile}
+                setSaveTasteProfile={setSaveTasteProfile}
+              />
             )}
 
             {/* Nút Submit Chính */}
@@ -432,20 +440,11 @@ function AuthModal({ onToast }) {
                 className="w-full py-3 px-4 rounded-xl bg-[#8a1e14] hover:bg-[#731910] active:scale-[0.99] text-amber-100 font-serif font-bold text-sm tracking-wider uppercase transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 border border-amber-400/30 disabled:opacity-75 disabled:cursor-not-allowed cursor-pointer mt-3"
               >
                 {lockoutSeconds > 0 ? (
-                  <>
-                    <Clock className="w-4 h-4 animate-pulse text-amber-300" />
-                    <span>TẠM KHÓA THỬ LẠI ({lockoutSeconds}S)</span>
-                  </>
+                  <><Clock className="w-4 h-4 animate-pulse text-amber-300" /><span>TẠM KHÓA THỬ LẠI ({lockoutSeconds}S)</span></>
                 ) : isLoading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-amber-200 border-t-transparent rounded-full animate-spin"></div>
-                    <span>Đang xử lý...</span>
-                  </>
+                  <><div className="w-4 h-4 border-2 border-amber-200 border-t-transparent rounded-full animate-spin" /><span>Đang xử lý...</span></>
                 ) : (
-                  <>
-                    <span>{authTab === 'login' ? 'ĐĂNG NHẬP VÀO QUÁN' : 'GIA NHẬP BÁT PHỞ TRI KỶ'}</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
+                  <><span>{authTab === 'login' ? 'ĐĂNG NHẬP VÀO QUÁN' : 'GIA NHẬP BÁT PHỞ TRI KỶ'}</span><ArrowRight className="w-4 h-4" /></>
                 )}
               </button>
             )}
@@ -458,7 +457,7 @@ function AuthModal({ onToast }) {
               <button
                 type="button"
                 onClick={() => handleQuickDemo('member')}
-                className="flex-1 py-1.5 px-2 rounded-lg bg-[#f4ebd9] hover:bg-[#ede0c8] text-[#8a1e14] text-[11px] font-serif font-semibold border border-[#d6c7ac] transition-colors flex items-center justify-center gap-1.5"
+                className="flex-1 py-1.5 px-2 rounded-lg bg-[#f4ebd9] hover:bg-[#ede0c8] text-[#8a1e14] text-[11px] font-serif font-semibold border border-[#d6c7ac] transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Sparkles className="w-3 h-3 text-amber-600" />
                 <span>Khách Quen Demo</span>
@@ -466,7 +465,7 @@ function AuthModal({ onToast }) {
               <button
                 type="button"
                 onClick={() => handleQuickDemo('new')}
-                className="flex-1 py-1.5 px-2 rounded-lg bg-[#f4ebd9] hover:bg-[#ede0c8] text-[#2b1810] text-[11px] font-serif font-semibold border border-[#d6c7ac] transition-colors flex items-center justify-center gap-1.5"
+                className="flex-1 py-1.5 px-2 rounded-lg bg-[#f4ebd9] hover:bg-[#ede0c8] text-[#2b1810] text-[11px] font-serif font-semibold border border-[#d6c7ac] transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Heart className="w-3 h-3 text-red-500" />
                 <span>Khách Mới Demo</span>
