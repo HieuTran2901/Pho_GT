@@ -92,4 +92,11 @@ aws:
     access-key: ${AWS_ACCESS_KEY_ID:}
     secret-key: ${AWS_SECRET_ACCESS_KEY:}
 
+firebase:
+  project:
+    id: ${FIREBASE_PROJECT_ID:pho-viet-1986}
+  credentials:
+    path: ${FIREBASE_CONFIG_PATH:}
+
+
 

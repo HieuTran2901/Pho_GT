@@ -23,10 +23,15 @@ public class AuthController {
 
     private final AuthService authService;
     private final LoginRateLimiter loginRateLimiter;
+    private final com.pho1986.backend.service.FirebasePhoneAuthService firebasePhoneAuthService;
 
-    public AuthController(AuthService authService, LoginRateLimiter loginRateLimiter) {
+    public AuthController(
+            AuthService authService,
+            LoginRateLimiter loginRateLimiter,
+            com.pho1986.backend.service.FirebasePhoneAuthService firebasePhoneAuthService) {
         this.authService = authService;
         this.loginRateLimiter = loginRateLimiter;
+        this.firebasePhoneAuthService = firebasePhoneAuthService;
     }
 
     @PostMapping("/register")
@@ -107,6 +112,29 @@ public class AuthController {
                 .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
                 .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
                 .body(ApiResponse.ok(response, "Chuyển đổi thành công đơn hàng vào tài khoản hội viên!"));
+    }
+
+    @PostMapping("/firebase-phone-login")
+    public ResponseEntity<ApiResponse<AuthResponse>> firebasePhoneLogin(
+            @Valid @RequestBody FirebasePhoneLoginRequest request,
+            HttpServletRequest httpRequest) {
+        String clientIp = loginRateLimiter.extractClientIp(httpRequest);
+        String deviceId = ThreatDefenseFilter.extractDeviceId(httpRequest);
+
+        AuthResponse response = firebasePhoneAuthService.authenticate(request, clientIp, deviceId);
+        boolean isSecure = httpRequest.isSecure();
+
+        ResponseCookie accessCookie = createAccessCookie(response.getAccessToken(), isSecure);
+        ResponseCookie refreshCookie = createRefreshCookie(response.getRefreshToken(), isSecure);
+
+        String message = response.getPointsEarned() != null && response.getPointsEarned() > 0
+                ? "Chào mừng Bác! Đăng nhập thành công và nhận ngay " + response.getPointsEarned() + " Điểm Tri Kỷ!"
+                : "Đăng nhập bằng số điện thoại thành công!";
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                .body(ApiResponse.ok(response, message));
     }
 
     @GetMapping("/me")

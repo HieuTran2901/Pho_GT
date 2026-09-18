@@ -28,10 +28,12 @@ target/
 ### VS Code ###
 .vscode/
 
-### Environment & Logs ###
+# Environment & Logs & Secrets
 .env
 .env.local
 *.log
+*service-account*.json
+*firebase*.json
 
 # AI Context & Local Agent Workspace
 .ai/

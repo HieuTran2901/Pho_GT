@@ -73,6 +73,19 @@ public class AuthDtos {
         public void setPassword(String password) { this.password = password; }
     }
 
+    public static class FirebasePhoneLoginRequest {
+        @NotBlank(message = "Firebase ID Token không được để trống")
+        private String idToken;
+
+        private String fullName;
+
+        public String getIdToken() { return idToken; }
+        public void setIdToken(String idToken) { this.idToken = idToken; }
+
+        public String getFullName() { return fullName; }
+        public void setFullName(String fullName) { this.fullName = fullName; }
+    }
+
     public static class RefreshTokenRequest {
         private String refreshToken;
         public String getRefreshToken() { return refreshToken; }

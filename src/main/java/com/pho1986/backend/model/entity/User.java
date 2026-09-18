@@ -39,6 +39,12 @@ public class User {
     @Column(nullable = false, length = 20)
     private String status = "ACTIVE"; // ACTIVE | LOCKED
 
+    @Column(unique = true, length = 128)
+    private String firebaseUid;
+
+    @Column(nullable = false, length = 30)
+    private String authProvider = "PASSWORD"; // PASSWORD | FIREBASE_PHONE
+
     @Column(nullable = false)
     private int failedLoginAttempts = 0; // Đếm số lần sai trong vòng hiện tại (0 - 5)
 
@@ -188,4 +194,10 @@ public class User {
         this.status = "ACTIVE";
         resetLoginFailures();
     }
+
+    public String getFirebaseUid() { return firebaseUid; }
+    public void setFirebaseUid(String firebaseUid) { this.firebaseUid = firebaseUid; }
+
+    public String getAuthProvider() { return authProvider; }
+    public void setAuthProvider(String authProvider) { this.authProvider = authProvider; }
 }
