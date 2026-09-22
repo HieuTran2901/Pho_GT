@@ -3,10 +3,12 @@ package com.pho1986.backend.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pho1986.backend.model.dto.OrderDtos.CreateOrderItemRequest;
 import com.pho1986.backend.model.dto.PaymentDtos.*;
+import com.pho1986.backend.model.entity.Dish;
 import com.pho1986.backend.model.entity.Order;
 import com.pho1986.backend.model.entity.OrderItem;
 import com.pho1986.backend.model.entity.PaymentTransaction;
 import com.pho1986.backend.model.entity.User;
+import com.pho1986.backend.repository.DishRepository;
 import com.pho1986.backend.repository.OrderRepository;
 import com.pho1986.backend.repository.PaymentTransactionRepository;
 import com.pho1986.backend.repository.UserRepository;
@@ -26,6 +28,9 @@ import org.springframework.util.StringUtils;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.LocalDateTime;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class PaymentService {
@@ -47,6 +52,7 @@ public class PaymentService {
     private final MomoIpnHandler momoIpnHandler;
     private final PaymentGatewayService paymentGatewayService;
     private final TableService tableService;
+    private final DishRepository dishRepository;
     private final CustomerGiftService customerGiftService;
     private final VoucherService voucherService;
 
@@ -68,7 +74,8 @@ public class PaymentService {
             PaymentRateLimiter paymentRateLimiter, ObjectMapper objectMapper,
             VietQrHelper vietQrHelper, SepayIpnHandler sepayIpnHandler,
             MomoIpnHandler momoIpnHandler, PaymentGatewayService paymentGatewayService,
-            TableService tableService, CustomerGiftService customerGiftService, VoucherService voucherService) {
+            TableService tableService, CustomerGiftService customerGiftService,
+            VoucherService voucherService, DishRepository dishRepository) {
         this.paymentTransactionRepository = paymentTransactionRepository; this.orderRepository = orderRepository;
         this.userRepository = userRepository; this.loyaltyService = loyaltyService;
         this.sepayPaymentGateway = sepayPaymentGateway; this.momoPaymentGateway = momoPaymentGateway;
@@ -76,7 +83,7 @@ public class PaymentService {
         this.vietQrHelper = vietQrHelper; this.sepayIpnHandler = sepayIpnHandler;
         this.momoIpnHandler = momoIpnHandler; this.paymentGatewayService = paymentGatewayService;
         this.tableService = tableService; this.customerGiftService = customerGiftService;
-        this.voucherService = voucherService;
+        this.voucherService = voucherService; this.dishRepository = dishRepository;
     }
 
     @Transactional
@@ -135,6 +142,9 @@ public class PaymentService {
         }
         final String resolvedUserId = targetUserId;
 
+        List<OrderItem> verifiedItems = buildVerifiedOrderItems(request.getItems());
+        double verifiedTotal = verifiedItems.stream().mapToDouble(OrderItem::getSubtotal).sum();
+
         String method = request.getPaymentMethod().toUpperCase();
         Order order = orderRepository.findByOrderCode(request.getOrderCode())
                 .orElseGet(() -> {
@@ -144,7 +154,7 @@ public class PaymentService {
                     newOrder.setGuestPhone(StringUtils.hasText(request.getPhone()) ? request.getPhone() : "0986198686");
                     newOrder.setDeliveryAddressText(StringUtils.hasText(request.getAddress()) ? request.getAddress() : "Tại quán Phở Gia Truyền 1986");
                     newOrder.setPaymentMethod(method);
-                    Double initialAmount = (request.getAmount() != null && request.getAmount() > 0) ? request.getAmount() : 150000.0;
+                    Double initialAmount = (verifiedTotal > 0) ? verifiedTotal : ((request.getAmount() != null && request.getAmount() > 0) ? request.getAmount() : 150000.0);
                     newOrder.setTotalAmount(initialAmount);
                     newOrder.setFinalAmount(initialAmount);
                     newOrder.setNotes(request.getNote());
@@ -155,21 +165,15 @@ public class PaymentService {
                     if (resolvedUserId != null) {
                         userRepository.findById(resolvedUserId).ifPresent(newOrder::setUser);
                     }
-                    if (request.getItems() != null) {
-                        for (CreateOrderItemRequest itemReq : request.getItems()) {
-                            Double uPrice = (itemReq.getUnitPrice() != null) ? itemReq.getUnitPrice() : 0.0;
-                            int qty = (itemReq.getQuantity() != null && itemReq.getQuantity() > 0) ? itemReq.getQuantity() : 1;
-                            newOrder.addItem(new OrderItem(itemReq.getDishId(), itemReq.getDishName(), uPrice, qty, uPrice * qty, itemReq.getCustomizedOptions()));
-                        }
-                    }
+                    verifiedItems.forEach(newOrder::addItem);
                     return orderRepository.save(newOrder);
                 });
 
-        if (request.getItems() != null && !request.getItems().isEmpty() && order.getItems().isEmpty()) {
-            for (CreateOrderItemRequest itemReq : request.getItems()) {
-                Double uPrice = (itemReq.getUnitPrice() != null) ? itemReq.getUnitPrice() : 0.0;
-                int qty = (itemReq.getQuantity() != null && itemReq.getQuantity() > 0) ? itemReq.getQuantity() : 1;
-                order.addItem(new OrderItem(itemReq.getDishId(), itemReq.getDishName(), uPrice, qty, uPrice * qty, itemReq.getCustomizedOptions()));
+        if (!verifiedItems.isEmpty() && order.getItems().isEmpty()) {
+            verifiedItems.forEach(order::addItem);
+            if (verifiedTotal > 0) {
+                order.setTotalAmount(verifiedTotal);
+                order.setFinalAmount(verifiedTotal);
             }
             orderRepository.save(order);
         }
@@ -209,20 +213,14 @@ public class PaymentService {
             String transferContent = vietQrHelper.buildTransferContent(order.getOrderCode());
             String qrUrl = vietQrHelper.buildQrUrl(defaultBankBin, defaultAccountNo, amount, transferContent, defaultAccountName);
 
-            transaction.setBankBin(defaultBankBin);
-            transaction.setBankName(defaultBankName);
-            transaction.setBankAccountNo(defaultAccountNo);
-            transaction.setBankAccountName(defaultAccountName);
-            transaction.setTransferContent(transferContent);
-            transaction.setQrCodeUrl(qrUrl);
+            transaction.setBankBin(defaultBankBin); transaction.setBankName(defaultBankName);
+            transaction.setBankAccountNo(defaultAccountNo); transaction.setBankAccountName(defaultAccountName);
+            transaction.setTransferContent(transferContent); transaction.setQrCodeUrl(qrUrl);
             transaction.setStatus("PENDING");
 
-            response.setStatus("PENDING");
-            response.setQrCodeUrl(qrUrl);
-            response.setBankBin(defaultBankBin);
-            response.setBankName(defaultBankName);
-            response.setBankAccountNo(defaultAccountNo);
-            response.setBankAccountName(defaultAccountName);
+            response.setStatus("PENDING"); response.setQrCodeUrl(qrUrl);
+            response.setBankBin(defaultBankBin); response.setBankName(defaultBankName);
+            response.setBankAccountNo(defaultAccountNo); response.setBankAccountName(defaultAccountName);
             response.setTransferContent(transferContent);
             response.setInstructions("Quý khách vui lòng mở ứng dụng ngân hàng và quét mã VietQR trên để thanh toán trong vòng 15 phút.");
             response.setCompleted(false);
@@ -241,52 +239,32 @@ public class PaymentService {
             order.setPaymentStatus("UNPAID");
 
         } else if ("COD".equals(method)) {
-            transaction.setStatus("PENDING");
-            response.setStatus("PENDING");
+            transaction.setStatus("PENDING"); response.setStatus("PENDING"); response.setCompleted(true);
             response.setInstructions("Đơn hàng đã được xác nhận. Quý khách vui lòng chuẩn bị đúng số tiền khi nhận phở từ nhân viên giao hàng.");
-            response.setCompleted(true);
-
-            order.setPaymentMethod("COD");
-            order.setPaymentStatus("UNPAID");
-            order.setStatus("CONFIRMED");
+            order.setPaymentMethod("COD"); order.setPaymentStatus("UNPAID"); order.setStatus("CONFIRMED");
         } else if ("POST_PAID_AT_STORE".equals(method)) {
-            transaction.setStatus("PENDING");
-            response.setStatus("PENDING");
+            transaction.setStatus("PENDING"); response.setStatus("PENDING"); response.setCompleted(true);
             response.setInstructions("Bàn của quý khách đã được giữ chỗ trong 30 phút. Quý khách vui lòng thanh toán tại quầy thu ngân sau khi dùng bữa.");
-            response.setCompleted(true);
-            order.setPaymentMethod("POST_PAID_AT_STORE");
-            order.setPaymentStatus("UNPAID");
-            order.setStatus("CONFIRMED");
+            order.setPaymentMethod("POST_PAID_AT_STORE"); order.setPaymentStatus("UNPAID"); order.setStatus("CONFIRMED");
         } else if ("MOMO".equals(method)) {
-            transaction.setStatus("PENDING");
-            response.setStatus("PENDING");
+            transaction.setStatus("PENDING"); response.setStatus("PENDING"); response.setCompleted(false);
             response.setInstructions("Vui lòng mở ứng dụng MoMo và quét mã để hoàn tất thanh toán.");
-            response.setCompleted(false);
-
             if (momoPaymentGateway.isEnabled()) {
                 MomoPaymentGateway.MomoPaymentResult momoResult = momoPaymentGateway.createPayment(order.getOrderCode(), amount, request.getNote());
                 if (momoResult != null && momoResult.getPayUrl() != null) {
                     response.setPayUrl(momoResult.getPayUrl());
-                    if (momoResult.getQrCodeUrl() != null) {
-                        response.setQrCodeUrl(momoResult.getQrCodeUrl());
-                    }
+                    if (momoResult.getQrCodeUrl() != null) response.setQrCodeUrl(momoResult.getQrCodeUrl());
                     response.setInstructions("Hệ thống đã tạo yêu cầu thanh toán MoMo. Quý khách vui lòng chuyển tiếp đến ứng dụng MoMo để hoàn tất.");
                 }
             } else {
                 String cleanOrderCode = order.getOrderCode().replaceAll("[^a-zA-Z0-9]", "");
-                String momoQr = vietQrHelper.buildQrUrl(defaultBankBin, defaultAccountNo, amount, "MOMO " + cleanOrderCode, defaultAccountName);
-                response.setQrCodeUrl(momoQr);
+                response.setQrCodeUrl(vietQrHelper.buildQrUrl(defaultBankBin, defaultAccountNo, amount, "MOMO " + cleanOrderCode, defaultAccountName));
                 response.setInstructions("Vui lòng quét mã MoMo hoặc chuyển khoản với nội dung MOMO " + cleanOrderCode + " trong vòng 15 phút.");
             }
-
-            order.setPaymentMethod("MOMO");
-            order.setPaymentStatus("UNPAID");
-
+            order.setPaymentMethod("MOMO"); order.setPaymentStatus("UNPAID");
         } else {
-            transaction.setStatus("PENDING");
-            response.setStatus("PENDING");
+            transaction.setStatus("PENDING"); response.setStatus("PENDING"); response.setCompleted(false);
             response.setInstructions("Phương thức thanh toán đang được xử lý.");
-            response.setCompleted(false);
             order.setPaymentMethod(method);
         }
 
@@ -483,6 +461,22 @@ public class PaymentService {
         }
 
         return toStatusResponse(transaction);
+    }
+
+    private List<OrderItem> buildVerifiedOrderItems(List<CreateOrderItemRequest> requests) {
+        if (requests == null || requests.isEmpty()) return Collections.emptyList();
+        List<String> dishIds = requests.stream().map(CreateOrderItemRequest::getDishId).filter(StringUtils::hasText).distinct().toList();
+        Map<String, Dish> dishMap = dishIds.isEmpty() ? Collections.emptyMap() :
+                dishRepository.findAllById(dishIds).stream().collect(Collectors.toMap(Dish::getId, Function.identity(), (a, b) -> a));
+        List<OrderItem> items = new ArrayList<>();
+        for (CreateOrderItemRequest r : requests) {
+            Dish d = StringUtils.hasText(r.getDishId()) ? dishMap.get(r.getDishId()) : null;
+            Double price = (d != null && d.getPrice() != null) ? d.getPrice() : ((r.getUnitPrice() != null && r.getUnitPrice() > 0) ? r.getUnitPrice() : 0.0);
+            int qty = (r.getQuantity() != null && r.getQuantity() > 0) ? r.getQuantity() : 1;
+            String name = (d != null && StringUtils.hasText(d.getName())) ? d.getName() : r.getDishName();
+            items.add(new OrderItem(r.getDishId(), name, price, qty, price * qty, r.getCustomizedOptions()));
+        }
+        return items;
     }
 
     private PaymentStatusResponse toStatusResponse(PaymentTransaction tx) {

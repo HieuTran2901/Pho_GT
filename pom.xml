@@ -65,11 +65,11 @@
 			<scope>runtime</scope>
 		</dependency>
 
-		<!-- H2 Database for in-memory fallback/tests if MySQL is offline -->
+		<!-- H2 Database for unit/integration tests -->
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
-			<scope>runtime</scope>
+			<scope>test</scope>
 		</dependency>
 
 		<!-- JWT for Stateless Auth -->

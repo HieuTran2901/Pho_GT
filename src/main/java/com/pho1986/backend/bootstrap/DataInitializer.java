@@ -139,7 +139,8 @@ public class DataInitializer implements CommandLineRunner {
             if (shouldPopulate) {
                 System.out.println("🚀 [DataInitializer] Bắt đầu đồng bộ 25 món ăn gia truyền & 100% ảnh Unsplash độc bản vào Database...");
                 ResourceDatabasePopulator populator = new ResourceDatabasePopulator(
-                        new ClassPathResource("seed_mock_dishes.sql")
+                        new ClassPathResource("seed_mock_dishes_part1.sql"),
+                        new ClassPathResource("seed_mock_dishes_part2.sql")
                 );
                 populator.setIgnoreFailedDrops(true);
                 populator.setContinueOnError(true);

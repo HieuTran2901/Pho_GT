@@ -138,12 +138,12 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<ApiResponse<User>> getMe(Authentication authentication) {
+    public ResponseEntity<ApiResponse<UserProfileResponse>> getMe(Authentication authentication) {
         if (authentication == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.error("Chưa xác thực"));
         }
         User user = authService.getMe((String) authentication.getPrincipal());
-        return ResponseEntity.ok(ApiResponse.ok(user));
+        return ResponseEntity.ok(ApiResponse.ok(UserProfileResponse.from(user)));
     }
 
     @PostMapping("/logout")

@@ -57,7 +57,14 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/orders/history").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/orders/*").permitAll() // Tra cứu theo mã đơn
                         .requestMatchers(HttpMethod.POST, "/api/v1/chat/**").permitAll() // Trợ lý ẩm thực Tiểu Nhị 1986
-                        .requestMatchers("/api/v1/payments/**").permitAll() // Hỗ trợ khởi tạo & kiểm tra thanh toán VietQR / COD
+                        .requestMatchers(HttpMethod.GET, "/api/v1/payments/gateways").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/payments").permitAll() // Khởi tạo thanh toán (Guest/User)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/payments/*/status").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/payments/*/confirm").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/payments/sepay/ipn").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/payments/sepay/return/*").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/payments/momo/ipn").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/payments/webhook").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN") // Bảo vệ tuyệt đối phân khu Admin
                         .anyRequest().authenticated()
                 )

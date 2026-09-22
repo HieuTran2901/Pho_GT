@@ -131,4 +131,46 @@ public class AuthDtos {
         public Integer getPointsEarned() { return pointsEarned; }
         public void setPointsEarned(Integer pointsEarned) { this.pointsEarned = pointsEarned; }
     }
+
+    public static class UserProfileResponse {
+        private String id;
+        private String phone;
+        private String email;
+        private String fullName;
+        private String role;
+        private String status;
+        private String avatarUrl;
+        private Object loyaltyAccount;
+        private Object tasteProfile;
+        private java.time.LocalDateTime createdAt;
+
+        public UserProfileResponse() {}
+
+        public static UserProfileResponse from(User user) {
+            if (user == null) return null;
+            UserProfileResponse resp = new UserProfileResponse();
+            resp.id = user.getId();
+            resp.phone = user.getPhone();
+            resp.email = user.getEmail();
+            resp.fullName = user.getFullName();
+            resp.role = user.getRole();
+            resp.status = user.getStatus();
+            resp.avatarUrl = user.getAvatarUrl();
+            resp.loyaltyAccount = user.getLoyaltyAccount();
+            resp.tasteProfile = user.getTasteProfile();
+            resp.createdAt = user.getCreatedAt();
+            return resp;
+        }
+
+        public String getId() { return id; }
+        public String getPhone() { return phone; }
+        public String getEmail() { return email; }
+        public String getFullName() { return fullName; }
+        public String getRole() { return role; }
+        public String getStatus() { return status; }
+        public String getAvatarUrl() { return avatarUrl; }
+        public Object getLoyaltyAccount() { return loyaltyAccount; }
+        public Object getTasteProfile() { return tasteProfile; }
+        public java.time.LocalDateTime getCreatedAt() { return createdAt; }
+    }
 }

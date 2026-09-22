@@ -3,13 +3,13 @@ server:
 
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://pho-gt-mysql.c1qgi0ayimmy.ap-southeast-2.rds.amazonaws.com:3306/pho_1986_db?createDatabaseIfNotExist=true&useSSL=true&requireSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh}
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://pho-gt-mysql.c1qgi0ayimmy.ap-southeast-2.rds.amazonaws.com:3306/pho_1986_db?createDatabaseIfNotExist=true&useSSL=true&requireSSL=true&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh}
     username: ${SPRING_DATASOURCE_USERNAME:pho_admin}
     password: ${SPRING_DATASOURCE_PASSWORD:}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: false
     open-in-view: false
     properties:
@@ -28,7 +28,7 @@ app:
       full-name: ${ADMIN_INIT_NAME:Quản Trị Viên 1986}
       email: ${ADMIN_INIT_EMAIL:admin@pho1986.vn}
   payment:
-    webhook-secret: ${PAYMENT_WEBHOOK_SECRET:pho1986_webhook_secret_key_prod_auth_2026}
+    webhook-secret: ${PAYMENT_WEBHOOK_SECRET:}
     vietqr:
       bank-bin: ${VIETQR_BANK_BIN:970422}
       bank-name: ${VIETQR_BANK_NAME:MBBank - Ngân hàng Quân Đội}

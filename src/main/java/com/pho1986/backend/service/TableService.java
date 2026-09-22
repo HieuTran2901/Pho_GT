@@ -12,8 +12,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -38,19 +40,29 @@ public class TableService {
         List<DiningTable> tables = tableRepository.findAllByOrderByFloorAscIdAsc();
         List<Order> activeOrders = orderRepository.findByStatusInOrderByCreatedAtDesc(ACTIVE_STATUSES);
 
+        // Triệt tiêu O(T x O): Lập bản đồ tra cứu nhanh tableId -> Order
+        Map<String, Order> tableOrderMap = new HashMap<>();
+        for (Order order : activeOrders) {
+            if (order.getTableNumber() == null || order.getTableNumber().isBlank()) {
+                continue;
+            }
+            for (DiningTable t : tables) {
+                if (!tableOrderMap.containsKey(t.getId()) && matchesTableIdentifier(order.getTableNumber(), t)) {
+                    tableOrderMap.put(t.getId(), order);
+                    break;
+                }
+            }
+        }
+
         List<TableResponse> responses = new ArrayList<>();
 
         for (DiningTable table : tables) {
             TableResponse resp = toResponse(table);
             String dbStatus = table.getStatus() != null ? table.getStatus().toUpperCase(Locale.ROOT) : "AVAILABLE";
 
-            // Find matching active order
-            Optional<Order> matchedOrder = activeOrders.stream()
-                    .filter(o -> isOrderForTable(o, table))
-                    .findFirst();
+            Order order = tableOrderMap.get(table.getId());
 
-            if (matchedOrder.isPresent()) {
-                Order order = matchedOrder.get();
+            if (order != null) {
                 resp.setActiveOrderCode(order.getOrderCode());
 
                 String guestName = (order.getGuestName() != null && !order.getGuestName().isBlank())
