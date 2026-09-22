@@ -40,9 +40,17 @@ public class PaymentController {
     public ResponseEntity<ApiResponse<PaymentResponse>> createPayment(
             Authentication authentication,
             @Valid @RequestBody CreatePaymentRequest request) {
-        String userId = (authentication != null && !"anonymousUser".equals(authentication.getPrincipal()))
-                ? (String) authentication.getPrincipal()
-                : null;
+        String userId = null;
+        if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getName())) {
+            Object principal = authentication.getPrincipal();
+            if (principal instanceof org.springframework.security.core.userdetails.UserDetails ud) {
+                userId = ud.getUsername();
+            } else if (principal instanceof String str && !"anonymousUser".equals(str)) {
+                userId = str;
+            } else if (principal != null) {
+                userId = authentication.getName();
+            }
+        }
 
         PaymentResponse response = paymentService.createPayment(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -59,8 +67,20 @@ public class PaymentController {
     @PostMapping("/{paymentCode}/confirm")
     public ResponseEntity<ApiResponse<PaymentStatusResponse>> confirmPayment(
             @PathVariable String paymentCode,
-            @RequestBody(required = false) ConfirmPaymentRequest request) {
-        PaymentStatusResponse response = paymentService.confirmPayment(paymentCode, request);
+            @RequestHeader(value = "X-Secret-Key", required = false) String secretKeyHeader,
+            @RequestHeader(value = "X-Signature", required = false) String signatureHeader,
+            @RequestBody(required = false) ConfirmPaymentRequest request,
+            Authentication authentication) {
+        if (request == null) {
+            request = new ConfirmPaymentRequest();
+        }
+        if (!org.springframework.util.StringUtils.hasText(request.getSecretKey()) && org.springframework.util.StringUtils.hasText(secretKeyHeader)) {
+            request.setSecretKey(secretKeyHeader);
+        }
+        if (!org.springframework.util.StringUtils.hasText(request.getSignature()) && org.springframework.util.StringUtils.hasText(signatureHeader)) {
+            request.setSignature(signatureHeader);
+        }
+        PaymentStatusResponse response = paymentService.confirmPayment(paymentCode, request, authentication);
         return ResponseEntity.ok(ApiResponse.ok(response, "Xác nhận thanh toán thành công! Bếp đã bắt đầu nấu phở."));
     }
 

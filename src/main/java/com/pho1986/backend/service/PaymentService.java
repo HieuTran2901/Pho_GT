@@ -1,9 +1,7 @@
 package com.pho1986.backend.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pho1986.backend.model.dto.OrderDtos.CreateOrderItemRequest;
 import com.pho1986.backend.model.dto.PaymentDtos.*;
-import com.pho1986.backend.model.entity.Dish;
 import com.pho1986.backend.model.entity.Order;
 import com.pho1986.backend.model.entity.OrderItem;
 import com.pho1986.backend.model.entity.PaymentTransaction;
@@ -15,22 +13,19 @@ import com.pho1986.backend.repository.UserRepository;
 import com.pho1986.backend.security.PaymentRateLimiter;
 import com.pho1986.backend.service.gateway.MomoPaymentGateway;
 import com.pho1986.backend.service.gateway.SepayPaymentGateway;
-import com.pho1986.backend.service.payment.MomoIpnHandler;
-import com.pho1986.backend.service.payment.SepayIpnHandler;
-import com.pho1986.backend.service.payment.VietQrHelper;
+import com.pho1986.backend.service.payment.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.StringUtils;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.time.LocalDateTime;
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.List;
 
 @Service
 public class PaymentService {
@@ -55,11 +50,14 @@ public class PaymentService {
     private final DishRepository dishRepository;
     private final CustomerGiftService customerGiftService;
     private final VoucherService voucherService;
+    private final PaymentOrderValidator paymentOrderValidator;
+    private final PaymentSecurityValidator paymentSecurityValidator;
+    private final TransactionTemplate transactionTemplate;
 
     @Value("${app.payment.webhook-secret:pho1986_webhook_secret_key_prod_auth_2026}")
     private String webhookSecret;
     @Value("${app.payment.vietqr.bank-bin:970422}")
-    private String defaultBankBin; // MBBank
+    private String defaultBankBin;
     @Value("${app.payment.vietqr.bank-name:MBBank - Ngân hàng Quân Đội}")
     private String defaultBankName;
     @Value("${app.payment.vietqr.account-no:0384090045}")
@@ -75,7 +73,10 @@ public class PaymentService {
             VietQrHelper vietQrHelper, SepayIpnHandler sepayIpnHandler,
             MomoIpnHandler momoIpnHandler, PaymentGatewayService paymentGatewayService,
             TableService tableService, CustomerGiftService customerGiftService,
-            VoucherService voucherService, DishRepository dishRepository) {
+            VoucherService voucherService, DishRepository dishRepository,
+            PaymentOrderValidator paymentOrderValidator,
+            PaymentSecurityValidator paymentSecurityValidator,
+            PlatformTransactionManager transactionManager) {
         this.paymentTransactionRepository = paymentTransactionRepository; this.orderRepository = orderRepository;
         this.userRepository = userRepository; this.loyaltyService = loyaltyService;
         this.sepayPaymentGateway = sepayPaymentGateway; this.momoPaymentGateway = momoPaymentGateway;
@@ -84,10 +85,53 @@ public class PaymentService {
         this.momoIpnHandler = momoIpnHandler; this.paymentGatewayService = paymentGatewayService;
         this.tableService = tableService; this.customerGiftService = customerGiftService;
         this.voucherService = voucherService; this.dishRepository = dishRepository;
+        this.paymentOrderValidator = paymentOrderValidator;
+        this.paymentSecurityValidator = paymentSecurityValidator;
+        this.transactionTemplate = new TransactionTemplate(transactionManager);
     }
 
-    @Transactional
+    private record PaymentTxContext(
+            PaymentResponse response,
+            String method,
+            String orderCode,
+            Double amount
+    ) {}
+
     public PaymentResponse createPayment(String userId, CreatePaymentRequest request) {
+        // Bước 1: Lưu đơn hàng & giao dịch vào DB trong Transaction ngắn hạn
+        PaymentTxContext ctx = transactionTemplate.execute(status -> executePaymentCreationTx(userId, request));
+
+        PaymentResponse response = ctx.response();
+        String method = ctx.method();
+        String orderCode = ctx.orderCode();
+        Double amount = ctx.amount();
+
+        // Bước 2: Tách biệt I/O mạng cổng thanh toán ra NGOÀI Transaction để không chiếm dụng JDBC connection
+        if ("VIETQR".equals(method) || "SEPAY".equals(method)) {
+            if (sepayPaymentGateway.isEnabled()) {
+                SepayPaymentGateway.SepayCheckoutResult sepayResult = sepayPaymentGateway.createCheckout(orderCode, amount, request.getNote());
+                if (sepayResult != null) {
+                    response.setCheckoutUrl(sepayResult.getCheckoutUrl());
+                    response.setCheckoutFields(sepayResult.getCheckoutFields());
+                    response.setPayUrl(sepayResult.getCheckoutUrl());
+                    response.setInstructions("Quý khách có thể quét mã VietQR hoặc bấm chuyển hướng để thanh toán tự động qua cổng SePay.");
+                }
+            }
+        } else if ("MOMO".equals(method)) {
+            if (momoPaymentGateway.isEnabled()) {
+                MomoPaymentGateway.MomoPaymentResult momoResult = momoPaymentGateway.createPayment(orderCode, amount, request.getNote());
+                if (momoResult != null && momoResult.getPayUrl() != null) {
+                    response.setPayUrl(momoResult.getPayUrl());
+                    if (momoResult.getQrCodeUrl() != null) response.setQrCodeUrl(momoResult.getQrCodeUrl());
+                    response.setInstructions("Hệ thống đã tạo yêu cầu thanh toán MoMo. Quý khách vui lòng chuyển tiếp đến ứng dụng MoMo để hoàn tất.");
+                }
+            }
+        }
+
+        return response;
+    }
+
+    private PaymentTxContext executePaymentCreationTx(String userId, CreatePaymentRequest request) {
         // Chốt chặn tài khoản bị khóa (Account Lockout Guard)
         if (userId != null) {
             User user = userRepository.findById(userId).orElse(null);
@@ -115,48 +159,38 @@ public class PaymentService {
             throw new IllegalStateException("Quý khách đã gửi yêu cầu thanh toán quá nhiều lần. Vui lòng thử lại sau " + remaining + " giây!");
         }
 
-        // Chốt chặn chống lạm dụng voucher (Zero-Dollar & Minimum Basket Guard)
-        boolean hasVoucherOrGift = StringUtils.hasText(request.getAppliedGiftId());
-        boolean hasItems = request.getItems() != null && !request.getItems().isEmpty();
-        if (hasItems) {
-            boolean hasPaidItem = request.getItems().stream()
-                    .anyMatch(i -> i.getUnitPrice() != null && i.getUnitPrice() > 0);
-            if (!hasPaidItem) {
-                throw new IllegalArgumentException(
-                        "Đơn hàng không hợp lệ. Quý khách cần chọn ít nhất 01 món ăn chính để áp dụng ưu đãi.");
-            }
-        } else if (hasVoucherOrGift) {
-            throw new IllegalArgumentException(
-                    "Ưu đãi chỉ áp dụng kèm theo món ăn. Vui lòng chọn ít nhất 01 món chính trong thực đơn.");
-        }
-
-        // Chốt chặn kiểm tra bàn bị khóa (Table Lockout Guard)
+        // Kiểm tra bàn ăn trước khi xử lý
         if (StringUtils.hasText(request.getTableNumber())) {
             tableService.validateTableAvailable(request.getTableNumber());
         }
 
         String targetUserId = userId;
         if (targetUserId == null && StringUtils.hasText(request.getPhone())) {
-            targetUserId = userRepository.findByPhone(request.getPhone().trim())
-                    .map(User::getId).orElse(null);
+            targetUserId = userRepository.findByPhone(request.getPhone().trim()).map(User::getId).orElse(null);
         }
         final String resolvedUserId = targetUserId;
 
-        List<OrderItem> verifiedItems = buildVerifiedOrderItems(request.getItems());
+        // Xác thực món ăn & tính giá 100% từ Server Database
+        boolean hasItems = request.getItems() != null && !request.getItems().isEmpty();
+        List<OrderItem> verifiedItems = hasItems
+                ? paymentOrderValidator.buildAndVerifyOrderItems(request.getItems(), dishRepository)
+                : java.util.Collections.emptyList();
         double verifiedTotal = verifiedItems.stream().mapToDouble(OrderItem::getSubtotal).sum();
 
         String method = request.getPaymentMethod().toUpperCase();
         Order order = orderRepository.findByOrderCode(request.getOrderCode())
                 .orElseGet(() -> {
+                    if (!hasItems) {
+                        throw new IllegalArgumentException("Không tìm thấy đơn hàng #" + request.getOrderCode() + " và không có món ăn hợp lệ trong yêu cầu.");
+                    }
                     Order newOrder = new Order();
                     newOrder.setOrderCode(request.getOrderCode());
                     newOrder.setGuestName(StringUtils.hasText(request.getCustomerName()) ? request.getCustomerName() : "Khách Quý Phở 1986");
                     newOrder.setGuestPhone(StringUtils.hasText(request.getPhone()) ? request.getPhone() : "0986198686");
                     newOrder.setDeliveryAddressText(StringUtils.hasText(request.getAddress()) ? request.getAddress() : "Tại quán Phở Gia Truyền 1986");
                     newOrder.setPaymentMethod(method);
-                    Double initialAmount = (verifiedTotal > 0) ? verifiedTotal : ((request.getAmount() != null && request.getAmount() > 0) ? request.getAmount() : 150000.0);
-                    newOrder.setTotalAmount(initialAmount);
-                    newOrder.setFinalAmount(initialAmount);
+                    newOrder.setTotalAmount(verifiedTotal);
+                    newOrder.setFinalAmount(verifiedTotal);
                     newOrder.setNotes(request.getNote());
                     newOrder.setTableNumber(request.getTableNumber());
                     if (StringUtils.hasText(request.getAppliedGiftId())) {
@@ -169,24 +203,38 @@ public class PaymentService {
                     return orderRepository.save(newOrder);
                 });
 
-        if (!verifiedItems.isEmpty() && order.getItems().isEmpty()) {
-            verifiedItems.forEach(order::addItem);
-            if (verifiedTotal > 0) {
-                order.setTotalAmount(verifiedTotal);
-                order.setFinalAmount(verifiedTotal);
-            }
+        if (hasItems) {
+            paymentOrderValidator.replaceOrderItems(order, verifiedItems);
+            orderRepository.save(order);
+        } else {
+            // Đơn hàng đã tồn tại: Bắt buộc xác thực lại 100% đơn giá và tính lại thành tiền từ DB
+            paymentOrderValidator.recalculateAndVerifyExistingOrder(order, dishRepository);
             orderRepository.save(order);
         }
 
-        if (StringUtils.hasText(request.getAppliedGiftId())) {
-            order.setVoucherCode(request.getAppliedGiftId().trim());
-            if (resolvedUserId != null) {
-                customerGiftService.applyGiftToOrder(resolvedUserId, request.getAppliedGiftId(), order.getOrderCode());
+        // Chốt chặn ưu đãi & giữ bàn: Bắt buộc chứa ít nhất 01 món chính đã xác thực từ database
+        boolean orderHasMainDish = paymentOrderValidator.hasVerifiedMainDish(order.getItems(), dishRepository);
+        boolean hasVoucherOrDiscount = StringUtils.hasText(request.getAppliedGiftId())
+                || StringUtils.hasText(order.getVoucherCode())
+                || (order.getDiscountAmount() != null && order.getDiscountAmount() > 0);
+
+        if (hasVoucherOrDiscount) {
+            if (!orderHasMainDish) {
+                throw new IllegalArgumentException("Ưu đãi và giảm giá chỉ áp dụng kèm theo món ăn chính. Quý khách vui lòng chọn ít nhất 01 món chính trong thực đơn.");
             }
-            voucherService.applyVoucherUsage(request.getAppliedGiftId());
+            if (StringUtils.hasText(request.getAppliedGiftId())) {
+                order.setVoucherCode(request.getAppliedGiftId().trim());
+                if (resolvedUserId != null) {
+                    customerGiftService.applyGiftToOrder(resolvedUserId, request.getAppliedGiftId(), order.getOrderCode());
+                }
+                voucherService.applyVoucherUsage(request.getAppliedGiftId());
+            }
         }
 
         if (StringUtils.hasText(order.getTableNumber())) {
+            if (!orderHasMainDish) {
+                throw new IllegalArgumentException("Dịch vụ giữ bàn chỉ áp dụng khi quý khách đặt trước ít nhất 01 món ăn chính trong thực đơn.");
+            }
             tableService.markTableStatus(order.getTableNumber(), "RESERVED");
         }
 
@@ -225,16 +273,6 @@ public class PaymentService {
             response.setInstructions("Quý khách vui lòng mở ứng dụng ngân hàng và quét mã VietQR trên để thanh toán trong vòng 15 phút.");
             response.setCompleted(false);
 
-            if (sepayPaymentGateway.isEnabled()) {
-                SepayPaymentGateway.SepayCheckoutResult sepayResult = sepayPaymentGateway.createCheckout(order.getOrderCode(), amount, request.getNote());
-                if (sepayResult != null) {
-                    response.setCheckoutUrl(sepayResult.getCheckoutUrl());
-                    response.setCheckoutFields(sepayResult.getCheckoutFields());
-                    response.setPayUrl(sepayResult.getCheckoutUrl());
-                    response.setInstructions("Quý khách có thể quét mã VietQR hoặc bấm chuyển hướng để thanh toán tự động qua cổng SePay.");
-                }
-            }
-
             order.setPaymentMethod(method);
             order.setPaymentStatus("UNPAID");
 
@@ -249,14 +287,7 @@ public class PaymentService {
         } else if ("MOMO".equals(method)) {
             transaction.setStatus("PENDING"); response.setStatus("PENDING"); response.setCompleted(false);
             response.setInstructions("Vui lòng mở ứng dụng MoMo và quét mã để hoàn tất thanh toán.");
-            if (momoPaymentGateway.isEnabled()) {
-                MomoPaymentGateway.MomoPaymentResult momoResult = momoPaymentGateway.createPayment(order.getOrderCode(), amount, request.getNote());
-                if (momoResult != null && momoResult.getPayUrl() != null) {
-                    response.setPayUrl(momoResult.getPayUrl());
-                    if (momoResult.getQrCodeUrl() != null) response.setQrCodeUrl(momoResult.getQrCodeUrl());
-                    response.setInstructions("Hệ thống đã tạo yêu cầu thanh toán MoMo. Quý khách vui lòng chuyển tiếp đến ứng dụng MoMo để hoàn tất.");
-                }
-            } else {
+            if (!momoPaymentGateway.isEnabled()) {
                 String cleanOrderCode = order.getOrderCode().replaceAll("[^a-zA-Z0-9]", "");
                 response.setQrCodeUrl(vietQrHelper.buildQrUrl(defaultBankBin, defaultAccountNo, amount, "MOMO " + cleanOrderCode, defaultAccountName));
                 response.setInstructions("Vui lòng quét mã MoMo hoặc chuyển khoản với nội dung MOMO " + cleanOrderCode + " trong vòng 15 phút.");
@@ -271,30 +302,24 @@ public class PaymentService {
         paymentTransactionRepository.save(transaction);
         orderRepository.save(order);
 
-        return response;
+        return new PaymentTxContext(response, method, order.getOrderCode(), amount);
     }
 
     @Transactional
     public PaymentStatusResponse confirmPayment(String paymentCode, ConfirmPaymentRequest request) {
+        return confirmPayment(paymentCode, request, org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication());
+    }
+
+    @Transactional
+    public PaymentStatusResponse confirmPayment(String paymentCode, ConfirmPaymentRequest request, Authentication authentication) {
+        // Chốt chặn an ninh tối thượng: Xác thực Secret Key / Chữ ký HMAC-SHA256 hoặc ROLE_ADMIN TRƯỚC TIÊN
+        paymentSecurityValidator.validateConfirmation(webhookSecret, paymentCode, request, authentication);
+
         PaymentTransaction transaction = paymentTransactionRepository.findByPaymentCode(paymentCode)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy giao dịch với mã: " + paymentCode));
 
         if ("SUCCESS".equals(transaction.getStatus())) {
-            return new PaymentStatusResponse(
-                    transaction.getPaymentCode(),
-                    transaction.getOrder().getOrderCode(),
-                    transaction.getStatus(),
-                    transaction.getPaymentMethod(),
-                    transaction.getAmount(),
-                    transaction.getPaidAt()
-            );
-        }
-
-        String providedSecret = (request != null && request.getSecretKey() != null) ? request.getSecretKey() : null;
-        if (providedSecret == null || !MessageDigest.isEqual(
-                webhookSecret.getBytes(StandardCharsets.UTF_8),
-                providedSecret.getBytes(StandardCharsets.UTF_8))) {
-            throw new SecurityException("Xác thực cổng thanh toán thất bại: Secret Key không hợp lệ!");
+            return toStatusResponse(transaction);
         }
 
         if (request != null && request.getAmount() != null) {
@@ -320,7 +345,7 @@ public class PaymentService {
         LocalDateTime now = LocalDateTime.now();
         transaction.setStatus("SUCCESS");
         transaction.setPaidAt(now);
-        transaction.setTransactionRef(request.getTransactionRef() != null ? request.getTransactionRef() : "REF-" + System.currentTimeMillis());
+        transaction.setTransactionRef(request != null && request.getTransactionRef() != null ? request.getTransactionRef() : "REF-" + System.currentTimeMillis());
         try {
             transaction.setRawWebhookData(objectMapper.writeValueAsString(request));
         } catch (Exception e) {
@@ -337,9 +362,6 @@ public class PaymentService {
         return toStatusResponse(transaction);
     }
 
-    /**
-     * Xử lý Webhook IPN từ cổng SePay
-     */
     @Transactional
     public PaymentStatusResponse processSepayIpn(String authHeader, String secretHeader, SepayIpnPayload payload) {
         sepayIpnHandler.verifyIpnSecret(authHeader, secretHeader);
@@ -388,9 +410,6 @@ public class PaymentService {
         return toStatusResponse(transaction);
     }
 
-    /**
-     * Xử lý Webhook IPN từ ví điện tử MoMo
-     */
     @Transactional
     public PaymentStatusResponse processMomoIpn(MomoIpnRequest request) {
         momoIpnHandler.verifyIpnSignature(request);
@@ -435,9 +454,6 @@ public class PaymentService {
         return toStatusResponse(transaction);
     }
 
-    /**
-     * Xác định URL điều hướng người dùng sau khi SePay redirect về backend
-     */
     public String resolveSepayReturnUrl(String status, String orderCode) {
         return sepayIpnHandler.resolveReturnUrl(status, orderCode);
     }
@@ -461,22 +477,6 @@ public class PaymentService {
         }
 
         return toStatusResponse(transaction);
-    }
-
-    private List<OrderItem> buildVerifiedOrderItems(List<CreateOrderItemRequest> requests) {
-        if (requests == null || requests.isEmpty()) return Collections.emptyList();
-        List<String> dishIds = requests.stream().map(CreateOrderItemRequest::getDishId).filter(StringUtils::hasText).distinct().toList();
-        Map<String, Dish> dishMap = dishIds.isEmpty() ? Collections.emptyMap() :
-                dishRepository.findAllById(dishIds).stream().collect(Collectors.toMap(Dish::getId, Function.identity(), (a, b) -> a));
-        List<OrderItem> items = new ArrayList<>();
-        for (CreateOrderItemRequest r : requests) {
-            Dish d = StringUtils.hasText(r.getDishId()) ? dishMap.get(r.getDishId()) : null;
-            Double price = (d != null && d.getPrice() != null) ? d.getPrice() : ((r.getUnitPrice() != null && r.getUnitPrice() > 0) ? r.getUnitPrice() : 0.0);
-            int qty = (r.getQuantity() != null && r.getQuantity() > 0) ? r.getQuantity() : 1;
-            String name = (d != null && StringUtils.hasText(d.getName())) ? d.getName() : r.getDishName();
-            items.add(new OrderItem(r.getDishId(), name, price, qty, price * qty, r.getCustomizedOptions()));
-        }
-        return items;
     }
 
     private PaymentStatusResponse toStatusResponse(PaymentTransaction tx) {

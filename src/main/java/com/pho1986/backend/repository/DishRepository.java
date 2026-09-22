@@ -19,6 +19,10 @@ public interface DishRepository extends JpaRepository<Dish, String> {
     @EntityGraph(attributePaths = {"category"})
     Optional<Dish> findById(String id);
 
+    @Override
+    @EntityGraph(attributePaths = {"category"})
+    List<Dish> findAllById(Iterable<String> ids);
+
     @EntityGraph(attributePaths = {"category"})
     Optional<Dish> findBySlug(String slug);
 

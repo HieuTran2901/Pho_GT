@@ -109,6 +109,7 @@ public class PaymentDtos {
         private String transactionRef;
         private Double amount;
         private String secretKey;
+        private String signature;
 
         public String getTransactionRef() { return transactionRef; }
         public void setTransactionRef(String transactionRef) { this.transactionRef = transactionRef; }
@@ -116,6 +117,8 @@ public class PaymentDtos {
         public void setAmount(Double amount) { this.amount = amount; }
         public String getSecretKey() { return secretKey; }
         public void setSecretKey(String secretKey) { this.secretKey = secretKey; }
+        public String getSignature() { return signature; }
+        public void setSignature(String signature) { this.signature = signature; }
     }
 
     public static class PaymentStatusResponse {

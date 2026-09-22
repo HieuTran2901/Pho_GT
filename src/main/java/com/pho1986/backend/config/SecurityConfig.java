@@ -60,7 +60,23 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/payments/gateways").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/payments").permitAll() // Khởi tạo thanh toán (Guest/User)
                         .requestMatchers(HttpMethod.GET, "/api/v1/payments/*/status").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/payments/*/confirm").permitAll()
+                        // Thu hồi quyền truy cập mở permitAll(): Yêu cầu ROLE_ADMIN hoặc chữ ký HMAC/Secret Key bảo mật
+                        .requestMatchers(HttpMethod.POST, "/api/v1/payments/*/confirm").access((authenticationSupplier, context) -> {
+                            org.springframework.security.core.Authentication userAuth = authenticationSupplier.get();
+                            if (userAuth != null && userAuth.isAuthenticated()
+                                    && !(userAuth instanceof org.springframework.security.authentication.AnonymousAuthenticationToken)) {
+                                if (userAuth.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()))) {
+                                    return new org.springframework.security.authorization.AuthorizationDecision(true);
+                                }
+                            }
+                            // Cuộc gọi xác nhận thanh toán công khai bắt buộc phải có thông tin xác thực mật mã (Headers hoặc JSON Body)
+                            jakarta.servlet.http.HttpServletRequest req = context.getRequest();
+                            boolean hasSecretHeader = org.springframework.util.StringUtils.hasText(req.getHeader("X-Secret-Key"))
+                                    || org.springframework.util.StringUtils.hasText(req.getHeader("X-Signature"))
+                                    || org.springframework.util.StringUtils.hasText(req.getHeader("Authorization"));
+                            boolean hasJsonPayload = req.getContentType() != null && req.getContentType().toLowerCase().contains("application/json");
+                            return new org.springframework.security.authorization.AuthorizationDecision(hasSecretHeader || hasJsonPayload);
+                        })
                         .requestMatchers(HttpMethod.POST, "/api/v1/payments/sepay/ipn").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/payments/sepay/return/*").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/payments/momo/ipn").permitAll()
