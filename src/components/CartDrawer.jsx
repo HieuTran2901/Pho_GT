@@ -3,6 +3,7 @@ import { X, Trash2, Plus, Minus, ArrowRight, ShoppingBag, Utensils } from 'lucid
 import useAnimatedNumber from '../hooks/useAnimatedNumber';
 import GlidingGiftRibbon from './loyalty/GlidingGiftRibbon';
 import { useOnboardingTour } from '../context/OnboardingTourContext';
+import CartDrawerItem from './cart/CartDrawerItem';
 
 const currencyFormatter = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
 const formatPrice = (price) => currencyFormatter.format(price);
@@ -34,12 +35,13 @@ function CartDrawer({ isOpen, onClose, cartItems, onUpdateQuantity, onRemoveItem
 
     for (let i = 0; i < cartItems.length; i++) {
       const item = cartItems[i];
-      total += (item.price || 0) * (item.quantity || 1);
+      const itemPrice = item.unitPrice || item.price || 0;
+      total += itemPrice * (item.quantity || 1);
       count += (item.quantity || 1);
       if (item.isFreeGift) gift = item;
       else main.push(item);
     }
-    const hasPaid = main.some((item) => (item.price || 0) > 0);
+    const hasPaid = main.some((item) => (item.unitPrice || item.price || 0) > 0);
     return { totalAmount: total, itemCount: count, mainItems: main, freeGift: gift, hasPaidItems: hasPaid };
   }, [cartItems]);
 
@@ -187,150 +189,20 @@ function CartDrawer({ isOpen, onClose, cartItems, onUpdateQuantity, onRemoveItem
                 {/* 1. MÓN ĂN CHÍNH (KÈM COMBO MÓC NỐI GẤM NẾU CÓ QUÀ TẶNG) */}
                 {mainItems.map((item, idx) => {
                   const isPrimaryBowl = idx === 0 && Boolean(freeGift);
-
                   return (
-                    <div key={item.id} className="space-y-1.5">
-                      {/* Thẻ món ăn chính */}
-                      <div
-                        className={`relative flex items-center gap-3.5 sm:gap-4 p-3 rounded-2xl transition-all duration-500 shadow-xs ${
-                          justApplied && isPrimaryBowl
-                            ? 'bg-amber-50/80 border-2 border-amber-400/90 shadow-[0_0_20px_rgba(245,158,11,0.45)]'
-                            : 'bg-stone-50 border border-stone-200/90 hover:border-amber-400/60'
-                        }`}
-                      >
-                        {/* [PHƯƠNG ÁN A] RUY BĂNG NƠ LỤA HÚT VÀO ẢNH BÁT PHỞ */}
-                        {isPrimaryBowl && !isGliding && (
-                          <div className="absolute -top-2.5 left-3 z-10 animate-ribbon-snap pointer-events-none">
-                            <div className="bg-gradient-to-r from-[#9b2a1f] via-[#7d1d14] to-[#591008] border border-amber-300 text-amber-100 text-[10px] font-serif font-bold px-2.5 py-0.5 rounded-full shadow-md flex items-center gap-1.5 ring-1 ring-amber-400/40">
-                              <span>🎀</span>
-                              <span className="truncate max-w-[140px]">+ {freeGift.name}</span>
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="relative w-16 h-16 rounded-xl overflow-hidden shrink-0 bg-stone-200">
-                          <img
-                            src={item.image}
-                            alt={item.name}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-serif font-bold text-sm text-stone-900 truncate">
-                            {item.name}
-                          </h4>
-                          <div className="text-xs font-bold text-brand-red mt-0.5">
-                            {formatPrice(item.price)}
-                          </div>
-
-                          {/* Quantity controls */}
-                          <div className="flex items-center gap-2 mt-2">
-                            <button
-                              onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
-                              className="w-6 h-6 rounded bg-white border border-stone-300 flex items-center justify-center text-stone-700 hover:bg-stone-200 cursor-pointer"
-                            >
-                              <Minus className="w-3 h-3" />
-                            </button>
-                            <span className="text-xs font-bold text-stone-800 px-1 font-mono">
-                              {item.quantity}
-                            </span>
-                            <button
-                              onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                              className="w-6 h-6 rounded bg-white border border-stone-300 flex items-center justify-center text-stone-700 hover:bg-stone-200 cursor-pointer"
-                            >
-                              <Plus className="w-3 h-3" />
-                            </button>
-                          </div>
-                        </div>
-
-                        <button
-                          onClick={() => onRemoveItem(item.id)}
-                          className="p-2 text-stone-400 hover:text-red-600 transition-colors cursor-pointer"
-                          title="Xóa món"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-
-                      {/* [PHƯƠNG ÁN B] MÓC NỐI GẤM COMBO ĐI KÈM PHÍA DƯỚI BÁT PHỞ */}
-                      {isPrimaryBowl && (
-                        <div className="relative ml-5 sm:ml-7 pl-3.5 sm:pl-4 border-l-2 border-dashed border-amber-500/60 pb-1 animate-fadeIn">
-                          {/* Đường chỉ cong hình cành mai nối liền vào thẻ con */}
-                          <div className="absolute -left-[2px] top-5 w-3.5 h-3.5 border-b-2 border-l-2 border-amber-500/60 rounded-bl-lg pointer-events-none" />
-
-                          <div
-                            ref={comboChildRef}
-                            className={`relative flex items-center gap-2.5 p-2 rounded-xl transition-all duration-500 ${
-                              isGliding
-                                ? 'border-2 border-dashed border-amber-400/90 bg-amber-50/60 scale-[0.98] opacity-70 shadow-inner'
-                                : justApplied
-                                ? 'bg-gradient-to-r from-[#fff9ee] via-[#fff3db] to-[#fdedcd] border-2 border-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.55)] ring-2 ring-amber-400/60 scale-[1.005]'
-                                : 'bg-gradient-to-r from-[#fffdf8] via-[#fcf5e8] to-[#f4e7d0] border border-[#c88d2b]/60 shadow-xs hover:border-[#c88d2b]'
-                            }`}
-                          >
-                            {/* Làn bụi kim tuyến vàng bùng nổ khi tiếp đất (Docking Sparkle Burst) */}
-                            {sparkleBurst && (
-                              <div className="absolute inset-0 rounded-xl pointer-events-none border-2 border-amber-400 animate-docking-burst z-20" />
-                            )}
-
-                            {/* Thumbnail nhỏ gọn tỉ lệ hài hòa với món chính */}
-                            <div className="relative w-9 h-9 rounded-lg overflow-hidden border border-[#c88d2b]/80 shrink-0 bg-stone-900 shadow-xs">
-                              <img
-                                src={freeGift.image}
-                                alt={freeGift.name}
-                                className="w-full h-full object-cover"
-                              />
-                              <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#8a1f18] text-[6.5px] font-bold text-amber-200 border border-amber-300 flex items-center justify-center shadow-xs">
-                                0đ
-                              </span>
-                            </div>
-
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="font-serif font-bold text-xs text-stone-900 truncate">
-                                  {freeGift.name}
-                                </span>
-                                <span className="px-1.5 py-0.2 rounded bg-[#731911] text-amber-200 text-[8px] font-serif font-bold shrink-0">
-                                  🎁 Kèm
-                                </span>
-                                {justApplied && !isGliding && (
-                                  <span className="px-1.5 py-0.2 rounded-full bg-gradient-to-r from-[#9b2a1f] to-[#7a1811] text-amber-200 border border-amber-300 text-[7.5px] font-serif font-black shadow-xs flex items-center gap-0.5 animate-bounce shrink-0">
-                                    <span>✨</span>
-                                    <span>VỪA ÁP DỤNG</span>
-                                  </span>
-                                )}
-                              </div>
-
-                              {/* ANIMATION GẠCH GIÁ VÀ BỪNG SÁNG 0Đ */}
-                              <div className="flex items-center gap-2 mt-0.5">
-                                <div className="relative inline-block text-[11px] font-serif text-stone-400">
-                                  <span>{formatPrice(freeGift.originalPrice || 15000)}</span>
-                                  {!isGliding && (
-                                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-[1.5px] bg-[#9b2a1f] rounded-full animate-strike-brush" />
-                                  )}
-                                </div>
-                                {!isGliding && (
-                                  <span className="text-emerald-700 font-serif font-black text-xs animate-pop-zero flex items-center gap-1">
-                                    <span>0đ</span>
-                                    <span className="text-[9px] text-emerald-800 font-sans font-medium">(Tặng kèm)</span>
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={() => onRemoveItem(freeGift.id)}
-                              className="p-1 text-stone-400 hover:text-red-600 transition-colors shrink-0 cursor-pointer"
-                              title="Bỏ quà tặng"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                    <CartDrawerItem
+                      key={item.cartItemId || item.id}
+                      item={item}
+                      isPrimaryBowl={isPrimaryBowl}
+                      freeGift={freeGift}
+                      justApplied={justApplied}
+                      isGliding={isGliding}
+                      comboChildRef={comboChildRef}
+                      sparkleBurst={sparkleBurst}
+                      onUpdateQuantity={onUpdateQuantity}
+                      onRemoveItem={onRemoveItem}
+                      formatPrice={formatPrice}
+                    />
                   );
                 })}
 

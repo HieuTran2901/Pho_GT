@@ -15,11 +15,12 @@ import MemberWelcome3DCard from './components/auth/MemberWelcome3DCard';
 import HeritageChatbox from './components/chat/HeritageChatbox';
 import SpotlightTour from './components/onboarding/SpotlightTour';
 import { useAuth } from './context/AuthContext';
-import { TIER_CONFIG } from './components/navbar/navbarConstants';
 import { getCartStorageKey, loadCartFromStorage } from './utils/cartStorage';
+import { TIER_CONFIG } from './components/navbar/navbarConstants';
 
 import { useAppRouting } from './hooks/useAppRouting';
 import HeritageRouteLoading from './components/common/HeritageRouteLoading';
+import PwaInstallPrompt from './components/common/PwaInstallPrompt';
 
 // Code-Splitting: Tải lười các phân khu nặng để tối ưu dung lượng Bundle ban đầu
 const AdminPortal = lazy(() => import('./components/admin/AdminPortal'));
@@ -166,14 +167,16 @@ export default function App() {
     }
 
     // 1. Add item to cart state
+    const addedQty = item.quantity || 1;
+    const itemKey = item.cartItemId || item.id;
     setCartItems((prev) => {
-      const existing = prev.find((i) => i.id === item.id);
+      const existing = prev.find((i) => (i.cartItemId || i.id) === itemKey);
       if (existing) {
         return prev.map((i) =>
-          i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
+          (i.cartItemId || i.id) === itemKey ? { ...i, quantity: i.quantity + addedQty } : i
         );
       }
-      return [...prev, { ...item, quantity: 1 }];
+      return [...prev, { ...item, quantity: addedQty }];
     });
 
     // 2. Spawn parabolic flying bowl if coordinates exist
@@ -251,16 +254,16 @@ export default function App() {
 
   const handleUpdateQuantity = useCallback((id, newQuantity) => {
     if (newQuantity <= 0) {
-      setCartItems((prev) => prev.filter((i) => i.id !== id));
+      setCartItems((prev) => prev.filter((i) => (i.cartItemId || i.id) !== id));
       return;
     }
     setCartItems((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, quantity: newQuantity } : i))
+      prev.map((i) => ((i.cartItemId || i.id) === id ? { ...i, quantity: newQuantity } : i))
     );
   }, []);
 
   const handleRemoveItem = useCallback((id) => {
-    setCartItems((prev) => prev.filter((i) => i.id !== id));
+    setCartItems((prev) => prev.filter((i) => (i.cartItemId || i.id) !== id));
   }, []);
 
   const handleClearCart = useCallback(() => {
@@ -477,6 +480,9 @@ export default function App() {
 
         {/* Heritage Onboarding Spotlight Tour (Tiểu Nhị 1986) */}
         <SpotlightTour />
+
+        {/* PWA Mobile App Install Prompt */}
+        <PwaInstallPrompt />
 
         {/* Footer */}
         <Footer />

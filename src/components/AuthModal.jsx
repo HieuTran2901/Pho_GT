@@ -5,7 +5,7 @@ import AuthLockoutBanner from './auth/AuthLockoutBanner';
 import AuthModalHeader from './auth/AuthModalHeader';
 import AuthPhoneOtpField from './auth/AuthPhoneOtpField';
 import AuthTasteLoyaltyBox from './auth/AuthTasteLoyaltyBox';
-import { auth, formatVietnamPhoneE164, createRecaptchaVerifier, resetRecaptchaVerifier, clearRecaptchaVerifier, signInWithPhoneNumber } from '../config/firebase';
+import { auth, formatVietnamPhoneE164, createRecaptchaVerifier, resetRecaptchaVerifier, signInWithPhoneNumber } from '../config/firebase';
 
 function AuthModal({ onToast }) {
   const { authModalOpen, closeAuthModal, authTab, setAuthTab, login, register } = useAuth();

@@ -8,7 +8,7 @@ import {
 
 export const NAV_ITEMS = [
   { id: 'hero', label: 'TRANG CHỦ', shortLabel: 'TRANG CHỦ', icon: Home, href: '#hero' },
-  { id: 'menu', label: 'THỰC ĐƠN', shortLabel: 'THỰC ĐƠN', icon: Utensils, href: '#menu-catalog' },
+  { id: 'menu', label: 'THỰC ĐƠN', shortLabel: 'THỰC ĐƠN', icon: Utensils, href: '#menu' },
   { id: 'story', label: 'BÍ QUYẾT 1986', shortLabel: 'BÍ QUYẾT', icon: Star, href: '#story' },
   { id: 'reviews', label: 'THỰC KHÁCH NÓI GÌ', shortLabel: 'ĐÁNH GIÁ', icon: MessageSquareQuote, href: '#reviews' },
   { id: 'order', label: 'ĐẶT BÀN & GIAO TẬN NƠI', shortLabel: 'ĐẶT BÀN', icon: Bike, href: '#order' },

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { 
-  Clock, Gift, MapPin, Utensils, ChevronDown, Sparkles, 
-  User, Phone, ShoppingBag, Menu, X, FileText, Compass 
+  Gift, Utensils, ChevronDown, Sparkles, 
+  User, ShoppingBag, Menu, X, Compass, Clock, MapPin, Phone, FileText 
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useOnboardingTour } from '../context/OnboardingTourContext';
@@ -288,7 +288,33 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
                 </div>
               )}
 
-              {/* Hotline button: Nằm gần khung card tài khoản */}
+              {/* Nút Khám Phá Tour Tiểu Nhị 1986: Di chuyển sang ngay gần khung đăng nhập */}
+              <button
+                type="button"
+                onClick={() => startTour(0)}
+                id="navbar-tour-guide-btn"
+                title="Hướng dẫn khám phá quán (Tiểu Nhị 1986)"
+                aria-label="Hướng dẫn khám phá quán"
+                className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-amber-500/50 bg-amber-50/80 hover:bg-amber-100/90 text-[#8a1e14] hover:border-[#8a1e14] text-xs font-serif font-bold tracking-wide transition-all shadow-xs hover:shadow-md active:scale-95 group cursor-pointer whitespace-nowrap"
+              >
+                <Compass className="w-3.5 h-3.5 text-[#8a1e14] group-hover:rotate-45 transition-transform duration-300" />
+                <span className="text-[11px]">Khám phá quán</span>
+              </button>
+
+              {/* Kho quà button */}
+              <button
+                type="button"
+                onClick={onOpenGiftVault}
+                id="navbar-gift-vault-btn"
+                title="Khám phá kho quà tri ân"
+                aria-label="Khám phá kho quà tri ân"
+                className="hidden md:flex relative w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-r from-amber-50 to-orange-50/90 hover:from-amber-100 hover:to-orange-100 border border-amber-500/60 hover:border-[#8a1e14] text-[#8a1e14] items-center justify-center shadow-xs hover:shadow-md transition-all shrink-0 active:scale-95 group cursor-pointer"
+              >
+                <Gift className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#8a1e14] group-hover:scale-110 group-hover:rotate-12 transition-transform" />
+                <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500 border border-white animate-pulse" />
+              </button>
+
+              {/* Hotline button: Điều chỉnh vị trí nằm bên phải cạnh giỏ hàng */}
               <a
                 href="tel:19008686"
                 title="Hotline đặt hàng: 1900 8686"
@@ -311,32 +337,6 @@ function Navbar({ cartCount, onOpenCart, onOpenOrder, onAddToCart, onOpenOrderHi
                   </div>
                 </a>
               )}
-
-              {/* Nút Khám Phá Tour Tiểu Nhị 1986 */}
-              <button
-                type="button"
-                onClick={() => startTour(0)}
-                id="navbar-tour-guide-btn"
-                title="Hướng dẫn khám phá quán (Tiểu Nhị 1986)"
-                aria-label="Hướng dẫn khám phá quán"
-                className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-amber-500/50 bg-amber-50/80 hover:bg-amber-100/90 text-[#8a1e14] hover:border-[#8a1e14] text-xs font-serif font-bold tracking-wide transition-all shadow-xs hover:shadow-md active:scale-95 group cursor-pointer whitespace-nowrap"
-              >
-                <Compass className="w-3.5 h-3.5 text-[#8a1e14] group-hover:rotate-45 transition-transform duration-300" />
-                <span className="text-[11px]">Khám phá quán</span>
-              </button>
-
-              {/* Kho quà button: Nằm cạnh giỏ hàng bên phải */}
-              <button
-                type="button"
-                onClick={onOpenGiftVault}
-                id="navbar-gift-vault-btn"
-                title="Khám phá kho quà tri ân"
-                aria-label="Khám phá kho quà tri ân"
-                className="hidden md:flex relative w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-r from-amber-50 to-orange-50/90 hover:from-amber-100 hover:to-orange-100 border border-amber-500/60 hover:border-[#8a1e14] text-[#8a1e14] items-center justify-center shadow-xs hover:shadow-md transition-all shrink-0 active:scale-95 group cursor-pointer"
-              >
-                <Gift className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#8a1e14] group-hover:scale-110 group-hover:rotate-12 transition-transform" />
-                <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500 border border-white animate-pulse" />
-              </button>
 
               {/* Cart Trigger (Hidden on mobile < md because Bottom Nav has floating center Cart FAB) */}
               <button

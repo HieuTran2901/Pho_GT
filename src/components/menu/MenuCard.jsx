@@ -5,7 +5,8 @@ import {
   Sparkles,
   CheckCircle2,
   Heart,
-  Clock
+  Clock,
+  SlidersHorizontal,
 } from 'lucide-react';
 import useScrollReveal from '../../hooks/useScrollReveal';
 import LazyDishImage from './LazyDishImage';
@@ -21,6 +22,7 @@ const MenuCard = React.memo(function MenuCard({
   isLiked,
   onToggleLike,
   onOpenDetail,
+  onOpenCustomizer,
 }) {
   const [cardRef, isVisible] = useScrollReveal({
     threshold: 0.08,
@@ -124,7 +126,7 @@ const MenuCard = React.memo(function MenuCard({
             </div>
 
             {/* Dish Title */}
-            <h3 className="font-serif text-[15px] sm:text-base font-bold text-[#1b3425] leading-snug truncate">
+            <h3 className="font-serif text-[15px] sm:text-base font-bold text-[#1b3425] leading-snug line-clamp-2">
               {item.name}
             </h3>
 
@@ -396,33 +398,46 @@ const MenuCard = React.memo(function MenuCard({
                 <span>Bếp Tạm Hết Món — Hẹn Bữa Sau</span>
               </button>
             ) : (
-              <button
-                type="button"
-                id={isFirstDish ? 'tour-first-dish-add-btn' : undefined}
-                data-tour={isFirstDish ? 'dish-add-btn' : undefined}
-                onClick={handleCardClick}
-                className={`relative overflow-hidden w-full py-3.5 px-5 rounded-2xl font-bold text-xs sm:text-sm tracking-wide transition-all duration-300 flex items-center justify-center gap-2 group/btn shadow-sm active:scale-[0.98] ${
-                  isAdded
-                    ? 'bg-emerald-600 text-white shadow-[0_0_20px_rgba(16,185,129,0.5)]'
-                    : isGreenTheme
-                    ? 'bg-[#1b3425] text-white hover:bg-[#14281c] hover:shadow-[0_4px_18px_rgba(27,52,37,0.35)]'
-                    : 'bg-[#96281b] text-white hover:bg-[#802216] hover:shadow-[0_4px_18px_rgba(150,40,27,0.35)]'
-                }`}
-              >
-                <span className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover/btn:translate-x-[300%] transition-transform duration-700 ease-in-out pointer-events-none" />
-
-                {isAdded ? (
-                  <>
-                    <Check className="w-4 h-4 text-white" />
-                    <span>Đã Thêm Vào Bàn!</span>
-                  </>
-                ) : (
-                  <>
-                    <Plus className="w-4 h-4 text-amber-300 group-hover/btn:rotate-90 transition-transform duration-300" />
-                    <span>Thêm vào bàn</span>
-                  </>
+              <div className="flex items-center gap-2">
+                {onOpenCustomizer && (
+                  <button
+                    type="button"
+                    onClick={(e) => onOpenCustomizer(item, e)}
+                    className="p-3.5 rounded-2xl bg-amber-50 hover:bg-amber-100 text-[#8a1e14] border border-[#d4af37]/60 shadow-2xs active:scale-95 transition-all cursor-pointer flex items-center justify-center shrink-0"
+                    title="Tùy biến gu ăn phở 1986"
+                    aria-label="Tùy biến gu ăn phở 1986"
+                  >
+                    <SlidersHorizontal className="w-4 h-4" />
+                  </button>
                 )}
-              </button>
+                <button
+                  type="button"
+                  id={isFirstDish ? 'tour-first-dish-add-btn' : undefined}
+                  data-tour={isFirstDish ? 'dish-add-btn' : undefined}
+                  onClick={handleCardClick}
+                  className={`relative overflow-hidden flex-1 py-3.5 px-3 sm:px-5 rounded-2xl font-bold text-xs sm:text-sm tracking-wide transition-all duration-300 flex items-center justify-center gap-2 group/btn shadow-sm active:scale-[0.98] ${
+                    isAdded
+                      ? 'bg-emerald-600 text-white shadow-[0_0_20px_rgba(16,185,129,0.5)]'
+                      : isGreenTheme
+                      ? 'bg-[#1b3425] text-white hover:bg-[#14281c] hover:shadow-[0_4px_18px_rgba(27,52,37,0.35)]'
+                      : 'bg-[#96281b] text-white hover:bg-[#802216] hover:shadow-[0_4px_18px_rgba(150,40,27,0.35)]'
+                  }`}
+                >
+                  <span className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover/btn:translate-x-[300%] transition-transform duration-700 ease-in-out pointer-events-none" />
+
+                  {isAdded ? (
+                    <>
+                      <Check className="w-4 h-4 text-white" />
+                      <span>Đã Thêm!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4 text-amber-300 group-hover/btn:rotate-90 transition-transform duration-300" />
+                      <span>Thêm vào bàn</span>
+                    </>
+                  )}
+                </button>
+              </div>
             )}
           </div>
         </div>

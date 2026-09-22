@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="bgGrad" cx="50%" cy="50%" r="50%" fx="30%" fy="30%">
+      <stop offset="0%" stop-color="#b8382b"/>
+      <stop offset="100%" stop-color="#70150d"/>
+    </radialGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="108" fill="url(#bgGrad)"/>
+  <circle cx="256" cy="256" r="236" fill="none" stroke="#d4af37" stroke-width="6" stroke-dasharray="16 8"/>
+  <g filter="url(#shadow)" transform="translate(56, 76)">
+    <!-- Pho Bowl Base -->
+    <path d="M40 220 Q200 400 360 220 C380 200 380 180 360 180 L40 180 C20 180 20 200 40 220 Z" fill="#fdfbf7" stroke="#d4af37" stroke-width="10"/>
+    <path d="M120 320 L140 350 Q200 360 260 350 L280 320 Z" fill="#e8ded1" stroke="#d4af37" stroke-width="6"/>
+    <!-- Steam waves -->
+    <path d="M130 140 Q150 100 130 60 Q110 20 130 0" fill="none" stroke="#fdfbf7" stroke-width="12" stroke-linecap="round" opacity="0.8"/>
+    <path d="M200 130 Q220 90 200 50 Q180 10 200 -10" fill="none" stroke="#fdfbf7" stroke-width="14" stroke-linecap="round" opacity="0.9"/>
+    <path d="M270 140 Q290 100 270 60 Q250 20 270 0" fill="none" stroke="#fdfbf7" stroke-width="12" stroke-linecap="round" opacity="0.8"/>
+    <!-- Chopsticks -->
+    <line x1="60" y1="90" x2="350" y2="40" stroke="#d4af37" stroke-width="12" stroke-linecap="round"/>
+    <line x1="80" y1="110" x2="360" y2="55" stroke="#eccb73" stroke-width="10" stroke-linecap="round"/>
+  </g>
+  <!-- Year 1986 -->
+  <text x="256" y="456" font-family="'Merriweather', serif, Arial" font-size="34" font-weight="bold" fill="#d4af37" text-anchor="middle" letter-spacing="4">HÀ NỘI 1986</text>
+</svg>

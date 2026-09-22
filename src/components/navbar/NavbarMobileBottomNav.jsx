@@ -42,10 +42,10 @@ function NavbarMobileBottomNav({
 
         {/* Tab 2: Thực đơn */}
         <a
-          href="#menu-catalog"
+          href="#menu"
           onClick={(e) => {
             setActiveTab('menu');
-            const target = document.getElementById('menu-catalog');
+            const target = document.getElementById('menu') || document.getElementById('menu-catalog');
             if (target) {
               e.preventDefault();
               const yOffset = -76;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, ShieldCheck, Leaf, Soup, ArrowRight } from 'lucide-react';
+import { Soup, ArrowRight, Leaf, ShieldCheck, Calendar } from 'lucide-react';
 import SteamEffect from './SteamEffect';
 
 function Hero({ onExploreMenu, onBookTable }) {
