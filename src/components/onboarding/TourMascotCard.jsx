@@ -46,7 +46,7 @@ const TourMascotCard = memo(function TourMascotCard({
 
     // 1. TRÊN THIẾT BỊ DI ĐỘNG (< 768px):
     // Cơ chế Ghim nửa màn hình ngược chiều (Smart Opposite Pinning) triệt tiêu việc che khuất nút bấm
-    if (isMob) {
+    if (isMobile) {
       const isTargetInBottomHalf = top > viewportHeight * 0.42 || bottom > viewportHeight * 0.55;
       if (isTargetInBottomHalf) {
         return {
@@ -140,7 +140,7 @@ const TourMascotCard = memo(function TourMascotCard({
       left: `${clampedLeft}px`,
       width: `${cardWidth}px`
     };
-  }, [targetRect, step.preferredPlacement, step.id]);
+  }, [targetRect, step.preferredPlacement, step.id, isMobile]);
 
   return (
     <div

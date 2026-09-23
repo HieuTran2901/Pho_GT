@@ -12,7 +12,8 @@ const SpotlightOverlay = memo(function SpotlightOverlay({
     return (
       <div
         onClick={onBackdropClick}
-        className="fixed inset-0 z-[9990] bg-[#050c08]/80 backdrop-blur-xs transition-opacity duration-300"
+        onTouchEnd={onBackdropClick}
+        className="fixed inset-0 z-[9990] bg-[#050c08]/80 backdrop-blur-xs transition-opacity duration-300 cursor-pointer"
       />
     );
   }
@@ -38,7 +39,8 @@ const SpotlightOverlay = memo(function SpotlightOverlay({
           fill="rgba(5, 12, 8, 0.78)"
           fillRule="evenodd"
           onClick={onBackdropClick}
-          className="cursor-default pointer-events-auto transition-all duration-200"
+          onTouchEnd={onBackdropClick}
+          className="cursor-pointer pointer-events-auto transition-all duration-200"
         />
       </svg>
 

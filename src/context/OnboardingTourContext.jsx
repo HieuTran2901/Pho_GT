@@ -118,34 +118,62 @@ export function OnboardingTourProvider({ children }) {
     }
   }, [activeSteps]);
 
-  // Lắng nghe scroll và resize để đồng bộ vùng sáng 60fps
+  // Lắng nghe scroll, resize và ResizeObserver để đồng bộ vùng sáng 60fps mượt mà, triệt tiêu timer yanking
   useEffect(() => {
     if (!isTourActive) return;
 
+    let scrollRestTimer = null;
     const handleSync = () => {
       if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
       rafIdRef.current = requestAnimationFrame(updateTargetRect);
     };
 
-    window.addEventListener('resize', handleSync, { passive: true });
-    window.addEventListener('scroll', handleSync, { passive: true });
+    // Safari iOS fallback: không có native scrollend, dùng debounce nhẹ 120ms trên scroll để chốt vị trí nghỉ
+    const handleScroll = () => {
+      handleSync();
+      if (scrollRestTimer) clearTimeout(scrollRestTimer);
+      scrollRestTimer = setTimeout(handleSync, 120);
+    };
 
-    // Cập nhật ngay lần đầu và đồng bộ nhiều pha khi trang cuộn êm (smooth scroll) & drawer trượt vào
+    window.addEventListener('resize', handleSync, { passive: true });
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('scrollend', handleSync, { passive: true });
+    window.addEventListener('touchmove', handleScroll, { passive: true });
+    window.addEventListener('touchend', handleScroll, { passive: true });
+    window.addEventListener('gesturechange', handleScroll, { passive: true });
+    window.addEventListener('gestureend', handleSync, { passive: true });
+
+    if (typeof window !== 'undefined' && window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleSync, { passive: true });
+      window.visualViewport.addEventListener('scroll', handleScroll, { passive: true });
+    }
+
+    // Đồng bộ tức thời không độ trễ
     updateTargetRect();
-    const t1 = setTimeout(updateTargetRect, 200);
-    const t2 = setTimeout(updateTargetRect, 500);
-    const t3 = setTimeout(updateTargetRect, 580);
-    const t4 = setTimeout(updateTargetRect, 720);
-    const t5 = setTimeout(updateTargetRect, 850);
+
+    // ResizeObserver tự động bắt kịp co dãn DOM hoặc trượt drawer
+    let resizeObserver = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver(() => handleSync());
+      if (document.body) resizeObserver.observe(document.body);
+      const rootEl = document.getElementById('root');
+      if (rootEl) resizeObserver.observe(rootEl);
+    }
 
     return () => {
       window.removeEventListener('resize', handleSync);
-      window.removeEventListener('scroll', handleSync);
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-      clearTimeout(t4);
-      clearTimeout(t5);
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('scrollend', handleSync);
+      window.removeEventListener('touchmove', handleScroll);
+      window.removeEventListener('touchend', handleScroll);
+      window.removeEventListener('gesturechange', handleScroll);
+      window.removeEventListener('gestureend', handleSync);
+      if (typeof window !== 'undefined' && window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleSync);
+        window.visualViewport.removeEventListener('scroll', handleScroll);
+      }
+      if (scrollRestTimer) clearTimeout(scrollRestTimer);
+      if (resizeObserver) resizeObserver.disconnect();
       if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
     };
   }, [isTourActive, updateTargetRect]);
@@ -168,7 +196,7 @@ export function OnboardingTourProvider({ children }) {
     playTourStepChime();
     const steps = mode === 'ordering' ? ORDERING_TOUR_STEPS : HERITAGE_TOUR_STEPS;
     if (steps[0]) {
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         const firstStep = steps[0];
         const selectorList = (firstStep.scrollSelector || firstStep.targetSelector)
           .split(',')
@@ -182,7 +210,7 @@ export function OnboardingTourProvider({ children }) {
           }
         }
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 120);
+      });
     }
   }, []);
 
@@ -271,11 +299,15 @@ export function OnboardingTourProvider({ children }) {
     }
   }, [isTourActive, isPraising, activeSteps, currentStepIndex, totalSteps, completeTour, scrollToTarget]);
 
-  // Lắng nghe sự kiện click thực tế trên các phần tử tương tác
+  // Lắng nghe sự kiện click & touchend thực tế trên các phần tử tương tác (ISS-007)
   useEffect(() => {
     if (!isTourActive || !currentStep?.isInteractive || isPraising) return;
 
-    const handleGlobalClick = (e) => {
+    let lastActionTime = 0;
+    const handleInteraction = (e) => {
+      const now = Date.now();
+      if (now - lastActionTime < 350) return;
+
       const step = currentStep;
       if (!step || !step.expectedAction) return;
 
@@ -284,6 +316,7 @@ export function OnboardingTourProvider({ children }) {
           '#tour-first-dish-add-btn, #tour-first-dish-add-btn-mobile, [data-tour="dish-add-btn"]'
         );
         if (targetBtn) {
+          lastActionTime = now;
           notifyTourAction('ADD_TO_CART');
         }
       } else if (step.expectedAction === 'OPEN_CART') {
@@ -291,6 +324,7 @@ export function OnboardingTourProvider({ children }) {
           '#navbar-cart-btn, #mobile-bottom-cart-btn, [data-tour="navbar-gift-vault-btn"]'
         );
         if (targetCart) {
+          lastActionTime = now;
           notifyTourAction('OPEN_CART');
         }
       } else if (step.expectedAction === 'CLICK_CHECKOUT') {
@@ -298,6 +332,7 @@ export function OnboardingTourProvider({ children }) {
           '#cart-drawer-checkout-btn, [data-tour="cart-checkout-btn"]'
         );
         if (targetCheckout) {
+          lastActionTime = now;
           notifyTourAction('CLICK_CHECKOUT');
         }
       } else if (step.expectedAction === 'SELECT_PAYMENT_OR_SUBMIT') {
@@ -305,12 +340,14 @@ export function OnboardingTourProvider({ children }) {
           '#order-form-card input, #order-form-card button, #order-form-card label'
         );
         if (targetPayment) {
+          lastActionTime = now;
           notifyTourAction('SELECT_PAYMENT_OR_SUBMIT');
         }
       }
     };
 
-    window.addEventListener('click', handleGlobalClick, true);
+    window.addEventListener('click', handleInteraction, true);
+    window.addEventListener('touchend', handleInteraction, { passive: true, capture: true });
 
     const handleCustomTourAction = (e) => {
       if (e.detail?.action) {
@@ -320,7 +357,8 @@ export function OnboardingTourProvider({ children }) {
     window.addEventListener('pho1986:tour-action', handleCustomTourAction);
 
     return () => {
-      window.removeEventListener('click', handleGlobalClick, true);
+      window.removeEventListener('click', handleInteraction, true);
+      window.removeEventListener('touchend', handleInteraction, { capture: true });
       window.removeEventListener('pho1986:tour-action', handleCustomTourAction);
     };
   }, [isTourActive, currentStep, isPraising, notifyTourAction]);
@@ -340,7 +378,15 @@ export function OnboardingTourProvider({ children }) {
       }
     }
 
+    let prevPos = '';
+    let prevZ = '';
+    let prevPE = '';
+
     if (elevatedEl) {
+      prevPos = elevatedEl.style.position;
+      prevZ = elevatedEl.style.zIndex;
+      prevPE = elevatedEl.style.pointerEvents;
+
       elevatedEl.classList.add('pho-tour-elevated');
       elevatedEl.style.position = 'relative';
       elevatedEl.style.zIndex = '9996';
@@ -350,9 +396,9 @@ export function OnboardingTourProvider({ children }) {
     return () => {
       if (elevatedEl) {
         elevatedEl.classList.remove('pho-tour-elevated');
-        elevatedEl.style.position = '';
-        elevatedEl.style.zIndex = '';
-        elevatedEl.style.pointerEvents = '';
+        elevatedEl.style.position = prevPos;
+        elevatedEl.style.zIndex = prevZ;
+        elevatedEl.style.pointerEvents = prevPE;
       }
     };
   }, [isTourActive, currentStep]);
@@ -403,44 +449,16 @@ export function OnboardingTourProvider({ children }) {
 
   const value = useMemo(
     () => ({
-      isTourActive,
-      isModeSelectorOpen,
-      tourMode,
-      currentStepIndex,
-      currentStep,
-      totalSteps,
-      targetRect,
-      isPraising,
-      praiseData,
-      notifyTourAction,
-      startTour,
-      openModeSelector,
-      closeModeSelector,
-      selectTourMode,
-      nextStep,
-      prevStep,
-      skipTour,
-      completeTour
+      isTourActive, isModeSelectorOpen, tourMode, currentStepIndex, currentStep,
+      totalSteps, targetRect, isPraising, praiseData, notifyTourAction,
+      startTour, openModeSelector, closeModeSelector, selectTourMode,
+      nextStep, prevStep, skipTour, completeTour
     }),
     [
-      isTourActive,
-      isModeSelectorOpen,
-      tourMode,
-      currentStepIndex,
-      currentStep,
-      totalSteps,
-      targetRect,
-      isPraising,
-      praiseData,
-      notifyTourAction,
-      startTour,
-      openModeSelector,
-      closeModeSelector,
-      selectTourMode,
-      nextStep,
-      prevStep,
-      skipTour,
-      completeTour
+      isTourActive, isModeSelectorOpen, tourMode, currentStepIndex, currentStep,
+      totalSteps, targetRect, isPraising, praiseData, notifyTourAction,
+      startTour, openModeSelector, closeModeSelector, selectTourMode,
+      nextStep, prevStep, skipTour, completeTour
     ]
   );
 
