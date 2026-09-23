@@ -173,6 +173,18 @@ export const adminApi = {
     });
   },
 
+  async getCustomersPage({ page = 0, size = 20, search = '', status = 'ALL', tier = 'ALL' } = {}) {
+    const params = new URLSearchParams();
+    params.append('page', String(page));
+    params.append('size', String(size));
+    if (search && search.trim()) params.append('search', search.trim());
+    if (status && status !== 'ALL') params.append('status', status);
+    if (tier && tier !== 'ALL') params.append('tier', tier);
+    return await fetchAdminWithRetry(`${API_BASE_URL}/customers/page?${params.toString()}`, {
+      method: 'GET',
+    });
+  },
+
   async getCustomerMetrics() {
     return await fetchAdminWithRetry(`${API_BASE_URL}/customers/metrics`, {
       method: 'GET',
