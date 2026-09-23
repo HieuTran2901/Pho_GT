@@ -5,7 +5,11 @@ import com.pho1986.backend.repository.CategoryRepository;
 import com.pho1986.backend.repository.DishRepository;
 import com.pho1986.backend.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -15,14 +19,15 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.util.Optional;
 
-import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
-
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@Tag("integration")
+@EnabledIfSystemProperty(named = "live.mysql.enabled", matches = "true")
 @SpringBootTest
-@DisabledIfEnvironmentVariable(named = "CI", matches = "true", disabledReason = "Bỏ qua live MySQL test trên môi trường CI không có database local")
 public class MySqlLiveIntegrationTest {
+
+    private static final Logger log = LoggerFactory.getLogger(MySqlLiveIntegrationTest.class);
 
     @Autowired
     private DataSource dataSource;
@@ -43,19 +48,19 @@ public class MySqlLiveIntegrationTest {
 
         try (Connection conn = dataSource.getConnection()) {
             DatabaseMetaData meta = conn.getMetaData();
-            System.out.println("==================================================");
-            System.out.println("✅ [DatabaseTest] KẾT NỐI MYSQL THÀNH CÔNG RỰC RỠ!");
-            System.out.println("   - DB Product : " + meta.getDatabaseProductName() + " " + meta.getDatabaseProductVersion());
-            System.out.println("   - URL        : " + meta.getURL());
-            System.out.println("   - User       : " + meta.getUserName());
-            System.out.println("==================================================");
+            log.info("==================================================");
+            log.info("✅ [DatabaseTest] KẾT NỐI MYSQL THÀNH CÔNG RỰC RỠ!");
+            log.info("   - DB Product : {} {}", meta.getDatabaseProductName(), meta.getDatabaseProductVersion());
+            log.info("   - URL        : {}", meta.getURL());
+            log.info("   - User       : {}", meta.getUserName());
+            log.info("==================================================");
 
             try (ResultSet tables = meta.getTables("pho_1986_db", null, "%", new String[]{"TABLE"})) {
-                System.out.println("📋 [DatabaseTest] Danh sách bảng được sinh ra trong pho_1986_db:");
+                log.info("📋 [DatabaseTest] Danh sách bảng được sinh ra trong pho_1986_db:");
                 int count = 0;
                 while (tables.next()) {
                     count++;
-                    System.out.println("   " + count + ". " + tables.getString("TABLE_NAME"));
+                    log.info("   {}. {}", count, tables.getString("TABLE_NAME"));
                 }
                 assertTrue(count >= 8, "Phải có ít nhất 8 bảng thực thể trong MySQL");
             }
@@ -66,9 +71,9 @@ public class MySqlLiveIntegrationTest {
         long dishCount = dishRepository.count();
         Optional<User> demoUser = userRepository.findByPhone("0988888888");
 
-        System.out.println("🍜 Số lượng danh mục phở đã tạo: " + catCount);
-        System.out.println("🥢 Số lượng món phở & kèm đã tạo: " + dishCount);
-        System.out.println("👤 Tài khoản khách mẫu: " + (demoUser.isPresent() ? demoUser.get().getFullName() + " (" + demoUser.get().getPhone() + ")" : "Chưa có"));
+        log.info("🍜 Số lượng danh mục phở đã tạo: {}", catCount);
+        log.info("🥢 Số lượng món phở & kèm đã tạo: {}", dishCount);
+        log.info("👤 Tài khoản khách mẫu: {}", (demoUser.isPresent() ? demoUser.get().getFullName() + " (" + demoUser.get().getPhone() + ")" : "Chưa có"));
 
         assertTrue(catCount > 0, "Danh mục phở phải được gieo hạt giống");
         assertTrue(dishCount > 0, "Thực đơn món phở phải được gieo hạt giống");

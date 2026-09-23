@@ -3,6 +3,9 @@ package com.pho1986.backend.service;
 import com.pho1986.backend.model.dto.AdminCustomerDtos.*;
 import com.pho1986.backend.model.entity.*;
 import com.pho1986.backend.repository.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,48 +48,22 @@ public class AdminCustomerService {
     }
 
     @Transactional(readOnly = true)
-    public List<AdminCustomerSummaryResponse> getCustomers(String search, String status, String tier) {
+    public Page<AdminCustomerSummaryResponse> getCustomers(String search, String status, String tier, Pageable pageable) {
         String cleanSearch = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
-        String cleanStatus = (status != null && !status.trim().isEmpty() && !"ALL".equalsIgnoreCase(status))
-                ? status.trim().toUpperCase() : null;
-
-        boolean filterLocked = "LOCKED".equalsIgnoreCase(cleanStatus);
-        boolean filterPasswordLocked = "LOCKED_PASSWORD".equalsIgnoreCase(cleanStatus) || "PASSWORD_FAILED".equalsIgnoreCase(cleanStatus);
-        boolean filterAdminLocked = "LOCKED_ADMIN".equalsIgnoreCase(cleanStatus) || "ADMIN_MANUAL".equalsIgnoreCase(cleanStatus);
-
-        // Với các bộ lọc khóa, truyền queryStatus = null để tìm cả user có status = 'LOCKED' lẫn user tạm khóa theo vòng (lockedUntil > now)
-        String queryStatus = (filterLocked || filterPasswordLocked || filterAdminLocked) ? null : cleanStatus;
-
-        List<User> users = userRepository.searchCustomers(cleanSearch, queryStatus);
+        String statusFilter = normalizeStatusFilter(status);
+        String tierFilter = normalizeTierFilter(tier);
         LocalDateTime now = LocalDateTime.now();
 
-        List<User> filteredUsers = users.stream()
-                .filter(u -> {
-                    boolean isLockedNow = "LOCKED".equalsIgnoreCase(u.getStatus()) || (u.getLockedUntil() != null && u.getLockedUntil().isAfter(now));
-                    if (filterLocked) {
-                        return isLockedNow;
-                    }
-                    if (filterPasswordLocked) {
-                        return isLockedNow && u.isPasswordLocked();
-                    }
-                    if (filterAdminLocked) {
-                        return isLockedNow && !u.isPasswordLocked();
-                    }
-                    return true;
-                })
-                .filter(u -> {
-                    if (tier == null || tier.trim().isEmpty() || "ALL".equalsIgnoreCase(tier)) {
-                        return true;
-                    }
-                    LoyaltyAccount la = u.getLoyaltyAccount();
-                    String userTier = (la != null && la.getMembershipTier() != null)
-                            ? la.getMembershipTier() : "DONG";
-                    return tier.equalsIgnoreCase(userTier);
-                })
-                .collect(Collectors.toList());
+        Page<User> usersPage;
+        if (pageable == null || pageable.isUnpaged()) {
+            List<User> list = userRepository.searchCustomersList(cleanSearch, statusFilter, tierFilter, now);
+            usersPage = new PageImpl<>(list, Pageable.unpaged(), list.size());
+        } else {
+            usersPage = userRepository.searchCustomersPage(cleanSearch, statusFilter, tierFilter, now, pageable);
+        }
 
         // Batch fetch món yêu thích để triệt tiêu toàn bộ vòng lặp N+1 queries
-        Set<String> dishIds = filteredUsers.stream()
+        Set<String> dishIds = usersPage.getContent().stream()
                 .map(User::getTasteProfile)
                 .filter(Objects::nonNull)
                 .map(TasteProfile::getFavoriteDishId)
@@ -97,9 +74,33 @@ public class AdminCustomerService {
                 dishRepository.findAllById(dishIds).stream()
                         .collect(Collectors.toMap(Dish::getId, Dish::getName, (existing, replacement) -> existing));
 
-        return filteredUsers.stream()
-                .map(u -> toSummaryResponse(u, dishNames))
-                .collect(Collectors.toList());
+        return usersPage.map(u -> toSummaryResponse(u, dishNames));
+    }
+
+    @Transactional(readOnly = true)
+    public List<AdminCustomerSummaryResponse> getCustomers(String search, String status, String tier) {
+        return getCustomers(search, status, tier, Pageable.unpaged()).getContent();
+    }
+
+    private String normalizeStatusFilter(String status) {
+        if (status == null || status.trim().isEmpty() || "ALL".equalsIgnoreCase(status.trim())) {
+            return null;
+        }
+        String clean = status.trim().toUpperCase(Locale.ROOT);
+        if ("LOCKED_PASSWORD".equals(clean) || "PASSWORD_FAILED".equals(clean)) {
+            return "LOCKED_PASSWORD";
+        }
+        if ("LOCKED_ADMIN".equals(clean) || "ADMIN_MANUAL".equals(clean) || "BLACKLISTED".equals(clean)) {
+            return "LOCKED_ADMIN";
+        }
+        return clean;
+    }
+
+    private String normalizeTierFilter(String tier) {
+        if (tier == null || tier.trim().isEmpty() || "ALL".equalsIgnoreCase(tier.trim())) {
+            return null;
+        }
+        return tier.trim().toUpperCase(Locale.ROOT);
     }
 
     @Transactional(readOnly = true)
@@ -353,7 +354,7 @@ public class AdminCustomerService {
             res.setBrothType(tp.getBrothType());
             res.setOnionStyle(tp.getOnionStyle());
             if (tp.getFavoriteDishId() != null) {
-                if (dishNames != null && dishNames.containsKey(tp.getFavoriteDishId())) {
+                if (dishNames != null) {
                     res.setFavoriteDishName(dishNames.get(tp.getFavoriteDishId()));
                 } else {
                     dishRepository.findById(tp.getFavoriteDishId())

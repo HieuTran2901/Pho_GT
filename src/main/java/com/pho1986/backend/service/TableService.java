@@ -40,17 +40,16 @@ public class TableService {
         List<DiningTable> tables = tableRepository.findAllByOrderByFloorAscIdAsc();
         List<Order> activeOrders = orderRepository.findByStatusInOrderByCreatedAtDesc(ACTIVE_STATUSES);
 
-        // Triệt tiêu O(T x O): Lập bản đồ tra cứu nhanh tableId -> Order
+        // Triệt tiêu O(T x O): Sử dụng TableIndex tra cứu O(1) mỗi đơn hàng, đạt O(T + O)
+        TableIndex tableIndex = TableIndex.build(tables);
         Map<String, Order> tableOrderMap = new HashMap<>();
         for (Order order : activeOrders) {
             if (order.getTableNumber() == null || order.getTableNumber().isBlank()) {
                 continue;
             }
-            for (DiningTable t : tables) {
-                if (!tableOrderMap.containsKey(t.getId()) && matchesTableIdentifier(order.getTableNumber(), t)) {
-                    tableOrderMap.put(t.getId(), order);
-                    break;
-                }
+            DiningTable matchedTable = tableIndex.find(order.getTableNumber());
+            if (matchedTable != null && !tableOrderMap.containsKey(matchedTable.getId())) {
+                tableOrderMap.put(matchedTable.getId(), order);
             }
         }
 
@@ -115,8 +114,9 @@ public class TableService {
 
             if ("AVAILABLE".equals(newStatus)) {
                 List<Order> activeOrders = orderRepository.findByStatusInOrderByCreatedAtDesc(ACTIVE_STATUSES);
+                TableIndex singleTableIndex = TableIndex.build(java.util.Collections.singletonList(table));
                 Optional<Order> matchedOrderOpt = activeOrders.stream()
-                        .filter(o -> isOrderForTable(o, table))
+                        .filter(o -> o.getTableNumber() != null && !o.getTableNumber().isBlank() && singleTableIndex.find(o.getTableNumber()) != null)
                         .findFirst();
 
                 if (matchedOrderOpt.isPresent()) {
@@ -148,10 +148,13 @@ public class TableService {
                     // Xử lý theo Resolution
                     if ("MOVE_TABLE".equals(resolution) && request.getTargetTableId() != null && !request.getTargetTableId().isBlank()) {
                         DiningTable targetTable = tableRepository.findById(request.getTargetTableId())
-                                .orElseGet(() -> tableRepository.findAll().stream()
-                                        .filter(t -> matchesTableIdentifier(request.getTargetTableId(), t))
-                                        .findFirst()
-                                        .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy bàn đích để chuyển: " + request.getTargetTableId())));
+                                .orElseGet(() -> {
+                                    DiningTable match = TableIndex.build(tableRepository.findAll()).find(request.getTargetTableId());
+                                    if (match == null) {
+                                        throw new IllegalArgumentException("Không tìm thấy bàn đích để chuyển: " + request.getTargetTableId());
+                                    }
+                                    return match;
+                                });
 
                         validateTableAvailable(targetTable.getId());
                         order.setTableNumber(targetTable.getName());
@@ -181,8 +184,9 @@ public class TableService {
 
             if ("MAINTENANCE".equals(newStatus)) {
                 List<Order> activeOrders = orderRepository.findByStatusInOrderByCreatedAtDesc(ACTIVE_STATUSES);
+                TableIndex singleTableIndex = TableIndex.build(java.util.Collections.singletonList(table));
                 Optional<Order> matchedOrderOpt = activeOrders.stream()
-                        .filter(o -> isOrderForTable(o, table))
+                        .filter(o -> o.getTableNumber() != null && !o.getTableNumber().isBlank() && singleTableIndex.find(o.getTableNumber()) != null)
                         .findFirst();
 
                 if (matchedOrderOpt.isPresent()) {
@@ -191,10 +195,13 @@ public class TableService {
 
                     if ("MOVE_TABLE".equals(resolution) && request.getTargetTableId() != null && !request.getTargetTableId().isBlank()) {
                         DiningTable targetTable = tableRepository.findById(request.getTargetTableId())
-                                .orElseGet(() -> tableRepository.findAll().stream()
-                                        .filter(t -> matchesTableIdentifier(request.getTargetTableId(), t))
-                                        .findFirst()
-                                        .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy bàn đích để chuyển: " + request.getTargetTableId())));
+                                .orElseGet(() -> {
+                                    DiningTable match = TableIndex.build(tableRepository.findAll()).find(request.getTargetTableId());
+                                    if (match == null) {
+                                        throw new IllegalArgumentException("Không tìm thấy bàn đích để chuyển: " + request.getTargetTableId());
+                                    }
+                                    return match;
+                                });
 
                         validateTableAvailable(targetTable.getId());
                         order.setTableNumber(targetTable.getName());
@@ -232,12 +239,9 @@ public class TableService {
         }
 
         List<DiningTable> allTables = tableRepository.findAll();
-        Optional<DiningTable> matchedTable = allTables.stream()
-                .filter(t -> matchesTableIdentifier(tableNumberOrId, t))
-                .findFirst();
+        DiningTable table = TableIndex.build(allTables).find(tableNumberOrId);
 
-        if (matchedTable.isPresent()) {
-            DiningTable table = matchedTable.get();
+        if (table != null) {
             String current = table.getStatus() != null ? table.getStatus().toUpperCase(Locale.ROOT) : "AVAILABLE";
             if (!"MAINTENANCE".equals(current)) {
                 table.setStatus(status.toUpperCase(Locale.ROOT));
@@ -273,12 +277,10 @@ public class TableService {
         }
 
         List<DiningTable> allTables = tableRepository.findAll();
-        Optional<DiningTable> matchedTable = allTables.stream()
-                .filter(t -> matchesTableIdentifier(tableNumberOrId, t))
-                .findFirst();
+        TableIndex tableIndex = TableIndex.build(allTables);
+        DiningTable table = tableIndex.find(tableNumberOrId);
 
-        if (matchedTable.isPresent()) {
-            DiningTable table = matchedTable.get();
+        if (table != null) {
             String dbStatus = table.getStatus() != null ? table.getStatus().toUpperCase(Locale.ROOT) : "AVAILABLE";
             if ("MAINTENANCE".equals(dbStatus)) {
                 throw new IllegalStateException("Bàn \"" + table.getName() + "\" hiện đang tạm khóa để bảo trì. Quý khách vui lòng chọn bàn khác.");
@@ -288,7 +290,10 @@ public class TableService {
             }
 
             List<Order> activeOrders = orderRepository.findByStatusInOrderByCreatedAtDesc(ACTIVE_STATUSES);
-            boolean isHeldByActiveOrder = activeOrders.stream().anyMatch(o -> isOrderForTable(o, table));
+            boolean isHeldByActiveOrder = activeOrders.stream().anyMatch(o -> {
+                DiningTable orderTable = tableIndex.find(o.getTableNumber());
+                return orderTable != null && orderTable.getId().equals(table.getId());
+            });
             if (isHeldByActiveOrder || "RESERVED".equals(dbStatus)) {
                 throw new IllegalStateException("Bàn \"" + table.getName() + "\" vừa được một thực khách khác giữ chỗ trước. Quý khách vui lòng chọn bàn khác.");
             }
@@ -299,45 +304,7 @@ public class TableService {
         if (identifier == null || identifier.isBlank() || table == null) {
             return false;
         }
-
-        String raw = identifier.trim().toLowerCase(Locale.ROOT);
-        String tableId = table.getId() != null ? table.getId().toLowerCase(Locale.ROOT) : "";
-        String tableName = table.getName() != null ? table.getName().toLowerCase(Locale.ROOT) : "";
-
-        if (raw.equals(tableId) || raw.equals(tableName)) {
-            return true;
-        }
-
-        String normRaw = java.text.Normalizer.normalize(raw, java.text.Normalizer.Form.NFD)
-                .replaceAll("\\p{M}", "")
-                .replace("-", "")
-                .replace(" ", "");
-
-        String normName = java.text.Normalizer.normalize(tableName, java.text.Normalizer.Form.NFD)
-                .replaceAll("\\p{M}", "")
-                .replace("-", "")
-                .replace(" ", "");
-
-        String normId = tableId.replace("-", "").replace(" ", "");
-
-        if (normRaw.equals(normName) || normRaw.equals(normId)) {
-            return true;
-        }
-
-        // Chỉ match theo số khi input thực sự là bàn tầng 1 ("bàn 3", "ban 3", "3")
-        // Tuyệt đối không match nếu input thuộc tầng 2 ("ban công 03", "gian tranh 02", "vip")
-        boolean isFloor2OrSpecial = normRaw.contains("cong") || normRaw.contains("tranh") || normRaw.contains("vip") || normRaw.contains("tra");
-        if (!isFloor2OrSpecial && table.getFloor() == 1 && normName.startsWith("ban")) {
-            try {
-                String digitsOnlyRaw = raw.replaceAll("[^0-9]", "");
-                String digitsOnlyTable = tableName.replaceAll("[^0-9]", "");
-                if (!digitsOnlyRaw.isEmpty() && !digitsOnlyTable.isEmpty()) {
-                    return Integer.parseInt(digitsOnlyRaw) == Integer.parseInt(digitsOnlyTable);
-                }
-            } catch (Exception ignored) {}
-        }
-
-        return false;
+        return TableIndex.build(java.util.Collections.singletonList(table)).find(identifier) != null;
     }
 
     private boolean isOrderForTable(Order order, DiningTable table) {

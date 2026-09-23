@@ -4,6 +4,9 @@ import com.pho1986.backend.common.ApiResponse;
 import com.pho1986.backend.model.dto.AdminCustomerDtos.*;
 import com.pho1986.backend.service.AdminCustomerService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -27,6 +30,16 @@ public class AdminCustomerController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String tier) {
         List<AdminCustomerSummaryResponse> customers = adminCustomerService.getCustomers(search, status, tier);
+        return ResponseEntity.ok(ApiResponse.ok(customers));
+    }
+
+    @GetMapping("/page")
+    public ResponseEntity<ApiResponse<Page<AdminCustomerSummaryResponse>>> getCustomersPage(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String tier,
+            @PageableDefault(size = 20) Pageable pageable) {
+        Page<AdminCustomerSummaryResponse> customers = adminCustomerService.getCustomers(search, status, tier, pageable);
         return ResponseEntity.ok(ApiResponse.ok(customers));
     }
 
