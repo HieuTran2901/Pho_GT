@@ -41,7 +41,10 @@ export default defineConfig(({ mode }) => {
   }
 
   return {
-    plugins: [react()],
+    plugins: [react({ jsxRuntime: 'automatic' })],
+    esbuild: {
+      jsx: 'automatic',
+    },
     define: defineEnv,
     build: {
       target: 'es2020',
