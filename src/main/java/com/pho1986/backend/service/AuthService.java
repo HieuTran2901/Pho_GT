@@ -1,14 +1,18 @@
 package com.pho1986.backend.service;
 
+import com.pho1986.backend.common.AccountLockedException;
+import com.pho1986.backend.common.LoginRateLimitExceededException;
 import com.pho1986.backend.model.dto.AuthDtos.*;
 import com.pho1986.backend.model.entity.*;
 import com.pho1986.backend.repository.*;
-import com.pho1986.backend.common.LoginRateLimitExceededException;
-import com.pho1986.backend.common.AccountLockedException;
 import com.pho1986.backend.security.JwtTokenProvider;
-import com.pho1986.backend.security.LoginRateLimiter;
-import com.pho1986.backend.security.TokenRevocationService;
+import com.pho1986.backend.security.ThreatDefenseService;
 import com.pho1986.backend.security.TokenHashUtil;
+import com.pho1986.backend.security.TokenRevocationService;
+import com.pho1986.backend.service.auth.LoginAttemptPolicy;
+import com.pho1986.backend.service.auth.PostOrderClaimHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -21,44 +25,46 @@ import java.util.UUID;
 @Service
 public class AuthService {
 
+    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
+
     private final UserRepository userRepository;
     private final TasteProfileRepository tasteProfileRepository;
     private final LoyaltyAccountRepository loyaltyAccountRepository;
     private final LoyaltyTransactionRepository loyaltyTransactionRepository;
-    private final OrderRepository orderRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
     private final RefreshTokenRepository refreshTokenRepository;
     private final TokenRevocationService tokenRevocationService;
-    private final LoginRateLimiter loginRateLimiter;
-    private final com.pho1986.backend.security.ThreatDefenseService threatDefenseService;
+    private final ThreatDefenseService threatDefenseService;
     private final CustomerGiftService customerGiftService;
+    private final LoginAttemptPolicy loginAttemptPolicy;
+    private final PostOrderClaimHelper postOrderClaimHelper;
 
     public AuthService(
             UserRepository userRepository,
             TasteProfileRepository tasteProfileRepository,
             LoyaltyAccountRepository loyaltyAccountRepository,
             LoyaltyTransactionRepository loyaltyTransactionRepository,
-            OrderRepository orderRepository,
             PasswordEncoder passwordEncoder,
             JwtTokenProvider tokenProvider,
             RefreshTokenRepository refreshTokenRepository,
             TokenRevocationService tokenRevocationService,
-            LoginRateLimiter loginRateLimiter,
-            com.pho1986.backend.security.ThreatDefenseService threatDefenseService,
-            CustomerGiftService customerGiftService) {
+            ThreatDefenseService threatDefenseService,
+            CustomerGiftService customerGiftService,
+            LoginAttemptPolicy loginAttemptPolicy,
+            PostOrderClaimHelper postOrderClaimHelper) {
         this.userRepository = userRepository;
         this.tasteProfileRepository = tasteProfileRepository;
         this.loyaltyAccountRepository = loyaltyAccountRepository;
         this.loyaltyTransactionRepository = loyaltyTransactionRepository;
-        this.orderRepository = orderRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
         this.refreshTokenRepository = refreshTokenRepository;
         this.tokenRevocationService = tokenRevocationService;
-        this.loginRateLimiter = loginRateLimiter;
         this.threatDefenseService = threatDefenseService;
         this.customerGiftService = customerGiftService;
+        this.loginAttemptPolicy = loginAttemptPolicy;
+        this.postOrderClaimHelper = postOrderClaimHelper;
     }
 
     private String createAndSaveRefreshToken(User user, String familyId) {
@@ -167,113 +173,21 @@ public class AuthService {
     public AuthResponse login(LoginRequest request, String clientIp, String deviceId) {
         User user = userRepository.findByPhone(request.getPhone()).orElse(null);
 
-        // 1. Kiểm tra chặn mức IP chống DDoS / Bot spray diện rộng (>30 lần/phút)
-        if (clientIp != null && !"unknown".equals(clientIp) && loginRateLimiter.isBlocked("ip:" + clientIp)) {
-            long remainingSeconds = loginRateLimiter.getRemainingBlockSeconds("ip:" + clientIp);
-            int round = (user != null) ? Math.max(1, Math.min(5, user.getLockoutRounds() + 1)) : 1;
-            throw new LoginRateLimitExceededException(
-                    "Địa chỉ IP của bạn đang bị tạm khóa do gửi quá nhiều yêu cầu liên tiếp. Vui lòng thử lại sau " + remainingSeconds + " giây.",
-                    remainingSeconds, round, 5, 5);
-        }
+        loginAttemptPolicy.checkPreLoginGuards(user, clientIp);
 
-        // 2. Nếu tài khoản đã tồn tại: Kiểm tra khóa cứng và tạm khóa theo vòng
         if (user != null) {
-            // 2.1 Kiểm tra khóa cứng cấp độ cơ sở dữ liệu (Sau 5 vòng = 25 lần sai)
-            if (user.isAccountLocked()) {
-                throw new AccountLockedException(
-                        user.getPhone(),
-                        "Tài khoản của quý khách đã bị khóa vĩnh viễn do vượt quá 5 vòng thử (25 lần nhập sai). Kính mời liên hệ Hotline Phở 1986 (0986 1986 86) hoặc Quản trị viên để được hỗ trợ mở khóa.",
-                        user.getLockedAt(),
-                        user.getLockReason()
-                );
-            }
-
-            // 2.2 Kiểm tra thời gian tạm khóa theo vòng hiện tại
-            if (user.isTemporarilyBlocked()) {
-                long remainingSec = user.getRemainingTemporaryLockSeconds();
-                int currentRound = Math.max(1, Math.min(user.getLockoutRounds(), 5));
-                int nextRound = Math.min(5, currentRound + 1);
-                throw new LoginRateLimitExceededException(
-                        "Quý khách đang trong thời gian tạm dừng đăng nhập của Vòng " + currentRound + "/5. Vòng tiếp theo: Vòng " + nextRound + "/5. Vui lòng thử lại sau " + remainingSec + " giây.",
-                        remainingSec, currentRound, 5, 5);
-            }
-
-            // 2.3 So khớp mật khẩu
             if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-                loginRateLimiter.recordLoginFailure(null, clientIp); // Ghi nhận IP
-
-                int nextAttempt = user.getFailedLoginAttempts() + 1;
-                user.setFailedLoginAttempts(nextAttempt);
-
-                // Nếu đạt đủ 5 lần sai trong vòng hiện tại -> kích hoạt tạm khóa vòng
-                if (nextAttempt >= 5) {
-                    int nextRound = user.getLockoutRounds() + 1;
-                    user.setLockoutRounds(nextRound);
-                    user.setFailedLoginAttempts(0); // Reset số lần đếm trong vòng
-
-                    if (nextRound >= 5) {
-                        // VƯỢT QUÁ 5 VÒNG THỬ -> KHÓA CỨNG TÀI KHOẢN VĨNH VIỄN
-                        user.setStatus("LOCKED");
-                        user.setLockedAt(LocalDateTime.now());
-                        user.setLockType("PASSWORD_FAILED");
-                        user.setLockReason("BRUTE_FORCE_EXCEEDED");
-                        user.setLockedUntil(null);
-                        userRepository.saveAndFlush(user);
-
-                        throw new AccountLockedException(
-                                user.getPhone(),
-                                "Tài khoản của bạn đã bị khóa bảo vệ do nhập sai quá 5 vòng thử (25 lần thử). Vui lòng liên hệ Hotline hoặc Quản trị viên để mở khóa.",
-                                user.getLockedAt(),
-                                user.getLockReason()
-                        );
-                    } else {
-                        // TẠM KHÓA THEO THỜI GIAN LŨY TIẾN CỦA VÒNG
-                        // Vòng 1: 60s, Vòng 2: 180s, Vòng 3: 300s, Vòng 4: 600s
-                        long cooldownSec = (nextRound == 1) ? 60L : (nextRound == 2) ? 180L : (nextRound == 3) ? 300L : 600L;
-                        user.setLockType("PASSWORD_FAILED");
-                        user.setLockedUntil(LocalDateTime.now().plusSeconds(cooldownSec));
-                        userRepository.saveAndFlush(user);
-
-                        int remainingRounds = 5 - nextRound;
-                        int upcomingRound = nextRound + 1;
-                        throw new LoginRateLimitExceededException(
-                                "Quý khách đã sử dụng hết 5 lần thử của Vòng " + nextRound + "/5. Hệ thống tạm dừng trong " + cooldownSec + " giây. (Vòng tiếp theo: Vòng " + upcomingRound + "/5, còn " + remainingRounds + " vòng thử trước khi tài khoản bị khóa vĩnh viễn)",
-                                cooldownSec, nextRound, 5, 5);
-                    }
-                } else {
-                    // Chưa đủ 5 lần trong vòng hiện tại (1 -> 4 lần)
-                    userRepository.saveAndFlush(user);
-                    int remainingInRound = 5 - nextAttempt;
-                    int currentRound = user.getLockoutRounds() + 1;
-                    throw new BadCredentialsException(
-                            "Số điện thoại hoặc mật khẩu không chính xác. Bạn còn " + remainingInRound + " lần thử trong Vòng " + currentRound + "/5.");
-                }
+                loginAttemptPolicy.handleFailedPassword(user, clientIp);
             }
 
-            // Đăng nhập THÀNH CÔNG -> Reset toàn bộ trạng thái lỗi
-            user.resetLoginFailures();
-            if (clientIp != null && !"unknown".equalsIgnoreCase(clientIp)) {
-                user.setLastLoginIp(clientIp);
-            }
-            if (deviceId != null && !deviceId.isBlank()) {
-                user.setLastDeviceId(deviceId);
-            }
-            userRepository.save(user);
-            loginRateLimiter.resetLogin(request.getPhone(), clientIp);
+            loginAttemptPolicy.handleSuccessfulLogin(user, request.getPhone(), clientIp, deviceId);
 
             String accessToken = tokenProvider.generateAccessToken(user.getId(), user.getRole());
             String refreshToken = createAndSaveRefreshToken(user);
             return new AuthResponse(user, accessToken, refreshToken);
         }
 
-        // 3. Nếu số điện thoại không tồn tại trong DB -> Bảo vệ bằng LoginRateLimiter (tránh enumeration)
-        loginRateLimiter.recordLoginFailure(request.getPhone(), clientIp);
-        if (loginRateLimiter.isLoginBlocked(request.getPhone(), clientIp)) {
-            long remainingSeconds = loginRateLimiter.getRemainingLoginBlockSeconds(request.getPhone(), clientIp);
-            throw new LoginRateLimitExceededException(
-                    "Quý khách đã thử đăng nhập sai quá 5 lần. Vui lòng nghỉ tay và thử lại sau " + remainingSeconds + " giây.",
-                    remainingSeconds, 1, 5, 5);
-        }
+        loginAttemptPolicy.handleNonExistentUser(request.getPhone(), clientIp);
         throw new BadCredentialsException("Số điện thoại hoặc mật khẩu không chính xác");
     }
 
@@ -304,9 +218,8 @@ public class AuthService {
         if (refreshToken.isRevoked()) {
             String familyId = refreshToken.getFamilyId();
             refreshTokenRepository.revokeFamilyTokens(familyId);
-            org.slf4j.LoggerFactory.getLogger(AuthService.class)
-                    .warn("[Security Alert] Phát hiện tái sử dụng RefreshToken đã thu hồi! User: {}, FamilyId: {}. Kích hoạt Breach Containment (thu hồi toàn bộ dòng token của phiên).",
-                            refreshToken.getUser().getId(), familyId);
+            log.warn("[Security Alert] Phát hiện tái sử dụng RefreshToken đã thu hồi! User: {}, FamilyId: {}. Kích hoạt Breach Containment (thu hồi toàn bộ dòng token của phiên).",
+                    refreshToken.getUser().getId(), familyId);
             throw new BadCredentialsException("CẢNH BÁO BẢO MẬT: Phát hiện dấu hiệu phiên đăng nhập bất thường. Để bảo vệ an toàn tài khoản, toàn bộ phiên của thiết bị này đã được ngắt kết nối.");
         }
 
@@ -377,87 +290,10 @@ public class AuthService {
 
     @Transactional
     public AuthResponse postOrderClaim(PostOrderClaimRequest request) {
-        Order order = orderRepository.findByOrderCode(request.getOrderCode())
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy thông tin đơn hàng này"));
-
-        if (order.getUser() != null) {
-            throw new IllegalArgumentException("Đơn hàng này đã được gắn vào tài khoản");
-        }
-
-        // Chống chiếm đoạt đơn hàng: Bắt buộc số điện thoại claim phải khớp với số điện thoại người đặt
-        String cleanClaimPhone = (request.getPhone() != null) ? request.getPhone().replaceAll("[\\s.-]+", "") : "";
-        String cleanGuestPhone = (order.getGuestPhone() != null) ? order.getGuestPhone().replaceAll("[\\s.-]+", "") : "";
-        if (!cleanClaimPhone.equals(cleanGuestPhone)) {
-            throw new IllegalArgumentException("Số điện thoại yêu cầu tích điểm không khớp với số điện thoại đặt đơn hàng này!");
-        }
-
-        int earnedPoints = Math.max(10, (int) Math.floor(order.getFinalAmount() / 1000.0));
-
-        User user = userRepository.findByPhone(request.getPhone()).orElse(null);
-
-        if (user == null) {
-            user = new User(
-                    request.getPhone(),
-                    request.getFullName(),
-                    passwordEncoder.encode(request.getPassword()),
-                    null
-            );
-            user = userRepository.save(user);
-
-            // Tạo Gu ăn phở
-            TasteProfile taste = new TasteProfile();
-            taste.setUser(user);
-            taste.setCustomNote("Lưu tự động từ đơn đặt đầu tiên");
-            taste = tasteProfileRepository.save(taste);
-            user.setTasteProfile(taste);
-
-            // Tạo Loyalty Account
-            int totalStart = 50 + earnedPoints;
-            LoyaltyAccount loyalty = new LoyaltyAccount();
-            loyalty.setUser(user);
-            loyalty.setTotalPoints(totalStart);
-            loyalty.setAvailablePoints(totalStart);
-            loyalty.setTotalSpent(order.getFinalAmount());
-            loyalty.setTotalOrdersCount(1);
-            loyalty.setMembershipTier(totalStart >= 500 ? "BAC" : "DONG");
-            loyalty = loyaltyAccountRepository.save(loyalty);
-            user.setLoyaltyAccount(loyalty);
-
-            loyaltyTransactionRepository.save(new LoyaltyTransaction(
-                    loyalty, null, 50, "WELCOME_BONUS", 50, "Thưởng 50 điểm chào mừng thành viên mới"
-            ));
-
-            loyaltyTransactionRepository.save(new LoyaltyTransaction(
-                    loyalty, order.getId(), earnedPoints, "EARN_ORDER", totalStart, "Tích điểm từ đơn hàng #" + order.getOrderCode()
-            ));
-
-            order.setUser(user);
-            orderRepository.save(order);
-        } else {
-            order.setUser(user);
-            orderRepository.save(order);
-
-            LoyaltyAccount loyalty = loyaltyAccountRepository.findByUserId(user.getId()).orElse(null);
-            if (loyalty != null) {
-                int newTotal = loyalty.getTotalPoints() + earnedPoints;
-                int newAvail = loyalty.getAvailablePoints() + earnedPoints;
-                loyalty.setTotalPoints(newTotal);
-                loyalty.setAvailablePoints(newAvail);
-                loyalty.setTotalSpent(loyalty.getTotalSpent() + order.getFinalAmount());
-                loyalty.setTotalOrdersCount(loyalty.getTotalOrdersCount() + 1);
-
-                String tier = (newTotal >= 2000) ? "KIM_CUONG" : (newTotal >= 1000) ? "VANG" : (newTotal >= 500) ? "BAC" : "DONG";
-                loyalty.setMembershipTier(tier);
-                loyaltyAccountRepository.save(loyalty);
-
-                loyaltyTransactionRepository.save(new LoyaltyTransaction(
-                        loyalty, order.getId(), earnedPoints, "EARN_ORDER", newAvail, "Tích điểm từ đơn hàng #" + order.getOrderCode()
-                ));
-            }
-        }
-
+        PostOrderClaimHelper.ClaimResult result = postOrderClaimHelper.processClaim(request);
+        User user = result.user();
         String accessToken = tokenProvider.generateAccessToken(user.getId(), user.getRole());
         String refreshToken = createAndSaveRefreshToken(user);
-        return new AuthResponse(user, accessToken, refreshToken, earnedPoints);
+        return new AuthResponse(user, accessToken, refreshToken, result.earnedPoints());
     }
 }
