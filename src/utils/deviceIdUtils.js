@@ -64,21 +64,36 @@ export function installGlobalDeviceInterceptor() {
   const originalFetch = window.fetch;
   window.fetch = async function (resource, init = {}) {
     try {
-      const devId = getOrCreateDeviceId();
-      if (init.headers instanceof Headers) {
-        if (!init.headers.has('X-Device-Id')) {
-          init.headers.set('X-Device-Id', devId);
+      const url = typeof resource === 'string'
+        ? resource
+        : (resource && resource.url ? resource.url : '');
+
+      // Chỉ gắn X-Device-Id cho API của hệ thống Phở 1986 (Backend nội bộ)
+      // Tuyệt đối không gắn vào các dịch vụ bên thứ 3 (Google, Firebase, Cloudinary...) để tránh lỗi CORS Preflight
+      const isInternalApi =
+        (!url.startsWith('http://') && !url.startsWith('https://'))
+        || url.includes('localhost:8080')
+        || url.includes('127.0.0.1:8080')
+        || (typeof window !== 'undefined' && url.startsWith(window.location.origin + '/api/'))
+        || (import.meta?.env?.VITE_API_BASE_URL && url.startsWith(import.meta.env.VITE_API_BASE_URL));
+
+      if (isInternalApi) {
+        const devId = getOrCreateDeviceId();
+        if (init.headers instanceof Headers) {
+          if (!init.headers.has('X-Device-Id')) {
+            init.headers.set('X-Device-Id', devId);
+          }
+        } else if (Array.isArray(init.headers)) {
+          const hasHeader = init.headers.some(([k]) => k.toLowerCase() === 'x-device-id');
+          if (!hasHeader) {
+            init.headers.push(['X-Device-Id', devId]);
+          }
+        } else {
+          init.headers = {
+            'X-Device-Id': devId,
+            ...init.headers,
+          };
         }
-      } else if (Array.isArray(init.headers)) {
-        const hasHeader = init.headers.some(([k]) => k.toLowerCase() === 'x-device-id');
-        if (!hasHeader) {
-          init.headers.push(['X-Device-Id', devId]);
-        }
-      } else {
-        init.headers = {
-          'X-Device-Id': devId,
-          ...init.headers,
-        };
       }
     } catch {
       // Ignore

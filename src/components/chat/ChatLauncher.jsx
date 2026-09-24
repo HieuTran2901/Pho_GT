@@ -40,6 +40,7 @@ function ChatLauncher({ onClick, isOpen }) {
 
       {/* Floating Action Button: Huân chương Ngọc Bích viền vàng & Bát phở tỏa khói */}
       <button
+        id="heritage-chat-launcher"
         onClick={() => {
           setShowTooltip(false);
           onClick();

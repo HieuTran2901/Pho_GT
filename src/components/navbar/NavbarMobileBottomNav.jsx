@@ -42,10 +42,10 @@ function NavbarMobileBottomNav({
 
         {/* Tab 2: Thực đơn */}
         <a
-          href="#menu-catalog"
+          href="#menu"
           onClick={(e) => {
             setActiveTab('menu');
-            const target = document.getElementById('menu-catalog');
+            const target = document.getElementById('menu') || document.getElementById('menu-catalog');
             if (target) {
               e.preventDefault();
               const yOffset = -76;
@@ -83,6 +83,8 @@ function NavbarMobileBottomNav({
 
         {/* Tab 4: Hội viên / Bát quen */}
         <button
+          id="mobile-bottom-member-btn"
+          data-tour="navbar-gift-vault-btn"
           onClick={() => {
             if (!isInitialized) return;
             if (isAuthenticated && user) {

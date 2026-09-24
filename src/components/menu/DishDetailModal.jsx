@@ -5,7 +5,8 @@ import {
   Sparkles,
   CheckCircle2,
   Plus,
-  Clock
+  Clock,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { FeatureIcon, TagBadgeIcon, formatPrice } from './menuConstants';
 
@@ -14,7 +15,8 @@ export default function DishDetailModal({
   onClose,
   isLiked,
   onToggleLike,
-  onAdd
+  onAdd,
+  onOpenCustomizer,
 }) {
   useEffect(() => {
     if (!selectedDetailItem) return;
@@ -191,7 +193,7 @@ export default function DishDetailModal({
           )}
 
           {/* Bottom Action Button */}
-          <div className="pt-2">
+          <div className="pt-2 flex flex-col sm:flex-row gap-2">
             {selectedDetailItem.isAvailable === false ? (
               <button
                 type="button"
@@ -202,16 +204,31 @@ export default function DishDetailModal({
                 <span>Bếp Tạm Hết Món — Hẹn Thực Khách Bữa Sau</span>
               </button>
             ) : (
-              <button
-                onClick={(e) => {
-                  onAdd(selectedDetailItem, e);
-                  onClose();
-                }}
-                className="w-full py-3.5 px-4 rounded-2xl bg-[#96281b] hover:bg-[#802216] text-white font-serif font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-red-950/25 active:scale-[0.98] transition-all cursor-pointer"
-              >
-                <Plus className="w-4 h-4 text-amber-300" />
-                <span>Thêm Vào Bàn — {formatPrice(selectedDetailItem.price)}</span>
-              </button>
+              <>
+                {onOpenCustomizer && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      onOpenCustomizer(selectedDetailItem, e);
+                      onClose();
+                    }}
+                    className="flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-[#8a1e14] to-[#a3271b] hover:from-[#a3271b] hover:to-[#be2e20] text-[#fcf8f2] font-serif font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 border border-[#d4af37]/60 shadow-md active:scale-[0.98] transition-all cursor-pointer"
+                  >
+                    <SlidersHorizontal className="w-4 h-4 text-[#f6d892]" />
+                    <span>Tùy Biến Gu 1986</span>
+                  </button>
+                )}
+                <button
+                  onClick={(e) => {
+                    onAdd(selectedDetailItem, e);
+                    onClose();
+                  }}
+                  className="flex-1 py-3 px-4 rounded-2xl bg-[#34140c] hover:bg-[#4d2015] text-white font-serif font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 border border-[#7a3929] shadow-md active:scale-[0.98] transition-all cursor-pointer"
+                >
+                  <Plus className="w-4 h-4 text-amber-300" />
+                  <span>Thêm Nhanh — {formatPrice(selectedDetailItem.price)}</span>
+                </button>
+              </>
             )}
           </div>
 

@@ -1,0 +1,25 @@
+{
+  "short_name": "Phở 1986",
+  "name": "Phở Gia Truyền 1986 — Hương Vị Thật, Tình Người Việt",
+  "description": "Thưởng thức Phở truyền thống gia truyền từ năm 1986 với nước dùng ninh 24h từ xương ống bò tươi, quế hồi thảo quả tự nhiên.",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512",
+      "purpose": "maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#fcf8f2",
+  "theme_color": "#160e09",
+  "display": "standalone",
+  "orientation": "portrait",
+  "lang": "vi"
+}

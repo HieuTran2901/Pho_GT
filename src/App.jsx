@@ -10,36 +10,35 @@ import Footer from './components/Footer';
 import FlyingPhoBowl from './components/FlyingPhoBowl';
 import FlyingGiftRibbon from './components/loyalty/FlyingGiftRibbon';
 import HeritageIslandToast from './components/toast/HeritageIslandToast';
-import AuthModal from './components/AuthModal';
-import MemberWelcome3DCard from './components/auth/MemberWelcome3DCard';
-import HeritageChatbox from './components/chat/HeritageChatbox';
 import { useAuth } from './context/AuthContext';
-import { TIER_CONFIG } from './components/navbar/navbarConstants';
 import { getCartStorageKey, loadCartFromStorage } from './utils/cartStorage';
+import { TIER_CONFIG } from './components/navbar/navbarConstants';
 
 import { useAppRouting } from './hooks/useAppRouting';
 import HeritageRouteLoading from './components/common/HeritageRouteLoading';
+import PwaInstallPrompt from './components/common/PwaInstallPrompt';
 
-// Code-Splitting: Tải lười các phân khu nặng để tối ưu dung lượng Bundle ban đầu
+// Code-Splitting: Tải lười các phân khu và modal nặng để tối ưu dung lượng Bundle ban đầu
 const AdminPortal = lazy(() => import('./components/admin/AdminPortal'));
 const AdminLoginView = lazy(() => import('./components/admin/AdminLoginView'));
 const MarketingPage = lazy(() => import('./marketing/MarketingPage'));
 const CustomerOrderHistoryModal = lazy(() => import('./components/order/CustomerOrderHistoryModal'));
 const GiftVaultModal = lazy(() => import('./components/loyalty/GiftVaultModal'));
+const AuthModal = lazy(() => import('./components/AuthModal'));
+const MemberWelcome3DCard = lazy(() => import('./components/auth/MemberWelcome3DCard'));
+const HeritageChatbox = lazy(() => import('./components/chat/HeritageChatbox'));
+const SpotlightTour = lazy(() => import('./components/onboarding/SpotlightTour'));
 
 export default function App() {
-  const { user, openAuthModal } = useAuth();
+  const { user, openAuthModal, authModalOpen } = useAuth();
   const { isAdminRoute, isMarketingRoute, navigateToHome } = useAppRouting();
 
-  // Phương án 1: User-Scoped Cart Partitioning
-  // Mỗi tài khoản (hoặc khách vãng lai) sở hữu một giỏ hàng riêng biệt
+  // User-Scoped Cart Partitioning (deterministic non-PII keys)
   const currentCartKey = useMemo(() => getCartStorageKey(user), [user]);
   const activeCartKeyRef = useRef(currentCartKey);
   const isSwitchingUserRef = useRef(false);
 
-  const [cartItems, setCartItems] = useState(() => {
-    return loadCartFromStorage(currentCartKey);
-  });
+  const [cartItems, setCartItems] = useState(() => loadCartFromStorage(currentCartKey, user));
   const cartItemsRef = useRef(cartItems);
   cartItemsRef.current = cartItems;
 
@@ -49,22 +48,15 @@ export default function App() {
       const oldKey = activeCartKeyRef.current;
       const newKey = currentCartKey;
 
-      // 1. Cất giỏ hàng hiện tại vào đúng partition của user cũ
       if (oldKey && typeof window !== 'undefined') {
-        try {
-          localStorage.setItem(oldKey, JSON.stringify(cartItemsRef.current));
-        } catch {}
+        try { localStorage.setItem(oldKey, JSON.stringify(cartItemsRef.current)); } catch {}
       }
 
-      // 2. Kích hoạt cờ đang chuyển tài khoản để chặn ghi đè cartItems cũ vào user mới
       isSwitchingUserRef.current = true;
       activeCartKeyRef.current = newKey;
-
-      // 3. Nạp giỏ hàng độc lập của user mới (hoặc giỏ trống nếu chưa có)
-      const newCart = loadCartFromStorage(newKey);
-      setCartItems(newCart);
+      setCartItems(loadCartFromStorage(newKey, user));
     }
-  }, [currentCartKey]);
+  }, [currentCartKey, user]);
 
   // Đồng bộ giỏ hàng vào partition của user đang hoạt động khi thêm/xóa/sửa món
   useEffect(() => {
@@ -73,13 +65,28 @@ export default function App() {
       return;
     }
     if (typeof window !== 'undefined' && activeCartKeyRef.current) {
-      try {
-        localStorage.setItem(activeCartKeyRef.current, JSON.stringify(cartItems));
-      } catch {
-        // quiet fail
-      }
+      try { localStorage.setItem(activeCartKeyRef.current, JSON.stringify(cartItems)); } catch {}
     }
   }, [cartItems]);
+
+  // Preload heavy modals when idle to ensure zero modal open delays
+  useEffect(() => {
+    const preload = () => {
+      import('./components/AuthModal');
+      import('./components/chat/HeritageChatbox');
+      import('./components/onboarding/SpotlightTour');
+      import('./components/auth/MemberWelcome3DCard');
+    };
+    if (typeof window !== 'undefined') {
+      if ('requestIdleCallback' in window) {
+        const id = window.requestIdleCallback(preload, { timeout: 3000 });
+        return () => window.cancelIdleCallback(id);
+      }
+      const id = setTimeout(preload, 1500);
+      return () => clearTimeout(id);
+    }
+  }, []);
+
   const [cartOpen, setCartOpen] = useState(false);
   const [orderHistoryOpen, setOrderHistoryOpen] = useState(false);
   const [giftVaultOpen, setGiftVaultOpen] = useState(false);
@@ -89,9 +96,7 @@ export default function App() {
   const [flyingGifts, setFlyingGifts] = useState([]);
   const [isCartJiggling, setIsCartJiggling] = useState(false);
 
-  const toastTimerRef = useRef(null);
-  const toastExitTimerRef = useRef(null);
-  const cartJiggleTimerRef = useRef(null);
+  const toastTimerRef = useRef(null), toastExitTimerRef = useRef(null), cartJiggleTimerRef = useRef(null);
 
   const closeToast = useCallback(() => {
     setToastClosing(true);
@@ -165,14 +170,16 @@ export default function App() {
     }
 
     // 1. Add item to cart state
+    const addedQty = item.quantity || 1;
+    const itemKey = item.cartItemId || item.id;
     setCartItems((prev) => {
-      const existing = prev.find((i) => i.id === item.id);
+      const existing = prev.find((i) => (i.cartItemId || i.id) === itemKey);
       if (existing) {
         return prev.map((i) =>
-          i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
+          (i.cartItemId || i.id) === itemKey ? { ...i, quantity: i.quantity + addedQty } : i
         );
       }
-      return [...prev, { ...item, quantity: 1 }];
+      return [...prev, { ...item, quantity: addedQty }];
     });
 
     // 2. Spawn parabolic flying bowl if coordinates exist
@@ -195,18 +202,10 @@ export default function App() {
       price: 0,
       originalPrice: gift.discountValue || 15000,
       image: gift.image,
-      quantity: 1,
-      isFreeGift: true,
-      voucherCode: gift.code
+      quantity: 1, isFreeGift: true, voucherCode: gift.code
     };
+    setCartItems((prev) => [...prev.filter((i) => !i.isFreeGift), giftItem]);
 
-    setCartItems((prev) => {
-      // Mỗi đơn chỉ áp dụng 1 món quà tặng 0đ duy nhất, thay thế quà cũ nếu có
-      const filtered = prev.filter((i) => !i.isFreeGift);
-      return [...filtered, giftItem];
-    });
-
-    // 1. Phóng dải vé Parabol lượn vào giỏ hàng nếu có tọa độ nút bấm
     if (coords && typeof window !== 'undefined') {
       const { endX, endY } = getCartTargetCoordinates();
       const newFlyGift = { id: Date.now() + Math.random(), image: gift.image, name: giftItem.name, startX: coords.startX, startY: coords.startY, endX, endY };
@@ -226,40 +225,29 @@ export default function App() {
 
   const handleGiftFlightComplete = useCallback((flyId) => {
     setFlyingGifts((prev) => prev.filter((f) => f.id !== flyId));
-
-    // Hiệu ứng tiếp đất: Rung lắc giỏ hàng và mở drawer đón quà
     setIsCartJiggling(true);
     if (cartJiggleTimerRef.current) clearTimeout(cartJiggleTimerRef.current);
-    cartJiggleTimerRef.current = setTimeout(() => {
-      setIsCartJiggling(false);
-    }, 700);
-
+    cartJiggleTimerRef.current = setTimeout(() => setIsCartJiggling(false), 700);
     setCartOpen(true);
   }, []);
 
   const handleFlightComplete = useCallback((flyId) => {
     setFlyingBowls((prev) => prev.filter((f) => f.id !== flyId));
-
-    // Trigger cart jiggle and golden ripple on navbar
     setIsCartJiggling(true);
     if (cartJiggleTimerRef.current) clearTimeout(cartJiggleTimerRef.current);
-    cartJiggleTimerRef.current = setTimeout(() => {
-      setIsCartJiggling(false);
-    }, 650);
+    cartJiggleTimerRef.current = setTimeout(() => setIsCartJiggling(false), 650);
   }, []);
 
   const handleUpdateQuantity = useCallback((id, newQuantity) => {
     if (newQuantity <= 0) {
-      setCartItems((prev) => prev.filter((i) => i.id !== id));
+      setCartItems((prev) => prev.filter((i) => (i.cartItemId || i.id) !== id));
       return;
     }
-    setCartItems((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, quantity: newQuantity } : i))
-    );
+    setCartItems((prev) => prev.map((i) => ((i.cartItemId || i.id) === id ? { ...i, quantity: newQuantity } : i)));
   }, []);
 
   const handleRemoveItem = useCallback((id) => {
-    setCartItems((prev) => prev.filter((i) => i.id !== id));
+    setCartItems((prev) => prev.filter((i) => (i.cartItemId || i.id) !== id));
   }, []);
 
   const handleClearCart = useCallback(() => {
@@ -306,12 +294,9 @@ export default function App() {
     showToast('Vui lòng hoàn tất thông tin giao hàng hoặc đặt bàn!');
   }, [scrollToSection, showToast]);
 
-  const handleOpenCart = useCallback(() => setCartOpen(true), []);
-  const handleCloseCart = useCallback(() => setCartOpen(false), []);
-  const handleOpenOrderHistory = useCallback(() => setOrderHistoryOpen(true), []);
-  const handleCloseOrderHistory = useCallback(() => setOrderHistoryOpen(false), []);
-  const handleOpenGiftVault = useCallback(() => setGiftVaultOpen(true), []);
-  const handleCloseGiftVault = useCallback(() => setGiftVaultOpen(false), []);
+  const handleOpenCart = useCallback(() => setCartOpen(true), []), handleCloseCart = useCallback(() => setCartOpen(false), []);
+  const handleOpenOrderHistory = useCallback(() => setOrderHistoryOpen(true), []), handleCloseOrderHistory = useCallback(() => setOrderHistoryOpen(false), []);
+  const handleOpenGiftVault = useCallback(() => setGiftVaultOpen(true), []), handleCloseGiftVault = useCallback(() => setGiftVaultOpen(false), []);
   const handleOpenOrder = useCallback(() => {
     const cardEl = document.getElementById('order-form-card');
     const orderEl = document.getElementById('order');
@@ -348,7 +333,9 @@ export default function App() {
           onBackToHome={navigateToHome}
           onNavigateToSection={(section) => {
             navigateToHome();
-            setTimeout(() => scrollToSection(section), 80);
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => scrollToSection(section));
+            });
           }}
         />
       </Suspense>
@@ -371,12 +358,14 @@ export default function App() {
     <div className="min-h-screen bg-brand-cream flex flex-col font-sans pb-16 md:pb-0 overflow-x-hidden w-full max-w-full">
         {/* 3D Imperial Heritage Pass & Steam Aura Welcome Card */}
         {toastData && toastData.type === 'member_welcome' && (
-          <MemberWelcome3DCard
-            data={toastData}
-            isClosing={toastClosing}
-            onClose={closeToast}
-            onQuickReorder={handleQuickReorderFromToast}
-          />
+          <Suspense fallback={null}>
+            <MemberWelcome3DCard
+              data={toastData}
+              isClosing={toastClosing}
+              onClose={closeToast}
+              onQuickReorder={handleQuickReorderFromToast}
+            />
+          </Suspense>
         )}
 
         {/* Dynamic Heritage Island Capsule Toast */}
@@ -400,7 +389,13 @@ export default function App() {
         />
 
         {/* Auth Modal (Heritage Vintage Register/Login) */}
-        <AuthModal onToast={showToast} />
+        <Suspense fallback={authModalOpen ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+            <div className="w-9 h-9 rounded-full border-2 border-[#d4af37] border-t-transparent animate-spin" />
+          </div>
+        ) : null}>
+          <AuthModal onToast={showToast} />
+        </Suspense>
 
         {/* Customer Order History Modal (Loaded on demand) */}
         {orderHistoryOpen && (
@@ -430,22 +425,12 @@ export default function App() {
           </Suspense>
         )}
 
-        {/* Flying Parabolic Pho Bowls */}
+        {/* Flying Parabolic Pho Bowls & Gift Ribbons */}
         {flyingBowls.map((fly) => (
-          <FlyingPhoBowl
-            key={fly.id}
-            fly={fly}
-            onComplete={handleFlightComplete}
-          />
+          <FlyingPhoBowl key={fly.id} fly={fly} onComplete={handleFlightComplete} />
         ))}
-
-        {/* Flying Parabolic Gift Ribbons */}
         {flyingGifts.map((fly) => (
-          <FlyingGiftRibbon
-            key={fly.id}
-            fly={fly}
-            onComplete={handleGiftFlightComplete}
-          />
+          <FlyingGiftRibbon key={fly.id} fly={fly} onComplete={handleGiftFlightComplete} />
         ))}
 
         {/* Main Sections */}
@@ -477,12 +462,22 @@ export default function App() {
         />
 
         {/* Heritage AI Assistant Chatbox (Tiểu Nhị 1986) */}
-        <HeritageChatbox
-          onAddToCart={handleAddToCart}
-          onOpenOrder={handleOpenOrder}
-          onExploreMenu={handleExploreMenu}
-          onToast={showToast}
-        />
+        <Suspense fallback={null}>
+          <HeritageChatbox
+            onAddToCart={handleAddToCart}
+            onOpenOrder={handleOpenOrder}
+            onExploreMenu={handleExploreMenu}
+            onToast={showToast}
+          />
+        </Suspense>
+
+        {/* Heritage Onboarding Spotlight Tour (Tiểu Nhị 1986) */}
+        <Suspense fallback={null}>
+          <SpotlightTour />
+        </Suspense>
+
+        {/* PWA Mobile App Install Prompt */}
+        <PwaInstallPrompt />
 
         {/* Footer */}
         <Footer />

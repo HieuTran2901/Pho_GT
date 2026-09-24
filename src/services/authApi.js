@@ -116,6 +116,30 @@ export const authApi = {
   },
 
   /**
+   * Đăng nhập nhanh bằng Firebase Phone OTP Token
+   */
+  async loginWithFirebasePhone({ idToken, fullName = null }) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/firebase-phone-login`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({ idToken, fullName }),
+      });
+
+      return await handleResponse(response, true);
+    } catch (err) {
+      if (err.name === 'TypeError' || err.message?.includes('fetch') || err.message?.includes('NetworkError')) {
+        throw new Error(FRIENDLY_NETWORK_ERROR);
+      }
+      throw err;
+    }
+  },
+
+  /**
    * Làm mới phiên đăng nhập ngầm qua Refresh Token Cookie (Silent Refresh)
    * Sử dụng Singleton Promise để chống race condition / double invocation
    */

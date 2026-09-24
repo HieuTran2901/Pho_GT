@@ -1,7 +1,6 @@
 import React from 'react';
 import useScrollReveal from '../hooks/useScrollReveal';
 import SeatMapModal from './SeatMapModal';
-import { BRANCH_LABELS } from './order/orderConstants';
 import OrderPrivilegesPanel from './order/OrderPrivilegesPanel';
 import OrderStep1Booking from './order/OrderStep1Booking';
 import OrderStep2Payment from './order/OrderStep2Payment';
@@ -11,6 +10,7 @@ import OrderProgressStepper from './order/OrderProgressStepper';
 import { useOrderSectionState } from './order/useOrderSectionState';
 import { usePaymentGatewaysStatus } from './order/usePaymentGatewaysStatus';
 import SePayRedirectOverlay from './order/SePayRedirectOverlay';
+import { BRANCH_LABELS } from './order/orderConstants';
 
 function OrderSection({ cartItems = [], onClearCart, onToast, onExploreMenu } = {}) {
   const [sectionRef, isVisible] = useScrollReveal({ threshold: 0.12 });

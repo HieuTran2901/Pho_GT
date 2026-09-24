@@ -117,7 +117,7 @@ export const MENU_ITEMS = [
     portion: 'Tô thường',
     theme: 'red',
     description: 'Thịt gà đồi ta thả vườn chắc thịt, da vàng ươm giòn sần sật, thái thớ đượm hương thơm thanh thoát của lá chanh tươi thái chỉ.',
-    image: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1576577445504-6af96477db52?auto=format&fit=crop&w=800&q=80',
     ingredients: ['Thịt gà đồi da vàng', 'Lá chanh tươi', 'Hành hoa tỉa', 'Nước dùng gà ngọt thanh'],
     featurePills: [
       { label: 'Gà đồi ta', sub: 'Thịt chắc', type: 'meat' },

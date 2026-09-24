@@ -244,6 +244,15 @@ export function AuthProvider({ children }) {
     return registeredUser;
   }, []);
 
+  const loginWithFirebasePhone = useCallback(async (idToken, fullName = null) => {
+    const data = await authApi.loginWithFirebasePhone({ idToken, fullName });
+    const authenticatedUser = data.user || data;
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+    setUser(authenticatedUser);
+    setAuthModalOpen(false);
+    return data;
+  }, []);
+
   const logout = useCallback(async () => {
     // Gọi API logout để Backend đưa token vào Blacklist và xóa sạch HttpOnly Cookie
     await authApi.logout();
@@ -307,6 +316,7 @@ export function AuthProvider({ children }) {
     openAuthModal,
     closeAuthModal,
     login,
+    loginWithFirebasePhone,
     register,
     logout,
     updateTasteProfile,
@@ -321,6 +331,7 @@ export function AuthProvider({ children }) {
     openAuthModal,
     closeAuthModal,
     login,
+    loginWithFirebasePhone,
     register,
     logout,
     updateTasteProfile,
