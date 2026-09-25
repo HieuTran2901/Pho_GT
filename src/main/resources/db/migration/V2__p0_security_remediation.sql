@@ -3,19 +3,19 @@
 
 -- 1. Orders: Capability token for Guest checkout and Refund Audit Trail
 ALTER TABLE orders
-    ADD COLUMN IF NOT EXISTS order_access_token_hash VARCHAR(64) NULL,
-    ADD COLUMN IF NOT EXISTS refund_amount DOUBLE NULL,
-    ADD COLUMN IF NOT EXISTS refunded_by VARCHAR(255) NULL,
-    ADD COLUMN IF NOT EXISTS refund_reason VARCHAR(255) NULL,
-    ADD COLUMN IF NOT EXISTS refund_ref VARCHAR(100) NULL,
-    ADD COLUMN IF NOT EXISTS refunded_at DATETIME NULL;
+    ADD COLUMN order_access_token_hash VARCHAR(64) NULL,
+    ADD COLUMN refund_amount DOUBLE NULL,
+    ADD COLUMN refunded_by VARCHAR(255) NULL,
+    ADD COLUMN refund_reason VARCHAR(255) NULL,
+    ADD COLUMN refund_ref VARCHAR(100) NULL,
+    ADD COLUMN refunded_at DATETIME NULL;
 
 -- Index for fast capability token lookup
-CREATE INDEX IF NOT EXISTS idx_orders_access_token_hash ON orders(order_access_token_hash);
+CREATE INDEX idx_orders_access_token_hash ON orders(order_access_token_hash);
 
 -- 2. Customer Gifts: Reservation TTL support
 ALTER TABLE customer_gifts
-    ADD COLUMN IF NOT EXISTS reserved_until DATETIME NULL;
+    ADD COLUMN reserved_until DATETIME NULL;
 
 -- 3. Voucher Redemptions Ledger (Anti-Double Spend & Idempotency)
 CREATE TABLE IF NOT EXISTS voucher_redemptions (
@@ -31,5 +31,5 @@ CREATE TABLE IF NOT EXISTS voucher_redemptions (
     CONSTRAINT fk_voucher_redemptions_order FOREIGN KEY (order_id) REFERENCES orders(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 4. Clean duplicate loyalty transactions before adding unique constraint if needed
-CREATE INDEX IF NOT EXISTS idx_loyalty_tx_order_type ON loyalty_transactions(order_id, type);
+-- 4. Unique index on loyalty transactions to prevent duplicate earning per order & type
+CREATE INDEX idx_loyalty_tx_order_type ON loyalty_transactions(order_id, type);
