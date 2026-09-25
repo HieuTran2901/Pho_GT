@@ -53,7 +53,10 @@ public class CustomerGift {
     private String image;
 
     @Column(nullable = false, length = 20)
-    private String status = "AVAILABLE"; // 'AVAILABLE' | 'USED' | 'EXPIRED'
+    private String status = "AVAILABLE"; // 'AVAILABLE' | 'RESERVED' | 'USED' | 'EXPIRED'
+
+    @Column(name = "reserved_until")
+    private LocalDateTime reservedUntil;
 
     @Column(nullable = false, length = 30)
     private String source = "REDEEM"; // 'WELCOME' | 'REDEEM' | 'ADMIN_GIFT'
@@ -129,11 +132,17 @@ public class CustomerGift {
     public void setUsedAt(LocalDateTime usedAt) { this.usedAt = usedAt; }
     public String getOrderId() { return orderId; }
     public void setOrderId(String orderId) { this.orderId = orderId; }
+    public LocalDateTime getReservedUntil() { return reservedUntil; }
+    public void setReservedUntil(LocalDateTime reservedUntil) { this.reservedUntil = reservedUntil; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
     public boolean isExpired() {
         return expiryDate != null && LocalDateTime.now().isAfter(expiryDate);
+    }
+
+    public boolean isReservationExpired() {
+        return "RESERVED".equals(status) && reservedUntil != null && LocalDateTime.now().isAfter(reservedUntil);
     }
 
     public boolean isExpiringSoon(int daysThreshold) {

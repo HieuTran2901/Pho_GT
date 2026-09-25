@@ -12,7 +12,8 @@ import java.util.List;
     @Index(name = "idx_orders_user_created", columnList = "user_id, created_at DESC"),
     @Index(name = "idx_orders_created_at", columnList = "created_at DESC"),
     @Index(name = "idx_orders_guest_phone", columnList = "guest_phone"),
-    @Index(name = "idx_orders_payment_status", columnList = "payment_status")
+    @Index(name = "idx_orders_payment_status", columnList = "payment_status"),
+    @Index(name = "idx_orders_access_token_hash", columnList = "order_access_token_hash")
 })
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Order {
@@ -65,6 +66,27 @@ public class Order {
     @Column(name = "voucher_code", length = 50)
     private String voucherCode;
 
+    @Column(name = "order_access_token_hash", length = 64)
+    private String orderAccessTokenHash;
+
+    @Transient
+    private String rawAccessToken;
+
+    @Column(name = "refund_amount")
+    private Double refundAmount;
+
+    @Column(name = "refunded_by", length = 100)
+    private String refundedBy;
+
+    @Column(name = "refund_reason", length = 255)
+    private String refundReason;
+
+    @Column(name = "refund_ref", length = 100)
+    private String refundRef;
+
+    @Column(name = "refunded_at")
+    private LocalDateTime refundedAt;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -113,6 +135,20 @@ public class Order {
     public void setTableNumber(String tableNumber) { this.tableNumber = tableNumber; }
     public String getVoucherCode() { return voucherCode; }
     public void setVoucherCode(String voucherCode) { this.voucherCode = voucherCode; }
+    public String getOrderAccessTokenHash() { return orderAccessTokenHash; }
+    public void setOrderAccessTokenHash(String orderAccessTokenHash) { this.orderAccessTokenHash = orderAccessTokenHash; }
+    public String getRawAccessToken() { return rawAccessToken; }
+    public void setRawAccessToken(String rawAccessToken) { this.rawAccessToken = rawAccessToken; }
+    public Double getRefundAmount() { return refundAmount; }
+    public void setRefundAmount(Double refundAmount) { this.refundAmount = refundAmount; }
+    public String getRefundedBy() { return refundedBy; }
+    public void setRefundedBy(String refundedBy) { this.refundedBy = refundedBy; }
+    public String getRefundReason() { return refundReason; }
+    public void setRefundReason(String refundReason) { this.refundReason = refundReason; }
+    public String getRefundRef() { return refundRef; }
+    public void setRefundRef(String refundRef) { this.refundRef = refundRef; }
+    public LocalDateTime getRefundedAt() { return refundedAt; }
+    public void setRefundedAt(LocalDateTime refundedAt) { this.refundedAt = refundedAt; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public List<OrderItem> getItems() { return items; }

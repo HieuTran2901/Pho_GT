@@ -23,7 +23,7 @@ public class OrderController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<Order>> createOrder(
+    public ResponseEntity<ApiResponse<CreateOrderResponse>> createOrder(
             Authentication authentication,
             @Valid @RequestBody CreateOrderRequest request) {
         String userId = (authentication != null && !"anonymousUser".equals(authentication.getPrincipal()))
@@ -31,8 +31,9 @@ public class OrderController {
                 : null;
 
         Order order = orderService.createOrder(userId, request);
+        CreateOrderResponse response = CreateOrderResponse.fromOrder(order, order.getRawAccessToken());
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.ok(order, "Đặt món thành công! Bếp Phở Gia Truyền 1986 đang chuẩn bị cho bạn."));
+                .body(ApiResponse.ok(response, "Đặt món thành công! Bếp Phở Gia Truyền 1986 đang chuẩn bị cho bạn."));
     }
 
     @GetMapping("/quick-reorder")
@@ -52,6 +53,7 @@ public class OrderController {
     @GetMapping("/{orderCode}")
     public ResponseEntity<ApiResponse<PublicOrderResponse>> getOrderByCode(
             @PathVariable String orderCode,
+            @RequestHeader(value = "X-Order-Access-Token", required = false) String orderAccessToken,
             Authentication authentication) {
         Order order = orderService.getOrderByCode(orderCode);
         boolean isOwner = false;
@@ -62,6 +64,14 @@ public class OrderController {
             }
             if (authentication.getAuthorities() != null &&
                     authentication.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()))) {
+                isOwner = true;
+            }
+        }
+        if (!isOwner && order.getUser() == null && org.springframework.util.StringUtils.hasText(orderAccessToken)) {
+            String hash = com.pho1986.backend.common.PiiMaskUtils.sha256Hex(orderAccessToken.trim());
+            if (order.getOrderAccessTokenHash() != null && java.security.MessageDigest.isEqual(
+                    order.getOrderAccessTokenHash().getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                    hash.getBytes(java.nio.charset.StandardCharsets.UTF_8))) {
                 isOwner = true;
             }
         }

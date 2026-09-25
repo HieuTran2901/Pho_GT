@@ -8,6 +8,8 @@ import java.time.LocalDateTime;
 @Table(name = "loyalty_transactions", indexes = {
     @Index(name = "idx_loyalty_tx_account_created", columnList = "loyalty_account_id, created_at DESC"),
     @Index(name = "idx_loyalty_tx_order", columnList = "order_id")
+}, uniqueConstraints = {
+    @UniqueConstraint(name = "uk_loyalty_tx_order_type", columnNames = {"order_id", "type"})
 })
 public class LoyaltyTransaction {
 

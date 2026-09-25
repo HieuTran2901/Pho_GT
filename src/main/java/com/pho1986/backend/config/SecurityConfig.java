@@ -41,6 +41,9 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                // [CSRF Defense Evaluation]: API REST Stateless sử dụng Authorization Bearer Header kết hợp
+                // HttpOnly Cookie có cấu hình SameSite=Lax (chống cross-site POST/PUT request forgery).
+                // Do đó AbstractHttpConfigurer::disable là an toàn theo khuyến nghị OWASP API Security.
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

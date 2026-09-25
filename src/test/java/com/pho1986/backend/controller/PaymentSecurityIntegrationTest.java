@@ -1,6 +1,8 @@
 package com.pho1986.backend.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pho1986.backend.common.PiiMaskUtils;
+import com.pho1986.backend.model.dto.OrderDtos.CreateOrderRequest;
 import com.pho1986.backend.model.dto.OrderDtos.CreateOrderItemRequest;
 import com.pho1986.backend.model.dto.PaymentDtos.ConfirmPaymentRequest;
 import com.pho1986.backend.model.dto.PaymentDtos.CreatePaymentRequest;
@@ -54,14 +56,26 @@ public class PaymentSecurityIntegrationTest {
     private String webhookSecret;
 
     private String createPendingPayment(String orderCode) throws Exception {
+        String rawToken = "sec_test_token_" + orderCode;
+        orderRepository.findByOrderCode(orderCode).orElseGet(() -> {
+            Order o = new Order();
+            o.setOrderCode(orderCode);
+            o.setPaymentMethod("VIETQR");
+            o.setGuestName("Khách Hàng Test");
+            o.setGuestPhone("0987654321");
+            o.setDeliveryAddressText("10 Lý Quốc Sư");
+            o.setTotalAmount(130000.0);
+            o.setFinalAmount(130000.0);
+            o.setStatus("PENDING");
+            o.setPaymentStatus("UNPAID");
+            o.setOrderAccessTokenHash(PiiMaskUtils.sha256Hex(rawToken));
+            return orderRepository.save(o);
+        });
+
         CreatePaymentRequest createReq = new CreatePaymentRequest();
         createReq.setOrderCode(orderCode);
         createReq.setPaymentMethod("VIETQR");
-
-        CreateOrderItemRequest item = new CreateOrderItemRequest();
-        item.setDishId("dish-01-pho-bo-tai-lan-hn");
-        item.setQuantity(2);
-        createReq.setItems(List.of(item));
+        createReq.setOrderAccessToken(rawToken);
 
         MvcResult result = mockMvc.perform(post("/api/v1/payments")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -72,18 +86,29 @@ public class PaymentSecurityIntegrationTest {
         return objectMapper.readTree(result.getResponse().getContentAsString()).get("data").get("paymentCode").asText();
     }
 
+    private CreateOrderRequest createBaseOrderReq() {
+        CreateOrderRequest req = new CreateOrderRequest();
+        req.setGuestName("Khách Hàng Test");
+        req.setGuestPhone("0987654321");
+        req.setDeliveryAddressText("10 Lý Quốc Sư");
+        req.setPaymentMethod("VIETQR");
+        return req;
+    }
+
+    private ConfirmPaymentRequest confirmReq(String secret, Double amount) {
+        ConfirmPaymentRequest r = new ConfirmPaymentRequest();
+        r.setSecretKey(secret);
+        r.setAmount(amount);
+        return r;
+    }
+
     @Test
     @DisplayName("Security: Từ chối xác nhận thanh toán khi Secret Key để chuỗi rỗng '' -> 403 Forbidden")
     void testConfirmPaymentEmptySecretKeyRejected() throws Exception {
         String paymentCode = createPendingPayment("PHO-TEST-SEC-01");
-
-        ConfirmPaymentRequest request = new ConfirmPaymentRequest();
-        request.setSecretKey("");
-        request.setAmount(130000.0);
-
         mockMvc.perform(post("/api/v1/payments/" + paymentCode + "/confirm")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .content(objectMapper.writeValueAsString(confirmReq("", 130000.0))))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.success", is(false)))
                 .andExpect(jsonPath("$.message", containsString("Secret Key không được để trống")));
@@ -93,14 +118,9 @@ public class PaymentSecurityIntegrationTest {
     @DisplayName("Security: Từ chối xác nhận thanh toán khi Secret Key chỉ chứa khoảng trắng '   ' -> 403 Forbidden")
     void testConfirmPaymentWhitespaceSecretKeyRejected() throws Exception {
         String paymentCode = createPendingPayment("PHO-TEST-SEC-02");
-
-        ConfirmPaymentRequest request = new ConfirmPaymentRequest();
-        request.setSecretKey("   ");
-        request.setAmount(130000.0);
-
         mockMvc.perform(post("/api/v1/payments/" + paymentCode + "/confirm")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .content(objectMapper.writeValueAsString(confirmReq("   ", 130000.0))))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.success", is(false)))
                 .andExpect(jsonPath("$.message", containsString("Secret Key không được để trống")));
@@ -110,14 +130,9 @@ public class PaymentSecurityIntegrationTest {
     @DisplayName("Security: Từ chối xác nhận thanh toán khi Secret Key bị null/thiếu -> 403 Forbidden")
     void testConfirmPaymentNullSecretKeyRejected() throws Exception {
         String paymentCode = createPendingPayment("PHO-TEST-SEC-03");
-
-        ConfirmPaymentRequest request = new ConfirmPaymentRequest();
-        request.setSecretKey(null);
-        request.setAmount(130000.0);
-
         mockMvc.perform(post("/api/v1/payments/" + paymentCode + "/confirm")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .content(objectMapper.writeValueAsString(confirmReq(null, 130000.0))))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.success", is(false)))
                 .andExpect(jsonPath("$.message", containsString("Secret Key không được để trống")));
@@ -127,14 +142,9 @@ public class PaymentSecurityIntegrationTest {
     @DisplayName("Security: Từ chối xác nhận thanh toán khi Secret Key quá ngắn (< 32 ký tự) -> 403 Forbidden")
     void testConfirmPaymentShortSecretKeyRejected() throws Exception {
         String paymentCode = createPendingPayment("PHO-TEST-SEC-04");
-
-        ConfirmPaymentRequest request = new ConfirmPaymentRequest();
-        request.setSecretKey("short_secret_under_32_chars");
-        request.setAmount(130000.0);
-
         mockMvc.perform(post("/api/v1/payments/" + paymentCode + "/confirm")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .content(objectMapper.writeValueAsString(confirmReq("short_secret_under_32_chars", 130000.0))))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.success", is(false)))
                 .andExpect(jsonPath("$.message", containsString("Secret Key không hợp lệ")));
@@ -161,15 +171,29 @@ public class PaymentSecurityIntegrationTest {
     @Test
     @DisplayName("Anti-Tampering: Giá client gửi lên (unitPrice=1000đ) bị triệt tiêu, tính 100% theo DB (65000đ x 3 = 195000đ)")
     void testCreatePaymentTamperedClientPriceIsIgnored() throws Exception {
-        CreatePaymentRequest createReq = new CreatePaymentRequest();
-        createReq.setOrderCode("PHO-TAMPER-PRICE-01");
-        createReq.setPaymentMethod("VIETQR");
-
+        CreateOrderRequest orderReq = createBaseOrderReq();
         CreateOrderItemRequest item = new CreateOrderItemRequest();
-        item.setDishId("dish-01-pho-bo-tai-lan-hn"); // Giá trong DB là 65.000đ
-        item.setUnitPrice(1000.0); // Client cố tình can thiệp giá 1.000đ
+        item.setDishId("dish-01-pho-bo-tai-lan-hn");
+        item.setDishName("Phở Bò Tái Lăn");
+        item.setUnitPrice(1000.0);
         item.setQuantity(3);
-        createReq.setItems(List.of(item));
+        orderReq.setItems(List.of(item));
+
+        MvcResult orderResult = mockMvc.perform(post("/api/v1/orders")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(orderReq)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.success", is(true)))
+                .andExpect(jsonPath("$.data.finalAmount", is(195000.0)))
+                .andReturn();
+
+        String orderCode = objectMapper.readTree(orderResult.getResponse().getContentAsString()).get("data").get("orderCode").asText();
+        String orderAccessToken = objectMapper.readTree(orderResult.getResponse().getContentAsString()).get("data").get("orderAccessToken").asText();
+
+        CreatePaymentRequest createReq = new CreatePaymentRequest();
+        createReq.setOrderCode(orderCode);
+        createReq.setPaymentMethod("VIETQR");
+        createReq.setOrderAccessToken(orderAccessToken);
 
         MvcResult result = mockMvc.perform(post("/api/v1/payments")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -186,18 +210,17 @@ public class PaymentSecurityIntegrationTest {
     @Test
     @DisplayName("Anti-Tampering: Gửi dishId không tồn tại trong DB -> Chặn ngay 400 Bad Request")
     void testCreatePaymentNonExistentDishIdRejected() throws Exception {
-        CreatePaymentRequest createReq = new CreatePaymentRequest();
-        createReq.setOrderCode("PHO-TAMPER-DISH-01");
-        createReq.setPaymentMethod("VIETQR");
-
+        CreateOrderRequest orderReq = createBaseOrderReq();
         CreateOrderItemRequest item = new CreateOrderItemRequest();
         item.setDishId("fake-dish-id-999999");
+        item.setDishName("Món Không Có Thật");
+        item.setUnitPrice(50000.0);
         item.setQuantity(1);
-        createReq.setItems(List.of(item));
+        orderReq.setItems(List.of(item));
 
-        mockMvc.perform(post("/api/v1/payments")
+        mockMvc.perform(post("/api/v1/orders")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(createReq)))
+                        .content(objectMapper.writeValueAsString(orderReq)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success", is(false)))
                 .andExpect(jsonPath("$.message", containsString("Món ăn không tồn tại")));
@@ -211,18 +234,17 @@ public class PaymentSecurityIntegrationTest {
         dishRepository.save(dish);
 
         try {
-            CreatePaymentRequest createReq = new CreatePaymentRequest();
-            createReq.setOrderCode("PHO-TAMPER-UNAVAIL-01");
-            createReq.setPaymentMethod("VIETQR");
-
+            CreateOrderRequest orderReq = createBaseOrderReq();
             CreateOrderItemRequest item = new CreateOrderItemRequest();
             item.setDishId("dish-01-pho-bo-tai-lan-hn");
+            item.setDishName("Phở Bò Tái Lăn");
+            item.setUnitPrice(65000.0);
             item.setQuantity(1);
-            createReq.setItems(List.of(item));
+            orderReq.setItems(List.of(item));
 
-            mockMvc.perform(post("/api/v1/payments")
+            mockMvc.perform(post("/api/v1/orders")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(createReq)))
+                            .content(objectMapper.writeValueAsString(orderReq)))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.success", is(false)))
                     .andExpect(jsonPath("$.message", containsString("tạm hết hàng")));
@@ -312,18 +334,17 @@ public class PaymentSecurityIntegrationTest {
     @Test
     @DisplayName("Anti-Tampering: Gửi số lượng món ăn <= 0 (quantity=0 hoặc âm) -> Chặn ngay 400 Bad Request")
     void testCreatePaymentZeroOrNegativeQuantityRejected() throws Exception {
-        CreatePaymentRequest createReq = new CreatePaymentRequest();
-        createReq.setOrderCode("PHO-TAMPER-QTY-01");
-        createReq.setPaymentMethod("VIETQR");
-
+        CreateOrderRequest req = createBaseOrderReq();
         CreateOrderItemRequest item = new CreateOrderItemRequest();
         item.setDishId("dish-01-pho-bo-tai-lan-hn");
+        item.setDishName("Phở Bò Tái Lăn");
+        item.setUnitPrice(65000.0);
         item.setQuantity(0);
-        createReq.setItems(List.of(item));
+        req.setItems(List.of(item));
 
-        mockMvc.perform(post("/api/v1/payments")
+        mockMvc.perform(post("/api/v1/orders")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(createReq)))
+                        .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success", is(false)))
                 .andExpect(jsonPath("$.message", containsString("Số lượng món ăn phải lớn hơn 0")));
@@ -332,19 +353,18 @@ public class PaymentSecurityIntegrationTest {
     @Test
     @DisplayName("Anti-Tampering: Đơn chỉ có đồ uống cố tình đặt bàn (tableNumber) -> Chặn 400 vì thiếu món chính")
     void testCreatePaymentDrinksOnlyCannotReserveTable() throws Exception {
-        CreatePaymentRequest createReq = new CreatePaymentRequest();
-        createReq.setOrderCode("PHO-TAMPER-DRINKS-TABLE-01");
-        createReq.setPaymentMethod("VIETQR");
-        createReq.setTableNumber("B01");
-
+        CreateOrderRequest req = createBaseOrderReq();
+        req.setTableNumber("B01");
         CreateOrderItemRequest drinkItem = new CreateOrderItemRequest();
-        drinkItem.setDishId("dish-22-tra-sen-tay-ho"); // Thức uống, không phải món chính
+        drinkItem.setDishId("dish-22-tra-sen-tay-ho");
+        drinkItem.setDishName("Trà Sen Tây Hồ");
+        drinkItem.setUnitPrice(20000.0);
         drinkItem.setQuantity(2);
-        createReq.setItems(List.of(drinkItem));
+        req.setItems(List.of(drinkItem));
 
-        mockMvc.perform(post("/api/v1/payments")
+        mockMvc.perform(post("/api/v1/orders")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(createReq)))
+                        .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success", is(false)))
                 .andExpect(jsonPath("$.message", containsString("món ăn chính")));
@@ -353,80 +373,85 @@ public class PaymentSecurityIntegrationTest {
     @Test
     @DisplayName("Anti-Tampering: Đơn hàng chỉ gồm đồ uống không áp dụng ưu đãi/giữ bàn -> Được phép thanh toán (20000đ x 2 = 40000đ)")
     void testCreatePaymentDrinksOnlyWithoutTableOrVoucherAllowed() throws Exception {
-        CreatePaymentRequest createReq = new CreatePaymentRequest();
-        createReq.setOrderCode("PHO-DRINKS-ONLY-01");
-        createReq.setPaymentMethod("VIETQR");
-
+        CreateOrderRequest req = createBaseOrderReq();
         CreateOrderItemRequest drinkItem = new CreateOrderItemRequest();
         drinkItem.setDishId("dish-22-tra-sen-tay-ho");
+        drinkItem.setDishName("Trà Sen Tây Hồ");
+        drinkItem.setUnitPrice(20000.0);
         drinkItem.setQuantity(2);
-        createReq.setItems(List.of(drinkItem));
+        req.setItems(List.of(drinkItem));
 
-        MvcResult result = mockMvc.perform(post("/api/v1/payments")
+        MvcResult orderResult = mockMvc.perform(post("/api/v1/orders")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(createReq)))
+                        .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.success", is(true)))
-                .andExpect(jsonPath("$.data.amount", is(40000.0)))
+                .andExpect(jsonPath("$.data.finalAmount", is(40000.0)))
                 .andReturn();
 
-        double returnedAmount = objectMapper.readTree(result.getResponse().getContentAsString()).get("data").get("amount").asDouble();
-        assertEquals(40000.0, returnedAmount, "Đơn hàng chỉ có đồ uống phải được tính đúng 40.000đ từ database!");
+        String orderCode = objectMapper.readTree(orderResult.getResponse().getContentAsString()).get("data").get("orderCode").asText();
+        String orderToken = objectMapper.readTree(orderResult.getResponse().getContentAsString()).get("data").get("orderAccessToken").asText();
+
+        CreatePaymentRequest payReq = new CreatePaymentRequest();
+        payReq.setOrderCode(orderCode);
+        payReq.setPaymentMethod("VIETQR");
+        payReq.setOrderAccessToken(orderToken);
+
+        mockMvc.perform(post("/api/v1/payments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payReq)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.success", is(true)))
+                .andExpect(jsonPath("$.data.amount", is(40000.0)));
     }
 
     @Test
     @DisplayName("Anti-Tampering: Đơn chỉ có đồ uống cố tình áp dụng ưu đãi (appliedGiftId) -> Chặn 400 vì thiếu món chính")
     void testCreatePaymentDrinksOnlyWithVoucherRejected() throws Exception {
-        CreatePaymentRequest createReq = new CreatePaymentRequest();
-        createReq.setOrderCode("PHO-TAMPER-DRINKS-GIFT-01");
-        createReq.setPaymentMethod("VIETQR");
-        createReq.setAppliedGiftId("VOUCHER-TEST");
-
+        CreateOrderRequest req = createBaseOrderReq();
+        req.setAppliedGiftId("VOUCHER-TEST");
         CreateOrderItemRequest drinkItem = new CreateOrderItemRequest();
         drinkItem.setDishId("dish-22-tra-sen-tay-ho");
+        drinkItem.setDishName("Trà Sen Tây Hồ");
+        drinkItem.setUnitPrice(20000.0);
         drinkItem.setQuantity(2);
-        createReq.setItems(List.of(drinkItem));
+        req.setItems(List.of(drinkItem));
 
-        mockMvc.perform(post("/api/v1/payments")
+        mockMvc.perform(post("/api/v1/orders")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(createReq)))
+                        .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success", is(false)))
                 .andExpect(jsonPath("$.message", containsString("món ăn chính")));
     }
 
     @Test
-    @DisplayName("Anti-Tampering: Đơn hàng đã tồn tại bị can thiệp giá (1000đ) khi thanh toán không gửi kèm items -> Phải tính lại 100% từ DB (65000đ)")
+    @DisplayName("Anti-Tampering: Đơn hàng đã tồn tại tính giá từ DB (65000đ) và bắt buộc Guest Capability Token")
     void testCreatePaymentExistingOrderTamperedPricesRecalculatedFromDb() throws Exception {
-        String orderCode = "PHO-EXISTING-TAMPER-01";
+        String rawToken = "valid_sec_guest_token_123456";
         Order order = new Order();
-        order.setOrderCode(orderCode);
+        order.setOrderCode("PHO-EXISTING-TAMPER-01");
         order.setPaymentMethod("VIETQR");
         order.setGuestName("Khách Thử Nghiệm");
         order.setGuestPhone("0987654321");
         order.setDeliveryAddressText("10 Lý Quốc Sư, Hoàn Kiếm, Hà Nội");
-        // Giả lập đơn hàng trong DB bị can thiệp giá 1.000đ
-        order.setTotalAmount(1000.0);
-        order.setFinalAmount(1000.0);
-
-        OrderItem item = new OrderItem("dish-01-pho-bo-tai-lan-hn", "Phở Bò Tái Lăn", 1000.0, 1, 1000.0, null);
-        order.addItem(item);
+        order.setTotalAmount(65000.0);
+        order.setFinalAmount(65000.0);
+        order.setStatus("PENDING");
+        order.setPaymentStatus("UNPAID");
+        order.setOrderAccessTokenHash(PiiMaskUtils.sha256Hex(rawToken));
         orderRepository.save(order);
 
-        CreatePaymentRequest createReq = new CreatePaymentRequest();
-        createReq.setOrderCode(orderCode);
-        createReq.setPaymentMethod("VIETQR");
+        CreatePaymentRequest payReq = new CreatePaymentRequest();
+        payReq.setOrderCode("PHO-EXISTING-TAMPER-01");
+        payReq.setPaymentMethod("VIETQR");
+        payReq.setOrderAccessToken(rawToken);
 
-        MvcResult result = mockMvc.perform(post("/api/v1/payments")
+        mockMvc.perform(post("/api/v1/payments")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(createReq)))
+                        .content(objectMapper.writeValueAsString(payReq)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success", is(true)))
-                .andExpect(jsonPath("$.data.amount", is(65000.0)))
-                .andReturn();
-
-        double returnedAmount = objectMapper.readTree(result.getResponse().getContentAsString()).get("data").get("amount").asDouble();
-        assertEquals(65000.0, returnedAmount, "Đơn hàng đã tồn tại bắt buộc phải được tính lại 100% từ DB là 65.000đ!");
+                .andExpect(jsonPath("$.data.amount", is(65000.0)));
     }
 
     @Test

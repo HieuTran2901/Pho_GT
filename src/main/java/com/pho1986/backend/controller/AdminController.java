@@ -64,6 +64,18 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.ok(updated, "Cập nhật trạng thái đơn hàng thành công!"));
     }
 
+    @PostMapping("/orders/{id}/refund")
+    public ResponseEntity<ApiResponse<Order>> confirmRefund(
+            @PathVariable String id,
+            @RequestParam(required = false) Double refundAmount,
+            @RequestParam(required = false) String refundRef,
+            @RequestParam(required = false) String reason,
+            Authentication authentication) {
+        String adminPhone = (authentication != null) ? authentication.getName() : "ADMIN";
+        Order refunded = adminService.confirmRefund(id, adminPhone, refundAmount, refundRef, reason);
+        return ResponseEntity.ok(ApiResponse.ok(refunded, "Xác nhận hoàn tiền cho đơn hàng thành công!"));
+    }
+
     @GetMapping("/dishes")
     public ResponseEntity<ApiResponse<List<Dish>>> getDishes() {
         List<Dish> dishes = adminService.getAllDishes();

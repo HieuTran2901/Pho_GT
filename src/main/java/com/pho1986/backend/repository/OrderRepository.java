@@ -3,6 +3,7 @@ package com.pho1986.backend.repository;
 import com.pho1986.backend.model.entity.Order;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -38,6 +39,8 @@ public interface OrderRepository extends JpaRepository<Order, String> {
     @EntityGraph(attributePaths = {"items", "user"})
     List<Order> findByStatusInOrderByCreatedAtDesc(List<String> statuses);
 
+    Optional<Order> findByOrderCodeAndOrderAccessTokenHash(String orderCode, String orderAccessTokenHash);
+
     // --- CÁC TRUY VẤN TỔNG HỢP SIÊU TỐC TRÊN CSDL (DATABASE AGGREGATIONS) ---
 
     long countByStatus(String status);
@@ -45,9 +48,13 @@ public interface OrderRepository extends JpaRepository<Order, String> {
     @Query("SELECT COUNT(o) FROM Order o WHERE o.status IN :statuses")
     long countByStatusIn(@Param("statuses") List<String> statuses);
 
-    @Query("SELECT COALESCE(SUM(o.finalAmount), 0.0) FROM Order o WHERE o.paymentStatus = 'PAID' OR o.status = 'COMPLETED'")
+    @Query("SELECT COALESCE(SUM(o.finalAmount), 0.0) FROM Order o WHERE o.paymentStatus = 'PAID' AND o.status != 'CANCELLED'")
     Double sumTotalRevenue();
 
-    @Query("SELECT COALESCE(SUM(o.finalAmount), 0.0) FROM Order o WHERE o.createdAt >= :since AND (o.paymentStatus = 'PAID' OR o.status = 'COMPLETED')")
+    @Query("SELECT COALESCE(SUM(o.finalAmount), 0.0) FROM Order o WHERE o.createdAt >= :since AND o.paymentStatus = 'PAID' AND o.status != 'CANCELLED'")
     Double sumRevenueSince(@Param("since") LocalDateTime since);
+
+    @Modifying
+    @Query("UPDATE Order o SET o.paymentStatus = 'PAID', o.status = 'CONFIRMED' WHERE o.id = :orderId AND o.paymentStatus = 'UNPAID' AND o.status IN ('PENDING', 'CONFIRMED')")
+    int markOrderAsPaidIfUnpaid(@Param("orderId") String orderId);
 }

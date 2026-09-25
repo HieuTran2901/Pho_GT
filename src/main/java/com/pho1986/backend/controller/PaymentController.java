@@ -39,6 +39,7 @@ public class PaymentController {
     @PostMapping
     public ResponseEntity<ApiResponse<PaymentResponse>> createPayment(
             Authentication authentication,
+            @RequestHeader(value = "X-Order-Access-Token", required = false) String orderAccessTokenHeader,
             @Valid @RequestBody CreatePaymentRequest request) {
         String userId = null;
         if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getName())) {
@@ -50,6 +51,9 @@ public class PaymentController {
             } else if (principal != null) {
                 userId = authentication.getName();
             }
+        }
+        if (!org.springframework.util.StringUtils.hasText(request.getOrderAccessToken()) && org.springframework.util.StringUtils.hasText(orderAccessTokenHeader)) {
+            request.setOrderAccessToken(orderAccessTokenHeader);
         }
 
         PaymentResponse response = paymentService.createPayment(userId, request);

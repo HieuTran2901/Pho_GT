@@ -19,6 +19,7 @@ public class PaymentDtos {
         private Double amount;
         private String tableNumber;
         private String appliedGiftId;
+        private String orderAccessToken;
         private java.util.List<OrderDtos.CreateOrderItemRequest> items;
 
         public String getOrderCode() { return orderCode; }
@@ -39,6 +40,8 @@ public class PaymentDtos {
         public void setTableNumber(String tableNumber) { this.tableNumber = tableNumber; }
         public String getAppliedGiftId() { return appliedGiftId; }
         public void setAppliedGiftId(String appliedGiftId) { this.appliedGiftId = appliedGiftId; }
+        public String getOrderAccessToken() { return orderAccessToken; }
+        public void setOrderAccessToken(String orderAccessToken) { this.orderAccessToken = orderAccessToken; }
         public java.util.List<OrderDtos.CreateOrderItemRequest> getItems() { return items; }
         public void setItems(java.util.List<OrderDtos.CreateOrderItemRequest> items) { this.items = items; }
     }

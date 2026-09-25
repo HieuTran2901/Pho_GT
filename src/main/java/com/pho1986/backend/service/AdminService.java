@@ -3,6 +3,7 @@ package com.pho1986.backend.service;
 import com.pho1986.backend.model.dto.AdminDashboardDtos.*;
 import com.pho1986.backend.model.entity.*;
 import com.pho1986.backend.repository.*;
+import com.pho1986.backend.service.payment.PaymentSettlementHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,25 +23,31 @@ public class AdminService {
     private final DishRepository dishRepository;
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
-    private final LoyaltyAccountRepository loyaltyAccountRepository;
-    private final LoyaltyTransactionRepository loyaltyTransactionRepository;
     private final TableService tableService;
+    private final PaymentSettlementHelper paymentSettlementHelper;
+    private final LoyaltyService loyaltyService;
+    private final CustomerGiftService customerGiftService;
+    private final VoucherService voucherService;
 
     public AdminService(
             OrderRepository orderRepository,
             DishRepository dishRepository,
             CategoryRepository categoryRepository,
             UserRepository userRepository,
-            LoyaltyAccountRepository loyaltyAccountRepository,
-            LoyaltyTransactionRepository loyaltyTransactionRepository,
-            TableService tableService) {
+            TableService tableService,
+            PaymentSettlementHelper paymentSettlementHelper,
+            LoyaltyService loyaltyService,
+            CustomerGiftService customerGiftService,
+            VoucherService voucherService) {
         this.orderRepository = orderRepository;
         this.dishRepository = dishRepository;
         this.categoryRepository = categoryRepository;
         this.userRepository = userRepository;
-        this.loyaltyAccountRepository = loyaltyAccountRepository;
-        this.loyaltyTransactionRepository = loyaltyTransactionRepository;
         this.tableService = tableService;
+        this.paymentSettlementHelper = paymentSettlementHelper;
+        this.loyaltyService = loyaltyService;
+        this.customerGiftService = customerGiftService;
+        this.voucherService = voucherService;
     }
 
     @Transactional(readOnly = true)
@@ -90,36 +97,45 @@ public class AdminService {
                 tableService.markTableStatus(order.getTableNumber(), "AVAILABLE");
             }
 
-            // Tự động chuyển paymentStatus sang PAID nếu đơn hoàn tất
+            // Quyết toán thống nhất nếu đơn hoàn tất
             if ("COMPLETED".equals(newStatus)) {
-                order.setPaymentStatus("PAID");
-
-                // Tích điểm loyalty nếu đơn thuộc về User và chưa được cộng
-                if (order.getUser() != null) {
-                    User user = order.getUser();
-                    LoyaltyAccount account = user.getLoyaltyAccount();
-                    if (account != null) {
-                        int pointsEarned = (int) (order.getFinalAmount() / 1000);
-                        if (pointsEarned > 0) {
-                            account.setTotalPoints(account.getTotalPoints() + pointsEarned);
-                            account.setAvailablePoints(account.getAvailablePoints() + pointsEarned);
-                            account.setTotalSpent(account.getTotalSpent() + order.getFinalAmount());
-                            account.setTotalOrdersCount(account.getTotalOrdersCount() + 1);
-                            loyaltyAccountRepository.save(account);
-
-                            loyaltyTransactionRepository.save(new LoyaltyTransaction(
-                                    account, order.getId(), pointsEarned, "EARN_ORDER",
-                                    account.getAvailablePoints(), "Tích điểm từ đơn " + order.getOrderCode()
-                            ));
-                        }
-                    }
+                paymentSettlementHelper.settleOrderDirectly(order, "[Admin Settle COMPLETED]");
+            } else if ("CANCELLED".equals(newStatus)) {
+                if ("PAID".equals(order.getPaymentStatus())) {
+                    order.setPaymentStatus("REFUND_PENDING");
+                } else {
+                    customerGiftService.releaseGiftFromOrder(order.getId(), order.getOrderCode());
                 }
             }
         }
 
         if (request.getPaymentStatus() != null && !request.getPaymentStatus().trim().isEmpty()) {
-            order.setPaymentStatus(request.getPaymentStatus().toUpperCase().trim());
+            String paymentStatusReq = request.getPaymentStatus().toUpperCase().trim();
+            if ("PAID".equals(paymentStatusReq)) {
+                paymentSettlementHelper.settleOrderDirectly(order, "[Admin Set PAID]");
+            } else {
+                order.setPaymentStatus(paymentStatusReq);
+            }
         }
+
+        return orderRepository.save(order);
+    }
+
+    @Transactional
+    public Order confirmRefund(String orderId, String adminUserId, Double refundAmount, String refundRef, String reason) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng: " + orderId));
+        order.setStatus("CANCELLED");
+        order.setPaymentStatus("REFUNDED");
+        order.setRefundAmount(refundAmount != null ? refundAmount : order.getFinalAmount());
+        order.setRefundedBy(adminUserId);
+        order.setRefundRef(refundRef);
+        order.setRefundReason(reason);
+        order.setRefundedAt(LocalDateTime.now());
+
+        loyaltyService.revertLoyaltyPointsForOrder(order);
+        customerGiftService.releaseGiftFromOrder(order.getId(), order.getOrderCode());
+        voucherService.revertVoucherRedemption(order.getId());
 
         return orderRepository.save(order);
     }

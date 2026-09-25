@@ -11,6 +11,7 @@ import org.springframework.util.StringUtils;
 import java.security.SecureRandom;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -24,29 +25,32 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
     private final TasteProfileRepository tasteProfileRepository;
-    private final LoyaltyAccountRepository loyaltyAccountRepository;
-    private final LoyaltyTransactionRepository loyaltyTransactionRepository;
     private final DishRepository dishRepository;
     private final TableService tableService;
+    private final CustomerGiftRepository customerGiftRepository;
     private final CustomerGiftService customerGiftService;
+    private final LoyaltyService loyaltyService;
+    private final VoucherService voucherService;
 
     public OrderService(
             OrderRepository orderRepository,
             UserRepository userRepository,
             TasteProfileRepository tasteProfileRepository,
-            LoyaltyAccountRepository loyaltyAccountRepository,
-            LoyaltyTransactionRepository loyaltyTransactionRepository,
             DishRepository dishRepository,
             TableService tableService,
-            CustomerGiftService customerGiftService) {
+            CustomerGiftRepository customerGiftRepository,
+            CustomerGiftService customerGiftService,
+            LoyaltyService loyaltyService,
+            VoucherService voucherService) {
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
         this.tasteProfileRepository = tasteProfileRepository;
-        this.loyaltyAccountRepository = loyaltyAccountRepository;
-        this.loyaltyTransactionRepository = loyaltyTransactionRepository;
         this.dishRepository = dishRepository;
         this.tableService = tableService;
+        this.customerGiftRepository = customerGiftRepository;
         this.customerGiftService = customerGiftService;
+        this.loyaltyService = loyaltyService;
+        this.voucherService = voucherService;
     }
 
     /**
@@ -76,11 +80,63 @@ public class OrderService {
             throw new IllegalArgumentException("Quý khách vui lòng cung cấp tên và số điện thoại nhận hàng");
         }
 
-        double totalAmount = request.getItems().stream()
-                .mapToDouble(i -> i.getUnitPrice() * i.getQuantity())
-                .sum();
+        if (request.getItems() == null || request.getItems().isEmpty()) {
+            throw new IllegalArgumentException("Đơn hàng phải có ít nhất 01 món ăn.");
+        }
+
+        // 1. Kiểm tra bắt buộc dishId trên từng món ăn
+        for (CreateOrderItemRequest itemReq : request.getItems()) {
+            if (!StringUtils.hasText(itemReq.getDishId())) {
+                throw new IllegalArgumentException("Mã món ăn (dishId) không hợp lệ hoặc để trống trong yêu cầu đặt hàng.");
+            }
+        }
+
+        // 2. Thu thập danh sách dishId duy nhất để truy vấn batch DB (chống N+1 query theo TEST-R015)
+        List<String> distinctDishIds = request.getItems().stream()
+                .map(CreateOrderItemRequest::getDishId)
+                .map(String::trim)
+                .distinct()
+                .toList();
+
+        Map<String, Dish> dishMap = dishRepository.findAllById(distinctDishIds).stream()
+                .collect(Collectors.toMap(Dish::getId, Function.identity(), (a, b) -> a));
+
+        // 3. Khởi tạo danh sách OrderItem và tính đơn giá/thành tiền 100% từ Server DB (hỗ trợ món trùng khác tùy biến)
+        List<OrderItem> orderItems = new java.util.ArrayList<>();
+        for (CreateOrderItemRequest itemReq : request.getItems()) {
+            String dishId = itemReq.getDishId().trim();
+            Dish dish = dishMap.get(dishId);
+            if (dish == null) {
+                throw new IllegalArgumentException("Món ăn không tồn tại trong thực đơn: " + dishId);
+            }
+            if (Boolean.FALSE.equals(dish.getIsAvailable())) {
+                throw new IllegalStateException("Món \"" + dish.getName() + "\" hiện đang tạm hết hàng tại quán. Quý khách vui lòng chọn món khác.");
+            }
+            if (itemReq.getQuantity() == null || itemReq.getQuantity() <= 0) {
+                throw new IllegalArgumentException("Số lượng món ăn phải lớn hơn 0: " + dishId);
+            }
+
+            Double serverPrice = dish.getPrice();
+            if (serverPrice == null || serverPrice <= 0) {
+                throw new IllegalArgumentException("Đơn giá món ăn không hợp lệ trong hệ thống: " + dishId);
+            }
+
+            int qty = itemReq.getQuantity();
+            double subtotal = serverPrice * qty;
+            String name = StringUtils.hasText(dish.getName()) ? dish.getName() : itemReq.getDishName();
+
+            orderItems.add(new OrderItem(
+                    dish.getId(),
+                    name,
+                    serverPrice,
+                    qty,
+                    subtotal,
+                    itemReq.getCustomizedOptions()
+            ));
+        }
+
+        double totalAmount = orderItems.stream().mapToDouble(OrderItem::getSubtotal).sum();
         double discountAmount = 0.0;
-        double finalAmount = totalAmount - discountAmount;
 
         Order order = new Order();
         order.setOrderCode(generateOrderCode());
@@ -89,94 +145,124 @@ public class OrderService {
         order.setGuestPhone(user != null ? null : request.getGuestPhone());
         order.setDeliveryAddressText(request.getDeliveryAddressText());
         order.setPaymentMethod(request.getPaymentMethod());
-        order.setPaymentStatus("COD".equalsIgnoreCase(request.getPaymentMethod()) ? "UNPAID" : "PAID");
-        order.setTotalAmount(totalAmount);
-        order.setDiscountAmount(discountAmount);
-        order.setFinalAmount(finalAmount);
+        // BẤT BIẾN: 100% đơn hàng mới luôn khởi tạo ở trạng thái UNPAID
+        order.setPaymentStatus("UNPAID");
+        order.setStatus("PENDING");
         order.setNotes(request.getNotes());
         order.setTableNumber(request.getTableNumber());
-        if (StringUtils.hasText(request.getAppliedGiftId())) {
-            order.setVoucherCode(request.getAppliedGiftId().trim());
+
+        // Guest Capability Token: sinh 256-bit token ngẫu nhiên, chỉ lưu hash và trả token raw 1 lần duy nhất
+        if (user == null) {
+            byte[] tokenBytes = new byte[32];
+            SECURE_RANDOM.nextBytes(tokenBytes);
+            String rawAccessToken = java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(tokenBytes);
+            order.setOrderAccessTokenHash(com.pho1986.backend.common.PiiMaskUtils.sha256Hex(rawAccessToken));
+            order.setRawAccessToken(rawAccessToken);
         }
 
-        if (StringUtils.hasText(request.getTableNumber())) {
-            tableService.validateTableAvailable(request.getTableNumber());
-        }
-
-        // [Performance Guard] Batch fetch all dishes to avoid N+1 SELECT queries
-        List<String> dishIds = request.getItems().stream()
-                .map(CreateOrderItemRequest::getDishId)
-                .filter(StringUtils::hasText)
-                .distinct()
-                .toList();
-
-        if (!dishIds.isEmpty()) {
-            Map<String, Dish> dishMap = dishRepository.findAllById(dishIds).stream()
-                    .collect(Collectors.toMap(Dish::getId, Function.identity()));
-            for (CreateOrderItemRequest itemReq : request.getItems()) {
-                if (StringUtils.hasText(itemReq.getDishId())) {
-                    Dish dish = dishMap.get(itemReq.getDishId());
-                    if (dish != null && Boolean.FALSE.equals(dish.getIsAvailable())) {
-                        throw new IllegalStateException("Món \"" + dish.getName() + "\" hiện đang tạm hết hàng tại quán. Quý khách vui lòng chọn món khác.");
-                    }
-                }
+        // Kiểm tra bắt buộc có món ăn chính nếu đặt bàn hoặc áp dụng ưu đãi
+        boolean hasMainDish = orderItems.stream().anyMatch(item -> {
+            Dish d = dishMap.get(item.getDishId());
+            if (d == null) return false;
+            if (d.getCategory() == null || d.getCategory().getSlug() == null) {
+                String name = d.getName() != null ? d.getName().toLowerCase() : "";
+                return name.contains("phở") || name.contains("pho");
             }
+            String slug = d.getCategory().getSlug().toLowerCase();
+            return !slug.contains("mon-an-kem") && !slug.contains("do-uong");
+        });
+
+        if ((StringUtils.hasText(request.getTableNumber()) || StringUtils.hasText(request.getAppliedGiftId())) && !hasMainDish) {
+            throw new IllegalArgumentException("Quý khách cần chọn ít nhất 01 món ăn chính (không áp dụng cho đơn chỉ gồm đồ uống hoặc món ăn kèm).");
         }
 
-        for (CreateOrderItemRequest itemReq : request.getItems()) {
-            OrderItem item = new OrderItem(
-                    itemReq.getDishId(),
-                    itemReq.getDishName(),
-                    itemReq.getUnitPrice(),
-                    itemReq.getQuantity(),
-                    itemReq.getUnitPrice() * itemReq.getQuantity(),
-                    itemReq.getCustomizedOptions()
-            );
-            order.addItem(item);
-        }
-
-        order = orderRepository.save(order);
-
-        if (StringUtils.hasText(request.getTableNumber())) {
-            tableService.markTableStatus(request.getTableNumber(), "RESERVED");
-        }
-
-        // Tích điểm cho thành viên
-        if (user != null) {
-            int earnedPoints = Math.max(10, (int) Math.floor(finalAmount / 1000.0));
-            LoyaltyAccount loyalty = loyaltyAccountRepository.findByUserId(user.getId()).orElse(null);
-
-            if (loyalty != null) {
-                int newTotal = loyalty.getTotalPoints() + earnedPoints;
-                int newAvail = loyalty.getAvailablePoints() + earnedPoints;
-                loyalty.setTotalPoints(newTotal);
-                loyalty.setAvailablePoints(newAvail);
-                loyalty.setTotalSpent(loyalty.getTotalSpent() + finalAmount);
-                loyalty.setTotalOrdersCount(loyalty.getTotalOrdersCount() + 1);
-
-                String tier = (newTotal >= 2000) ? "KIM_CUONG" : (newTotal >= 1000) ? "VANG" : (newTotal >= 500) ? "BAC" : "DONG";
-                loyalty.setMembershipTier(tier);
-                loyaltyAccountRepository.save(loyalty);
-
-                loyaltyTransactionRepository.save(new LoyaltyTransaction(
-                        loyalty, order.getId(), earnedPoints, "EARN_ORDER", newAvail, "Tích điểm đơn hàng #" + order.getOrderCode()
-                ));
-            }
-        }
-
-        // Tự động đánh dấu vé quà tặng là ĐÃ SỬ DỤNG
+        // Kiểm tra và giữ chỗ phiếu quà tặng nguyên tử (15 phút TTL)
         if (StringUtils.hasText(request.getAppliedGiftId())) {
+            String cleanGiftId = request.getAppliedGiftId().trim();
             String targetUserId = (user != null) ? user.getId() : null;
             if (targetUserId == null && StringUtils.hasText(request.getGuestPhone())) {
                 String cleanPhone = request.getGuestPhone().replaceAll("[\\s.-]+", "");
                 targetUserId = userRepository.findByPhone(cleanPhone).map(User::getId).orElse(null);
             }
             if (targetUserId != null) {
-                customerGiftService.applyGiftToOrder(targetUserId, request.getAppliedGiftId(), order.getOrderCode());
+                Optional<CustomerGift> optGift = customerGiftService.reserveGiftForOrder(targetUserId, cleanGiftId, order.getOrderCode(), 15);
+                if (optGift.isPresent()) {
+                    CustomerGift gift = optGift.get();
+                    order.setVoucherCode(gift.getCode());
+                    if ("DISCOUNT_CASH".equalsIgnoreCase(gift.getRewardType())
+                            && gift.getDiscountValue() != null && gift.getDiscountValue() > 0) {
+                        if (gift.getMinOrderAmount() == null || totalAmount >= gift.getMinOrderAmount()) {
+                            discountAmount = Math.min(totalAmount, gift.getDiscountValue());
+                        }
+                    }
+                }
+            } else {
+                order.setVoucherCode(cleanGiftId);
             }
         }
 
+        double finalAmount = Math.max(0.0, totalAmount - discountAmount);
+        order.setTotalAmount(totalAmount);
+        order.setDiscountAmount(discountAmount);
+        order.setFinalAmount(finalAmount);
+
+        if (StringUtils.hasText(request.getTableNumber())) {
+            tableService.validateTableAvailable(request.getTableNumber());
+        }
+
+        orderItems.forEach(order::addItem);
+        order = orderRepository.save(order);
+
+        if (StringUtils.hasText(request.getTableNumber())) {
+            tableService.markTableStatus(request.getTableNumber(), "RESERVED");
+        }
+
         return order;
+    }
+
+    @Transactional
+    public Order cancelOrder(String orderId, String reason) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng: " + orderId));
+        if ("CANCELLED".equals(order.getStatus())) {
+            return order;
+        }
+        order.setStatus("CANCELLED");
+        if (StringUtils.hasText(order.getTableNumber())) {
+            tableService.markTableStatus(order.getTableNumber(), "AVAILABLE");
+            order.setTableNumber(null);
+        }
+        if ("PAID".equals(order.getPaymentStatus())) {
+            order.setPaymentStatus("REFUND_PENDING");
+            order.setRefundReason(reason);
+        } else {
+            customerGiftService.releaseGiftFromOrder(order.getId(), order.getOrderCode());
+        }
+        return orderRepository.save(order);
+    }
+
+    @Transactional
+    public Order confirmRefund(String orderId, String adminUserId, Double refundAmount, String refundRef, String reason) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng: " + orderId));
+        if (!"REFUND_PENDING".equals(order.getPaymentStatus()) && !"PAID".equals(order.getPaymentStatus())) {
+            throw new IllegalStateException("Đơn hàng không ở trạng thái chờ hoàn tiền (REFUND_PENDING): " + order.getPaymentStatus());
+        }
+        order.setStatus("CANCELLED");
+        order.setPaymentStatus("REFUNDED");
+        order.setRefundAmount(refundAmount != null ? refundAmount : order.getFinalAmount());
+        order.setRefundedBy(adminUserId);
+        order.setRefundRef(refundRef);
+        order.setRefundReason(reason);
+        order.setRefundedAt(java.time.LocalDateTime.now());
+
+        // Thu hồi điểm thưởng thành viên đã tích lũy
+        loyaltyService.revertLoyaltyPointsForOrder(order);
+        // Giải phóng vé quà & sổ cái voucher
+        customerGiftService.releaseGiftFromOrder(order.getId(), order.getOrderCode());
+        voucherService.revertVoucherRedemption(order.getId());
+
+        return orderRepository.save(order);
     }
 
     @Transactional(readOnly = true)

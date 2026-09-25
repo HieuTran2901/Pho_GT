@@ -8,7 +8,9 @@ import com.pho1986.backend.model.dto.PaymentDtos.CreatePaymentRequest;
 import com.pho1986.backend.model.dto.PaymentDtos.SepayIpnPayload;
 import com.pho1986.backend.model.dto.PaymentDtos.MomoIpnRequest;
 import com.pho1986.backend.security.MomoSigner;
+import com.pho1986.backend.model.entity.Dish;
 import com.pho1986.backend.model.entity.Order;
+import com.pho1986.backend.repository.DishRepository;
 import com.pho1986.backend.service.OrderService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -22,6 +24,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -43,10 +46,39 @@ public class PaymentControllerTest {
     @Autowired
     private OrderService orderService;
 
+    @Autowired
+    private DishRepository dishRepository;
+
+    @Autowired
+    private com.pho1986.backend.repository.CategoryRepository categoryRepository;
+
     private Order testOrder;
+    private String testOrderToken;
+
+    private CreatePaymentRequest newPaymentRequest(String method) {
+        CreatePaymentRequest req = new CreatePaymentRequest();
+        req.setOrderCode(testOrder.getOrderCode());
+        req.setPaymentMethod(method);
+        req.setOrderAccessToken(testOrderToken);
+        return req;
+    }
 
     @BeforeEach
     void setUp() {
+        Dish testDish = dishRepository.findAll().stream()
+                .filter(d -> Boolean.TRUE.equals(d.getIsAvailable()) && Double.valueOf(75000.0).equals(d.getPrice()))
+                .findFirst()
+                .orElseGet(() -> {
+                    com.pho1986.backend.model.entity.Category cat = categoryRepository.findAll().stream().findFirst().orElse(null);
+                    Dish d = new Dish();
+                    d.setName("Phở Tái Bắp Bò Hoa 75K");
+                    d.setSlug("pho-tai-bap-bo-hoa-75k-" + UUID.randomUUID());
+                    d.setPrice(75000.0);
+                    d.setIsAvailable(true);
+                    d.setCategory(cat);
+                    return dishRepository.save(d);
+                });
+
         CreateOrderRequest orderReq = new CreateOrderRequest();
         orderReq.setGuestName("Trần Trọng Minh");
         orderReq.setGuestPhone("0912345678");
@@ -54,20 +86,20 @@ public class PaymentControllerTest {
         orderReq.setPaymentMethod("COD");
 
         CreateOrderItemRequest item = new CreateOrderItemRequest();
-        item.setDishName("Phở Tái Bắp Bò Hoa");
-        item.setUnitPrice(75000.0);
+        item.setDishId(testDish.getId());
+        item.setDishName(testDish.getName());
+        item.setUnitPrice(testDish.getPrice());
         item.setQuantity(2);
         orderReq.setItems(List.of(item));
 
         testOrder = orderService.createOrder(null, orderReq);
+        testOrderToken = testOrder.getRawAccessToken();
     }
 
     @Test
     @DisplayName("1. Khởi tạo thanh toán VietQR động -> Nhận URL VietQR chuẩn Napas và hạn 15 phút")
     void testCreatePaymentVietQR() throws Exception {
-        CreatePaymentRequest request = new CreatePaymentRequest();
-        request.setOrderCode(testOrder.getOrderCode());
-        request.setPaymentMethod("VIETQR");
+        CreatePaymentRequest request = newPaymentRequest("VIETQR");
 
         mockMvc.perform(post("/api/v1/payments")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -86,9 +118,7 @@ public class PaymentControllerTest {
     @Test
     @DisplayName("2. Khởi tạo thanh toán COD (Tiền mặt khi nhận phở) -> Trạng thái PENDING, completed = true")
     void testCreatePaymentCOD() throws Exception {
-        CreatePaymentRequest request = new CreatePaymentRequest();
-        request.setOrderCode(testOrder.getOrderCode());
-        request.setPaymentMethod("COD");
+        CreatePaymentRequest request = newPaymentRequest("COD");
 
         mockMvc.perform(post("/api/v1/payments")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -103,9 +133,7 @@ public class PaymentControllerTest {
     @Test
     @DisplayName("3. Khởi tạo thanh toán Đặt Bàn (POST_PAID_AT_STORE) -> Giữ bàn 30 phút, thanh toán sau")
     void testCreatePaymentPostPaidAtStore() throws Exception {
-        CreatePaymentRequest request = new CreatePaymentRequest();
-        request.setOrderCode(testOrder.getOrderCode());
-        request.setPaymentMethod("POST_PAID_AT_STORE");
+        CreatePaymentRequest request = newPaymentRequest("POST_PAID_AT_STORE");
 
         mockMvc.perform(post("/api/v1/payments")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -121,9 +149,7 @@ public class PaymentControllerTest {
     @DisplayName("4. Xác nhận thanh toán thành công với Secret Key hợp lệ -> Chuyển status SUCCESS và cập nhật đơn hàng PAID")
     void testConfirmPaymentSuccess() throws Exception {
         // Tạo payment VietQR trước
-        CreatePaymentRequest createReq = new CreatePaymentRequest();
-        createReq.setOrderCode(testOrder.getOrderCode());
-        createReq.setPaymentMethod("VIETQR");
+        CreatePaymentRequest createReq = newPaymentRequest("VIETQR");
 
         MvcResult result = mockMvc.perform(post("/api/v1/payments")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -157,9 +183,7 @@ public class PaymentControllerTest {
     @Test
     @DisplayName("5. [Bảo mật] Xác nhận thanh toán với Secret Key giả mạo -> Bị chặn 403 Forbidden")
     void testConfirmPaymentInvalidSecretKey() throws Exception {
-        CreatePaymentRequest createReq = new CreatePaymentRequest();
-        createReq.setOrderCode(testOrder.getOrderCode());
-        createReq.setPaymentMethod("VIETQR");
+        CreatePaymentRequest createReq = newPaymentRequest("VIETQR");
 
         MvcResult result = mockMvc.perform(post("/api/v1/payments")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -185,9 +209,7 @@ public class PaymentControllerTest {
     @Test
     @DisplayName("6. [Bảo mật] Xác nhận thanh toán với số tiền bị sửa đổi (Tampered Amount) -> Bị chặn 400 Bad Request")
     void testConfirmPaymentTamperedAmount() throws Exception {
-        CreatePaymentRequest createReq = new CreatePaymentRequest();
-        createReq.setOrderCode(testOrder.getOrderCode());
-        createReq.setPaymentMethod("VIETQR");
+        CreatePaymentRequest createReq = newPaymentRequest("VIETQR");
 
         MvcResult result = mockMvc.perform(post("/api/v1/payments")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -213,9 +235,7 @@ public class PaymentControllerTest {
     @Test
     @DisplayName("7. [Bảo mật] Chống Replay Attack: Gửi Webhook xác nhận nhiều lần -> Idempotent trả lời an toàn")
     void testConfirmPaymentReplayAttackIdempotent() throws Exception {
-        CreatePaymentRequest createReq = new CreatePaymentRequest();
-        createReq.setOrderCode(testOrder.getOrderCode());
-        createReq.setPaymentMethod("VIETQR");
+        CreatePaymentRequest createReq = newPaymentRequest("VIETQR");
 
         MvcResult result = mockMvc.perform(post("/api/v1/payments")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -249,9 +269,7 @@ public class PaymentControllerTest {
     @DisplayName("8. [SePay] Nhận Webhook IPN với Secret Token hợp lệ -> Cập nhật SUCCESS và đơn hàng PAID")
     void testSepayIpnSuccess() throws Exception {
         // Tạo giao dịch VietQR trước
-        CreatePaymentRequest createReq = new CreatePaymentRequest();
-        createReq.setOrderCode(testOrder.getOrderCode());
-        createReq.setPaymentMethod("VIETQR");
+        CreatePaymentRequest createReq = newPaymentRequest("VIETQR");
 
         mockMvc.perform(post("/api/v1/payments")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -296,9 +314,7 @@ public class PaymentControllerTest {
     @Test
     @DisplayName("10. [MoMo] Nhận Webhook IPN với chữ ký HMAC-SHA256 hợp lệ -> Cập nhật SUCCESS và đơn hàng PAID")
     void testMomoIpnSuccess() throws Exception {
-        CreatePaymentRequest createReq = new CreatePaymentRequest();
-        createReq.setOrderCode(testOrder.getOrderCode());
-        createReq.setPaymentMethod("MOMO");
+        CreatePaymentRequest createReq = newPaymentRequest("MOMO");
 
         mockMvc.perform(post("/api/v1/payments")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -376,5 +392,33 @@ public class PaymentControllerTest {
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.success", is(false)))
                 .andExpect(jsonPath("$.message", containsString("Chữ ký HMAC không hợp lệ")));
+    }
+
+    @Test
+    @DisplayName("12. [Bảo mật] Khách vãng lai khởi tạo thanh toán thiếu orderAccessToken -> Bị chặn 403 Forbidden")
+    void testCreatePaymentGuestMissingTokenRejected() throws Exception {
+        CreatePaymentRequest req = new CreatePaymentRequest();
+        req.setOrderCode(testOrder.getOrderCode());
+        req.setPaymentMethod("VIETQR");
+        // Không truyền token
+
+        mockMvc.perform(post("/api/v1/payments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("13. [Bảo mật] Khách vãng lai khởi tạo thanh toán sai orderAccessToken -> Bị chặn 403 Forbidden")
+    void testCreatePaymentGuestWrongTokenRejected() throws Exception {
+        CreatePaymentRequest req = new CreatePaymentRequest();
+        req.setOrderCode(testOrder.getOrderCode());
+        req.setPaymentMethod("VIETQR");
+        req.setOrderAccessToken("forged_wrong_access_token_12345");
+
+        mockMvc.perform(post("/api/v1/payments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isForbidden());
     }
 }

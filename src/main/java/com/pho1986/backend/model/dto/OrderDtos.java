@@ -183,4 +183,46 @@ public class OrderDtos {
         public List<OrderItem> getItems() { return items; }
         public boolean isOwner() { return isOwner; }
     }
+
+    public static class CreateOrderResponse {
+        private String id;
+        private String orderCode;
+        private String status;
+        private String paymentStatus;
+        private Double totalAmount;
+        private Double discountAmount;
+        private Double finalAmount;
+        private String paymentMethod;
+        private String orderAccessToken; // Trả về 1 lần duy nhất cho Guest
+        private LocalDateTime createdAt;
+        private List<OrderItem> items;
+
+        public static CreateOrderResponse fromOrder(Order order, String rawToken) {
+            CreateOrderResponse res = new CreateOrderResponse();
+            res.id = order.getId();
+            res.orderCode = order.getOrderCode();
+            res.status = order.getStatus();
+            res.paymentStatus = order.getPaymentStatus();
+            res.totalAmount = order.getTotalAmount();
+            res.discountAmount = order.getDiscountAmount();
+            res.finalAmount = order.getFinalAmount();
+            res.paymentMethod = order.getPaymentMethod();
+            res.orderAccessToken = rawToken;
+            res.createdAt = order.getCreatedAt();
+            res.items = order.getItems();
+            return res;
+        }
+
+        public String getId() { return id; }
+        public String getOrderCode() { return orderCode; }
+        public String getStatus() { return status; }
+        public String getPaymentStatus() { return paymentStatus; }
+        public Double getTotalAmount() { return totalAmount; }
+        public Double getDiscountAmount() { return discountAmount; }
+        public Double getFinalAmount() { return finalAmount; }
+        public String getPaymentMethod() { return paymentMethod; }
+        public String getOrderAccessToken() { return orderAccessToken; }
+        public LocalDateTime getCreatedAt() { return createdAt; }
+        public List<OrderItem> getItems() { return items; }
+    }
 }

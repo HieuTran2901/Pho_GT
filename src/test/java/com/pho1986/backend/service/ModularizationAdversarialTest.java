@@ -2,6 +2,7 @@ package com.pho1986.backend.service;
 
 import com.pho1986.backend.common.AccountLockedException;
 import com.pho1986.backend.common.LoginRateLimitExceededException;
+import com.pho1986.backend.common.PiiMaskUtils;
 import com.pho1986.backend.model.dto.AuthDtos.AuthResponse;
 import com.pho1986.backend.model.dto.AuthDtos.LoginRequest;
 import com.pho1986.backend.model.dto.AuthDtos.PostOrderClaimRequest;
@@ -77,15 +78,34 @@ public class ModularizationAdversarialTest {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    private Order createTestOrder(String orderCode, String rawToken, Double amount) {
+        Order order = new Order();
+        order.setOrderCode(orderCode);
+        order.setPaymentMethod("VIETQR");
+        order.setGuestName("Khách Hàng Test");
+        order.setGuestPhone("0981112233");
+        order.setDeliveryAddressText("10 Lý Quốc Sư");
+        order.setTotalAmount(amount);
+        order.setFinalAmount(amount);
+        order.setStatus("PENDING");
+        order.setPaymentStatus("UNPAID");
+        order.setOrderAccessTokenHash(PiiMaskUtils.sha256Hex(rawToken));
+        return orderRepository.save(order);
+    }
+
     @Test
     @DisplayName("TEST-R015: Payment gateway dispatch executes strictly OUT of database transaction")
     void testPaymentGatewayDispatchOutOfTransaction() {
         String orderCode = "TEST-OOT-" + System.currentTimeMillis();
+        String rawToken = "token_oot_" + System.currentTimeMillis();
+        createTestOrder(orderCode, rawToken, 65000.0);
+
         CreatePaymentRequest request = new CreatePaymentRequest();
         request.setOrderCode(orderCode);
         request.setPaymentMethod("VIETQR");
         request.setCustomerName("Adversarial Tester");
         request.setPhone("0981112233");
+        request.setOrderAccessToken(rawToken);
 
         CreateOrderItemRequest item = new CreateOrderItemRequest();
         item.setDishId("dish-01-pho-bo-tai-lan-hn");
@@ -111,10 +131,14 @@ public class ModularizationAdversarialTest {
     @DisplayName("Payment Idempotency & Rollback: Duplicate confirmation is idempotent; tampered amount rolls back")
     void testPaymentIdempotencyAndRollback() {
         String orderCode = "TEST-IDEM-" + System.currentTimeMillis();
+        String rawToken = "token_idem_" + System.currentTimeMillis();
+        createTestOrder(orderCode, rawToken, 65000.0);
+
         CreatePaymentRequest req = new CreatePaymentRequest();
         req.setOrderCode(orderCode);
         req.setPaymentMethod("VIETQR");
         req.setPhone("0982223344");
+        req.setOrderAccessToken(rawToken);
 
         CreateOrderItemRequest item = new CreateOrderItemRequest();
         item.setDishId("dish-01-pho-bo-tai-lan-hn");

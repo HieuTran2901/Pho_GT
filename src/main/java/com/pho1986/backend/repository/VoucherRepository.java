@@ -31,4 +31,8 @@ public interface VoucherRepository extends JpaRepository<Voucher, String> {
     @Query("UPDATE Voucher v SET v.usedCount = v.usedCount + 1, v.updatedAt = :now " +
            "WHERE v.id = :id AND (v.usageLimit IS NULL OR v.usedCount < v.usageLimit)")
     int incrementUsedCount(@Param("id") String id, @Param("now") LocalDateTime now);
+
+    @Modifying
+    @Query("UPDATE Voucher v SET v.usedCount = CASE WHEN v.usedCount > 0 THEN v.usedCount - 1 ELSE 0 END, v.updatedAt = :now WHERE v.id = :id")
+    int decrementUsedCount(@Param("id") String id, @Param("now") LocalDateTime now);
 }

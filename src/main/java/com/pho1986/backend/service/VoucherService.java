@@ -4,6 +4,8 @@ import com.pho1986.backend.dto.VoucherCreateUpdateDto;
 import com.pho1986.backend.dto.VoucherDto;
 import com.pho1986.backend.dto.VoucherValidateResponseDto;
 import com.pho1986.backend.model.entity.Voucher;
+import com.pho1986.backend.model.entity.VoucherRedemption;
+import com.pho1986.backend.repository.VoucherRedemptionRepository;
 import com.pho1986.backend.repository.VoucherRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,14 +23,16 @@ public class VoucherService {
     private static final Logger log = LoggerFactory.getLogger(VoucherService.class);
 
     private final VoucherRepository voucherRepository;
+    private final VoucherRedemptionRepository voucherRedemptionRepository;
 
     // In-Memory Cache (TTL 60s) tối ưu hiệu năng truy vấn
     private volatile List<Voucher> cachedActiveVouchers = null;
     private volatile long lastCacheTime = 0L;
     private static final long CACHE_TTL_MS = 60_000L;
 
-    public VoucherService(VoucherRepository voucherRepository) {
+    public VoucherService(VoucherRepository voucherRepository, VoucherRedemptionRepository voucherRedemptionRepository) {
         this.voucherRepository = voucherRepository;
+        this.voucherRedemptionRepository = voucherRedemptionRepository;
     }
 
     private synchronized void evictCache() {
@@ -124,6 +128,50 @@ public class VoucherService {
                 discountAmount,
                 finalAmount
         );
+    }
+
+    @Transactional
+    public boolean recordVoucherRedemption(String code, String orderId, String userId, Double discountAmount) {
+        if (code == null || code.isBlank() || orderId == null) return false;
+        String cleanCode = code.trim().toUpperCase();
+        Optional<Voucher> opt = voucherRepository.findByCodeIgnoreCase(cleanCode);
+        if (opt.isEmpty()) return false;
+
+        Voucher v = opt.get();
+        if (voucherRedemptionRepository.existsByVoucherIdAndOrderId(v.getId(), orderId)) {
+            return true; // Idempotent skip
+        }
+
+        if (v.getUsageLimit() != null && v.getUsedCount() >= v.getUsageLimit()) {
+            log.warn("⚠️ [VOUCHER] Tem phiếu [{}] đã vượt hạn mức sử dụng ({}/{})", cleanCode, v.getUsedCount(), v.getUsageLimit());
+            return false;
+        }
+
+        int updated = voucherRepository.incrementUsedCount(v.getId(), LocalDateTime.now());
+        if (updated > 0) {
+            voucherRedemptionRepository.save(new VoucherRedemption(v.getId(), orderId, userId, discountAmount, "USED"));
+            evictCache();
+            log.info("🎟️ [VOUCHER] Ghi nhận sử dụng tem phiếu [{}] cho đơn hàng [{}]", cleanCode, orderId);
+            return true;
+        }
+        return false;
+    }
+
+    @Transactional
+    public void revertVoucherRedemption(String orderId) {
+        if (orderId == null) return;
+        List<VoucherRedemption> redemptions = voucherRedemptionRepository.findByOrderId(orderId);
+        for (VoucherRedemption r : redemptions) {
+            if ("USED".equals(r.getStatus())) {
+                r.setStatus("CANCELLED");
+                voucherRepository.decrementUsedCount(r.getVoucherId(), LocalDateTime.now());
+                log.info("🔄 [VOUCHER] Đã bồi hoàn lượt sử dụng tem phiếu [{}] cho đơn hàng [{}]", r.getVoucherId(), orderId);
+            }
+        }
+        if (!redemptions.isEmpty()) {
+            voucherRedemptionRepository.saveAll(redemptions);
+            evictCache();
+        }
     }
 
     @Transactional

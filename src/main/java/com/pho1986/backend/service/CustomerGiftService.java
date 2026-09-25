@@ -1,5 +1,6 @@
 package com.pho1986.backend.service;
 
+import com.pho1986.backend.common.PiiMaskUtils;
 import com.pho1986.backend.dto.CustomerGiftDto;
 import com.pho1986.backend.model.entity.CustomerGift;
 import com.pho1986.backend.model.entity.LoyaltyReward;
@@ -9,12 +10,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class CustomerGiftService {
@@ -113,7 +117,8 @@ public class CustomerGiftService {
         welcomeGifts.add(voucher);
 
         List<CustomerGift> saved = customerGiftRepository.saveAll(welcomeGifts);
-        log.info("🎁 [CUSTOMER_GIFT] Đã gieo 3 món quà chào mừng cho khách hàng [{}] ({})", user.getFullName(), user.getPhone());
+        log.info("🎁 [CUSTOMER_GIFT] Đã gieo 3 món quà chào mừng cho khách hàng [{}] ({})",
+                user.getFullName(), PiiMaskUtils.maskPhone(user.getPhone()));
         return saved;
     }
 
@@ -128,6 +133,11 @@ public class CustomerGiftService {
         for (CustomerGift gift : gifts) {
             if ("AVAILABLE".equals(gift.getStatus()) && gift.getExpiryDate() != null && now.isAfter(gift.getExpiryDate())) {
                 gift.setStatus("EXPIRED");
+                needsUpdate = true;
+            } else if ("RESERVED".equals(gift.getStatus()) && gift.getReservedUntil() != null && now.isAfter(gift.getReservedUntil())) {
+                gift.setStatus("AVAILABLE");
+                gift.setOrderId(null);
+                gift.setReservedUntil(null);
                 needsUpdate = true;
             }
         }
@@ -172,13 +182,13 @@ public class CustomerGiftService {
 
         CustomerGift saved = customerGiftRepository.save(gift);
         log.info("⭐ [CUSTOMER_GIFT] Khách hàng [{}] đã đổi quà thành công: [{}] - Mã: [{}]",
-                user.getPhone(), saved.getTitle(), saved.getCode());
+                PiiMaskUtils.maskPhone(user.getPhone()), saved.getTitle(), saved.getCode());
         return CustomerGiftDto.fromEntity(saved);
     }
 
     @Transactional
-    public boolean applyGiftToOrder(String userId, String giftIdOrCode, String orderId) {
-        if (giftIdOrCode == null || userId == null) return false;
+    public Optional<CustomerGift> reserveGiftForOrder(String userId, String giftIdOrCode, String orderId, int durationMinutes) {
+        if (giftIdOrCode == null || userId == null || orderId == null) return Optional.empty();
 
         String clean = giftIdOrCode.trim();
         String candidate = clean.startsWith("gift_") ? clean.substring(5) : clean;
@@ -196,24 +206,79 @@ public class CustomerGiftService {
                     .filter(g -> g.getUser() != null && userId.equals(g.getUser().getId()));
         }
 
-        if (opt.isPresent()) {
-            CustomerGift gift = opt.get();
-            if (gift.isExpired()) {
-                gift.setStatus("EXPIRED");
-                customerGiftRepository.save(gift);
-                log.warn("⚠️ [CUSTOMER_GIFT] Vé quà [{}] đã hết hạn (HSD: {}). Từ chối áp dụng cho đơn [{}]",
-                        gift.getCode(), gift.getExpiryDate(), orderId);
-                return false;
-            }
-            if ("AVAILABLE".equals(gift.getStatus())) {
-                gift.setStatus("USED");
-                gift.setUsedAt(LocalDateTime.now());
-                gift.setOrderId(orderId);
-                customerGiftRepository.save(gift);
-                log.info("✨ [CUSTOMER_GIFT] Vé quà [{}] đã được sử dụng cho đơn hàng [{}]", gift.getCode(), orderId);
-                return true;
-            }
+        if (opt.isEmpty()) return Optional.empty();
+
+        CustomerGift gift = opt.get();
+        if (gift.isExpired()) {
+            gift.setStatus("EXPIRED");
+            customerGiftRepository.save(gift);
+            return Optional.empty();
         }
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime reservedUntil = now.plusMinutes(durationMinutes > 0 ? durationMinutes : 15);
+        int updated = customerGiftRepository.reserveGiftAtomically(gift.getId(), orderId, reservedUntil, now);
+        if (updated > 0) {
+            gift.setStatus("RESERVED");
+            gift.setOrderId(orderId);
+            gift.setReservedUntil(reservedUntil);
+            log.info("🔒 [CUSTOMER_GIFT] Đã giữ chỗ vé quà [{}] cho đơn hàng [{}] (Thời hạn: {} phút)",
+                    gift.getCode(), orderId, durationMinutes);
+            return Optional.of(gift);
+        }
+        log.warn("⚠️ [CUSTOMER_GIFT] Giữ chỗ thất bại: Vé quà [{}] đang được sử dụng hoặc giữ bởi đơn khác", gift.getCode());
+        return Optional.empty();
+    }
+
+    @Transactional
+    public boolean applyGiftToOrder(String userId, String giftIdOrCode, String orderId) {
+        if (giftIdOrCode == null || userId == null || orderId == null) return false;
+
+        String clean = giftIdOrCode.trim();
+        String candidate = clean.startsWith("gift_") ? clean.substring(5) : clean;
+
+        Optional<CustomerGift> opt = customerGiftRepository.findByIdAndUserId(clean, userId);
+        if (opt.isEmpty() && !candidate.equals(clean)) {
+            opt = customerGiftRepository.findByIdAndUserId(candidate, userId);
+        }
+        if (opt.isEmpty()) {
+            opt = customerGiftRepository.findByCodeIgnoreCase(clean)
+                    .filter(g -> g.getUser() != null && userId.equals(g.getUser().getId()));
+        }
+        if (opt.isEmpty() && !candidate.equals(clean)) {
+            opt = customerGiftRepository.findByCodeIgnoreCase(candidate)
+                    .filter(g -> g.getUser() != null && userId.equals(g.getUser().getId()));
+        }
+
+        if (opt.isEmpty()) return false;
+
+        CustomerGift gift = opt.get();
+        LocalDateTime now = LocalDateTime.now();
+        int updated = customerGiftRepository.settleGiftAtomically(gift.getId(), orderId, now);
+        if (updated > 0) {
+            gift.setStatus("USED");
+            gift.setUsedAt(now);
+            gift.setOrderId(orderId);
+            log.info("✨ [CUSTOMER_GIFT] Vé quà [{}] đã được quyết toán thành công cho đơn hàng [{}]", gift.getCode(), orderId);
+            return true;
+        }
+        log.warn("⚠️ [CUSTOMER_GIFT] Quyết toán vé quà [{}] thất bại cho đơn hàng [{}] (Không khớp reservation hoặc đã USED)",
+                gift.getCode(), orderId);
         return false;
+    }
+
+    @Transactional
+    public void releaseGiftFromOrder(String orderId) {
+        releaseGiftFromOrder(orderId, null);
+    }
+
+    @Transactional
+    public void releaseGiftFromOrder(String orderId, String orderCode) {
+        if (!StringUtils.hasText(orderId) && !StringUtils.hasText(orderCode)) return;
+        int released = customerGiftRepository.releaseGiftsForOrder(orderId, orderCode);
+        if (released > 0) {
+            log.info("🔄 [CUSTOMER_GIFT] Đã hoàn trả {} vé quà do đơn hàng [{}/{}] bị hủy/hết hạn",
+                    released, orderId, orderCode);
+        }
     }
 }

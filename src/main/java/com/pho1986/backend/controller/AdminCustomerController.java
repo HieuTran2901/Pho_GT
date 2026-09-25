@@ -25,11 +25,12 @@ public class AdminCustomerController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<AdminCustomerSummaryResponse>>> getCustomers(
+    public ResponseEntity<ApiResponse<Page<AdminCustomerSummaryResponse>>> getCustomers(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) String tier) {
-        List<AdminCustomerSummaryResponse> customers = adminCustomerService.getCustomers(search, status, tier);
+            @RequestParam(required = false) String tier,
+            @PageableDefault(size = 20) Pageable pageable) {
+        Page<AdminCustomerSummaryResponse> customers = adminCustomerService.getCustomers(search, status, tier, pageable);
         return ResponseEntity.ok(ApiResponse.ok(customers));
     }
 
@@ -39,8 +40,7 @@ public class AdminCustomerController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String tier,
             @PageableDefault(size = 20) Pageable pageable) {
-        Page<AdminCustomerSummaryResponse> customers = adminCustomerService.getCustomers(search, status, tier, pageable);
-        return ResponseEntity.ok(ApiResponse.ok(customers));
+        return getCustomers(search, status, tier, pageable);
     }
 
     @GetMapping("/metrics")

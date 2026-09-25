@@ -95,38 +95,32 @@ public class PaymentOrderValidator {
         for (OrderItem item : order.getItems()) {
             String dishId = (item.getDishId() != null) ? item.getDishId().trim() : null;
 
-            if (StringUtils.hasText(dishId)) {
-                Dish dish = dishMap.get(dishId);
-                if (dish == null) {
-                    throw new IllegalArgumentException("Món ăn không tồn tại trong thực đơn: " + dishId);
-                }
-                if (Boolean.FALSE.equals(dish.getIsAvailable())) {
-                    throw new IllegalArgumentException("Món \"" + dish.getName() + "\" hiện đang tạm hết hàng tại quán. Quý khách vui lòng chọn món khác.");
-                }
-                Double price = dish.getPrice();
-                if (price == null || price <= 0) {
-                    throw new IllegalArgumentException("Đơn giá món ăn không hợp lệ trong hệ thống: " + dishId);
-                }
-                if (item.getQuantity() == null || item.getQuantity() <= 0) {
-                    throw new IllegalArgumentException("Số lượng món ăn phải lớn hơn 0: " + dishId);
-                }
-
-                // Ghi đè đơn giá và thành tiền từ Server Database
-                item.setUnitPrice(price);
-                item.setSubtotal(price * item.getQuantity());
-                if (StringUtils.hasText(dish.getName())) {
-                    item.setDishName(dish.getName());
-                }
-                priceUpdated = true;
-            } else {
-                if (item.getQuantity() == null || item.getQuantity() <= 0) {
-                    throw new IllegalArgumentException("Số lượng món ăn phải lớn hơn 0.");
-                }
-                if (item.getUnitPrice() == null || item.getUnitPrice() <= 0) {
-                    throw new IllegalArgumentException("Đơn giá món ăn không hợp lệ.");
-                }
-                item.setSubtotal(item.getUnitPrice() * item.getQuantity());
+            if (!StringUtils.hasText(dishId)) {
+                throw new IllegalArgumentException("Mã món ăn (dishId) không hợp lệ hoặc để trống trong đơn hàng.");
             }
+
+            Dish dish = dishMap.get(dishId);
+            if (dish == null) {
+                throw new IllegalArgumentException("Món ăn không tồn tại trong thực đơn: " + dishId);
+            }
+            if (Boolean.FALSE.equals(dish.getIsAvailable())) {
+                throw new IllegalArgumentException("Món \"" + dish.getName() + "\" hiện đang tạm hết hàng tại quán. Quý khách vui lòng chọn món khác.");
+            }
+            Double price = dish.getPrice();
+            if (price == null || price <= 0) {
+                throw new IllegalArgumentException("Đơn giá món ăn không hợp lệ trong hệ thống: " + dishId);
+            }
+            if (item.getQuantity() == null || item.getQuantity() <= 0) {
+                throw new IllegalArgumentException("Số lượng món ăn phải lớn hơn 0: " + dishId);
+            }
+
+            // Ghi đè đơn giá và thành tiền từ Server Database
+            item.setUnitPrice(price);
+            item.setSubtotal(price * item.getQuantity());
+            if (StringUtils.hasText(dish.getName())) {
+                item.setDishName(dish.getName());
+            }
+            priceUpdated = true;
         }
 
         if (priceUpdated) {
@@ -137,17 +131,6 @@ public class PaymentOrderValidator {
         }
     }
 
-    /**
-     * Cập nhật danh sách món ăn đã xác thực vào đơn hàng và tính lại thành tiền
-     */
-    public void replaceOrderItems(Order order, List<OrderItem> verifiedItems) {
-        order.getItems().clear();
-        verifiedItems.forEach(order::addItem);
-        double verifiedTotal = verifiedItems.stream().mapToDouble(OrderItem::getSubtotal).sum();
-        order.setTotalAmount(verifiedTotal);
-        double discount = (order.getDiscountAmount() != null && order.getDiscountAmount() > 0) ? order.getDiscountAmount() : 0.0;
-        order.setFinalAmount(Math.max(0.0, verifiedTotal - discount));
-    }
 
     public boolean hasVerifiedMainDish(List<OrderItem> items, DishRepository dishRepository) {
         if (items == null || items.isEmpty()) {

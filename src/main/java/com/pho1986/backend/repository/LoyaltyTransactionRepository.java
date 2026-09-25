@@ -9,4 +9,6 @@ import java.util.List;
 @Repository
 public interface LoyaltyTransactionRepository extends JpaRepository<LoyaltyTransaction, String> {
     List<LoyaltyTransaction> findByLoyaltyAccountIdOrderByCreatedAtDesc(String loyaltyAccountId);
+
+    boolean existsByOrderIdAndType(String orderId, String type);
 }

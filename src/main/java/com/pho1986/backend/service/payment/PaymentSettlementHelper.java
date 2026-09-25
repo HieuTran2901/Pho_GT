@@ -6,10 +6,14 @@ import com.pho1986.backend.model.entity.Order;
 import com.pho1986.backend.model.entity.PaymentTransaction;
 import com.pho1986.backend.repository.OrderRepository;
 import com.pho1986.backend.repository.PaymentTransactionRepository;
+import com.pho1986.backend.repository.UserRepository;
+import com.pho1986.backend.service.CustomerGiftService;
 import com.pho1986.backend.service.LoyaltyService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 
@@ -25,19 +29,29 @@ public class PaymentSettlementHelper {
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final OrderRepository orderRepository;
     private final LoyaltyService loyaltyService;
+    private final CustomerGiftService customerGiftService;
+    private final com.pho1986.backend.service.VoucherService voucherService;
+    private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
 
     public PaymentSettlementHelper(
             PaymentTransactionRepository paymentTransactionRepository,
             OrderRepository orderRepository,
             LoyaltyService loyaltyService,
+            CustomerGiftService customerGiftService,
+            com.pho1986.backend.service.VoucherService voucherService,
+            UserRepository userRepository,
             ObjectMapper objectMapper) {
         this.paymentTransactionRepository = paymentTransactionRepository;
         this.orderRepository = orderRepository;
         this.loyaltyService = loyaltyService;
+        this.customerGiftService = customerGiftService;
+        this.voucherService = voucherService;
+        this.userRepository = userRepository;
         this.objectMapper = objectMapper;
     }
 
+    @Transactional
     public PaymentStatusResponse finalizeSuccessfulPayment(
             PaymentTransaction transaction,
             String transactionRef,
@@ -60,17 +74,51 @@ public class PaymentSettlementHelper {
 
         Order order = transaction.getOrder();
         if (order != null) {
-            order.setPaymentStatus("PAID");
-            order.setStatus("CONFIRMED");
-            orderRepository.save(order);
-
-            loyaltyService.awardLoyaltyPointsForOrder(order);
-            if (logPrefix != null) {
-                log.info("{} Xác nhận thanh toán thành công cho đơn hàng [{}]", logPrefix, order.getOrderCode());
-            }
+            settleOrderInternal(order, logPrefix);
         }
 
         return toStatusResponse(transaction);
+    }
+
+    @Transactional
+    public boolean settleOrderDirectly(Order order, String logPrefix) {
+        if (order == null) return false;
+        return settleOrderInternal(order, logPrefix);
+    }
+
+    private boolean settleOrderInternal(Order order, String logPrefix) {
+        // Atomic status transition UNPAID -> PAID to eliminate concurrency race condition
+        int updatedRows = orderRepository.markOrderAsPaidIfUnpaid(order.getId());
+        if (updatedRows > 0) {
+            order.setPaymentStatus("PAID");
+            order.setStatus("CONFIRMED");
+
+            // Tích điểm thành viên (idempotent, pessimistic write locked)
+            loyaltyService.awardLoyaltyPointsForOrder(order);
+
+            // Đánh dấu sử dụng phiếu quà tặng & sổ cái voucher khi đơn hàng đã thanh toán thành công
+            if (StringUtils.hasText(order.getVoucherCode())) {
+                String targetUserId = (order.getUser() != null) ? order.getUser().getId() : null;
+                if (targetUserId == null && StringUtils.hasText(order.getGuestPhone())) {
+                    String cleanPhone = order.getGuestPhone().replaceAll("[\\s.-]+", "");
+                    targetUserId = userRepository.findByPhone(cleanPhone).map(com.pho1986.backend.model.entity.User::getId).orElse(null);
+                }
+                if (targetUserId != null) {
+                    customerGiftService.applyGiftToOrder(targetUserId, order.getVoucherCode(), order.getOrderCode());
+                }
+                voucherService.recordVoucherRedemption(order.getVoucherCode(), order.getId(), targetUserId, order.getDiscountAmount());
+            }
+
+            if (logPrefix != null) {
+                log.info("{} Quyết toán thanh toán thành công cho đơn hàng [{}]", logPrefix, order.getOrderCode());
+            }
+            return true;
+        } else {
+            if (logPrefix != null) {
+                log.info("{} Đơn hàng [{}] đã được quyết toán trước đó (idempotent skip)", logPrefix, order.getOrderCode());
+            }
+            return false;
+        }
     }
 
     public PaymentStatusResponse recordFailedPayment(

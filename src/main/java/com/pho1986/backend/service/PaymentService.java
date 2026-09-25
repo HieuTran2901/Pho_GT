@@ -133,95 +133,53 @@ public class PaymentService {
             throw new IllegalStateException("Quý khách đã gửi yêu cầu thanh toán quá nhiều lần. Vui lòng thử lại sau " + remaining + " giây!");
         }
 
-        // Kiểm tra bàn ăn trước khi xử lý
-        if (StringUtils.hasText(request.getTableNumber())) {
-            tableService.validateTableAvailable(request.getTableNumber());
+        Order order = orderRepository.findByOrderCode(request.getOrderCode())
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng #" + request.getOrderCode()));
+
+        // Chốt chặn quyền sở hữu đơn hàng (Ownership Enforcement)
+        if (order.getUser() != null) {
+            if (userId == null || !userId.equals(order.getUser().getId())) {
+                throw new org.springframework.security.access.AccessDeniedException("Bạn không có quyền thao tác thanh toán cho đơn hàng này.");
+            }
+        } else {
+            // Guest order: bắt buộc kiểm tra orderAccessToken qua SHA-256 hash
+            String rawToken = request.getOrderAccessToken();
+            if (!StringUtils.hasText(rawToken)) {
+                throw new org.springframework.security.access.AccessDeniedException("Mã truy cập đơn hàng (orderAccessToken) không được để trống đối với khách vãng lai.");
+            }
+            String expectedHash = order.getOrderAccessTokenHash();
+            String actualHash = com.pho1986.backend.common.PiiMaskUtils.sha256Hex(rawToken.trim());
+            if (expectedHash == null || !java.security.MessageDigest.isEqual(
+                    expectedHash.getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                    actualHash.getBytes(java.nio.charset.StandardCharsets.UTF_8))) {
+                throw new org.springframework.security.access.AccessDeniedException("Mã truy cập đơn hàng không hợp lệ.");
+            }
         }
 
-        String targetUserId = userId;
-        if (targetUserId == null && StringUtils.hasText(request.getPhone())) {
-            targetUserId = userRepository.findByPhone(request.getPhone().trim()).map(User::getId).orElse(null);
+        // Chốt chặn trạng thái đơn: Bắt buộc PENDING và UNPAID
+        if (!"PENDING".equalsIgnoreCase(order.getStatus()) || !"UNPAID".equalsIgnoreCase(order.getPaymentStatus())) {
+            throw new IllegalStateException("Đơn hàng #" + order.getOrderCode() + " không ở trạng thái chờ thanh toán (Trạng thái hiện tại: " + order.getStatus() + "/" + order.getPaymentStatus() + ")");
         }
-        final String resolvedUserId = targetUserId;
-
-        // Xác thực món ăn & tính giá 100% từ Server Database
-        boolean hasItems = request.getItems() != null && !request.getItems().isEmpty();
-        List<OrderItem> verifiedItems = hasItems
-                ? paymentOrderValidator.buildAndVerifyOrderItems(request.getItems(), dishRepository)
-                : java.util.Collections.emptyList();
-        double verifiedTotal = verifiedItems.stream().mapToDouble(OrderItem::getSubtotal).sum();
 
         String method = request.getPaymentMethod().toUpperCase();
-        Order order = orderRepository.findByOrderCode(request.getOrderCode())
-                .orElseGet(() -> {
-                    if (!hasItems) {
-                        throw new IllegalArgumentException("Không tìm thấy đơn hàng #" + request.getOrderCode() + " và không có món ăn hợp lệ trong yêu cầu.");
-                    }
-                    Order newOrder = new Order();
-                    newOrder.setOrderCode(request.getOrderCode());
-                    newOrder.setGuestName(StringUtils.hasText(request.getCustomerName()) ? request.getCustomerName() : "Khách Quý Phở 1986");
-                    newOrder.setGuestPhone(StringUtils.hasText(request.getPhone()) ? request.getPhone() : "0986198686");
-                    newOrder.setDeliveryAddressText(StringUtils.hasText(request.getAddress()) ? request.getAddress() : "Tại quán Phở Gia Truyền 1986");
-                    newOrder.setPaymentMethod(method);
-                    newOrder.setTotalAmount(verifiedTotal);
-                    newOrder.setFinalAmount(verifiedTotal);
-                    newOrder.setNotes(request.getNote());
-                    newOrder.setTableNumber(request.getTableNumber());
-                    if (StringUtils.hasText(request.getAppliedGiftId())) {
-                        newOrder.setVoucherCode(request.getAppliedGiftId().trim());
-                    }
-                    if (resolvedUserId != null) {
-                        userRepository.findById(resolvedUserId).ifPresent(newOrder::setUser);
-                    }
-                    verifiedItems.forEach(newOrder::addItem);
-                    return orderRepository.save(newOrder);
-                });
-
-        if (hasItems) {
-            paymentOrderValidator.replaceOrderItems(order, verifiedItems);
-            orderRepository.save(order);
-        } else {
-            // Đơn hàng đã tồn tại: Bắt buộc xác thực lại 100% đơn giá và tính lại thành tiền từ DB
-            paymentOrderValidator.recalculateAndVerifyExistingOrder(order, dishRepository);
-            orderRepository.save(order);
-        }
-
-        // Chốt chặn ưu đãi & giữ bàn: Bắt buộc chứa ít nhất 01 món chính đã xác thực từ database
-        boolean orderHasMainDish = paymentOrderValidator.hasVerifiedMainDish(order.getItems(), dishRepository);
-        boolean hasVoucherOrDiscount = StringUtils.hasText(request.getAppliedGiftId())
-                || StringUtils.hasText(order.getVoucherCode())
-                || (order.getDiscountAmount() != null && order.getDiscountAmount() > 0);
-
-        if (hasVoucherOrDiscount) {
-            if (!orderHasMainDish) {
-                throw new IllegalArgumentException("Ưu đãi và giảm giá chỉ áp dụng kèm theo món ăn chính. Quý khách vui lòng chọn ít nhất 01 món chính trong thực đơn.");
-            }
-            if (StringUtils.hasText(request.getAppliedGiftId())) {
-                order.setVoucherCode(request.getAppliedGiftId().trim());
-                if (resolvedUserId != null) {
-                    customerGiftService.applyGiftToOrder(resolvedUserId, request.getAppliedGiftId(), order.getOrderCode());
-                }
-                voucherService.applyVoucherUsage(request.getAppliedGiftId());
-            }
-        }
-
-        if (StringUtils.hasText(order.getTableNumber())) {
-            if (!orderHasMainDish) {
-                throw new IllegalArgumentException("Dịch vụ giữ bàn chỉ áp dụng khi quý khách đặt trước ít nhất 01 món ăn chính trong thực đơn.");
-            }
-            tableService.markTableStatus(order.getTableNumber(), "RESERVED");
-        }
-
         Double amount = order.getFinalAmount();
+        LocalDateTime now = LocalDateTime.now();
 
-        PaymentTransaction transaction = new PaymentTransaction();
-        transaction.setPaymentCode(vietQrHelper.generatePaymentCode(order.getOrderCode()));
-        transaction.setOrder(order);
-        transaction.setAmount(amount);
-        transaction.setCurrency("VND");
-        transaction.setPaymentMethod(method);
-        transaction.setNote(request.getNote());
-        transaction.setExpiredAt(LocalDateTime.now().plusMinutes(15));
+        // Tái sử dụng giao dịch PENDING còn hiệu lực nếu có cùng phương thức
+        PaymentTransaction transaction = paymentTransactionRepository
+                .findTopByOrderOrderCodeOrderByCreatedAtDesc(order.getOrderCode())
+                .filter(tx -> "PENDING".equals(tx.getStatus()) && tx.getExpiredAt() != null && tx.getExpiredAt().isAfter(now) && method.equalsIgnoreCase(tx.getPaymentMethod()))
+                .orElseGet(() -> {
+                    PaymentTransaction newTx = new PaymentTransaction();
+                    newTx.setPaymentCode(vietQrHelper.generatePaymentCode(order.getOrderCode()));
+                    newTx.setOrder(order);
+                    newTx.setAmount(amount);
+                    newTx.setCurrency("VND");
+                    newTx.setPaymentMethod(method);
+                    newTx.setNote(request.getNote());
+                    newTx.setExpiredAt(now.plusMinutes(15));
+                    return paymentTransactionRepository.save(newTx);
+                });
 
         PaymentResponse response = new PaymentResponse();
         response.setPaymentCode(transaction.getPaymentCode());
@@ -232,9 +190,6 @@ public class PaymentService {
         response.setExpiredAt(transaction.getExpiredAt());
 
         paymentChannelDispatcher.populateMethodDetails(transaction, response, order, method, amount);
-
-        paymentTransactionRepository.save(transaction);
-        orderRepository.save(order);
 
         return new PaymentTxContext(response, method, order.getOrderCode(), amount);
     }
