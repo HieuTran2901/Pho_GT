@@ -57,7 +57,7 @@ payment:
 
 aws:
   s3:
-    bucket-name: ${AWS_S3_BUCKET:pho-media-assets}
+    bucket-name: ${AWS_S3_BUCKET:pho-media-assets-1}
     region: ${AWS_REGION:ap-southeast-2}
     profile: ${AWS_PROFILE:}
     access-key: ${AWS_ACCESS_KEY_ID:}

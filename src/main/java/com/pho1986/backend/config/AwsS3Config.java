@@ -19,7 +19,7 @@ public class AwsS3Config {
 
     private static final Logger log = LoggerFactory.getLogger(AwsS3Config.class);
 
-    @Value("${aws.s3.bucket-name:pho-media-assets}")
+    @Value("${aws.s3.bucket-name:pho-media-assets-1}")
     private String bucketName;
 
     @Value("${aws.s3.region:ap-southeast-2}")

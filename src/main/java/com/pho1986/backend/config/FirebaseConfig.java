@@ -6,6 +6,7 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -59,14 +60,25 @@ public class FirebaseConfig {
     }
 
     @Bean
-    public FirebaseAuth firebaseAuth(FirebaseApp firebaseApp) {
+    public FirebaseAuth firebaseAuth(ObjectProvider<FirebaseApp> firebaseAppProvider) {
+        FirebaseApp firebaseApp = firebaseAppProvider.getIfAvailable();
         if (firebaseApp == null) {
+            log.warn("[FIREBASE] FirebaseApp khong kha dung. FirebaseAuth khoi tao o che do null-safe.");
             return null;
         }
         return FirebaseAuth.getInstance(firebaseApp);
     }
 
     private InputStream resolveCredentialsStream() throws Exception {
+        // 0. Uu tien nap truc tiep tu cac bien moi truong rieng le (Zero-Disk Secret Architecture)
+        String envPrivateKey = System.getenv("FIREBASE_PRIVATE_KEY");
+        String envClientEmail = System.getenv("FIREBASE_CLIENT_EMAIL");
+        String envProjectId = System.getenv("FIREBASE_PROJECT_ID");
+        if (StringUtils.hasText(envPrivateKey) && StringUtils.hasText(envClientEmail)) {
+            log.info("[FIREBASE] Nap credentials truc tiep tu bien moi truong rieng le (Zero-Disk)");
+            return buildCredentialStreamFromEnv(envPrivateKey, envClientEmail, envProjectId);
+        }
+
         // 1. Uu tien chuoi JSON truc tiep tu bien moi truong
         String rawJsonEnv = System.getenv("FIREBASE_SERVICE_ACCOUNT_JSON");
         if (StringUtils.hasText(rawJsonEnv)) {
@@ -87,13 +99,35 @@ public class FirebaseConfig {
             }
         }
 
-        // 3. Fallback tim file mac dinh firebase-service-account.json trong classpath
+        // 3. Fallback tim file mac dinh firebase-service-account.json trong classpath (neu khong phai file placeholder)
         ClassPathResource defaultClasspath = new ClassPathResource("firebase-service-account.json");
         if (defaultClasspath.exists()) {
-            log.info("[FIREBASE] Nap credentials tu default classpath resource: firebase-service-account.json");
-            return defaultClasspath.getInputStream();
+            try (InputStream is = defaultClasspath.getInputStream()) {
+                String content = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+                if (!content.contains("REPLACED_BY_") && !content.contains("PLACEHOLDER")) {
+                    log.info("[FIREBASE] Nap credentials tu default classpath resource: firebase-service-account.json");
+                    return new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8));
+                }
+            } catch (Exception ignored) {
+                // Bo qua neu file loi hoac la placeholder
+            }
         }
 
         return null;
+    }
+
+    private InputStream buildCredentialStreamFromEnv(String privateKey, String clientEmail, String envProjectId) {
+        String effectiveProjectId = StringUtils.hasText(envProjectId) ? envProjectId.trim() : (StringUtils.hasText(projectId) ? projectId.trim() : "pho-gt");
+        String normalizedKey = privateKey.trim();
+        if (normalizedKey.contains("\r") || normalizedKey.contains("\n")) {
+            normalizedKey = normalizedKey.replace("\r\n", "\\n").replace("\r", "\\n").replace("\n", "\\n");
+        }
+        String json = "{\n" +
+                "  \"type\": \"service_account\",\n" +
+                "  \"project_id\": \"" + effectiveProjectId + "\",\n" +
+                "  \"private_key\": \"" + normalizedKey + "\",\n" +
+                "  \"client_email\": \"" + clientEmail.trim() + "\"\n" +
+                "}";
+        return new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8));
     }
 }
