@@ -43,7 +43,7 @@ app:
 
 payment:
   sepay:
-    enabled: ${SEPAY_ENABLED:true}
+    enabled: ${SEPAY_ENABLED:false}
     environment: ${SEPAY_ENV:production}
     merchant-id: ${MERCHANTID_PRODUCTION:${MERCHANTID:}}
     secret-key: ${SEPAY_SECRETKEY_PRODUCTION:${SEPAY_SECRETKEY:}}
