@@ -3,13 +3,13 @@ server:
 
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://pho-gt-mysql.c1qgi0ayimmy.ap-southeast-2.rds.amazonaws.com:3306/pho_1986_db?createDatabaseIfNotExist=true&useSSL=true&requireSSL=true&sslMode=VERIFY_IDENTITY&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh}
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://pho-gt-mysql.cfwm0a2sgonf.ap-southeast-2.rds.amazonaws.com:3306/pho_1986_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh}
     username: ${SPRING_DATASOURCE_USERNAME:pho_admin}
     password: ${SPRING_DATASOURCE_PASSWORD:}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
     show-sql: false
     open-in-view: false
     properties:
