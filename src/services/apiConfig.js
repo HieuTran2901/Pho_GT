@@ -23,8 +23,9 @@ export const getApiBaseUrl = (endpoint) => {
     return `/api/v1/${cleanEndpoint}`;
   }
 
-  // Localhost development fallback
-  return `http://localhost:8080/api/v1/${cleanEndpoint}`;
+  // Fallback to configured backend host from environment or localhost
+  const backendHost = import.meta?.env?.VITE_BACKEND_HOST || 'http://localhost:8080';
+  return `${String(backendHost).replace(/\/$/, '')}/api/v1/${cleanEndpoint}`;
 };
 
 /**
