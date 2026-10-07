@@ -40,49 +40,87 @@ export function formatVietnamPhoneE164(phone) {
   return '+84' + digits;
 }
 
+export function clearRecaptchaVerifier() {
+  if (typeof window === 'undefined') return;
+  if (window.recaptchaVerifier) {
+    try {
+      window.recaptchaVerifier.clear();
+    } catch (e) {
+      console.warn('[FIREBASE_AUTH] Warning clearing recaptcha:', e);
+    }
+    window.recaptchaVerifier = null;
+  }
+  // Dọn dẹp badge hoặc iframe còn sót lại trong container
+  const container = document.getElementById('recaptcha-container');
+  if (container) {
+    try { container.innerHTML = ''; } catch {}
+  }
+}
+
 /**
  * Khởi tạo hoặc tái sử dụng Invisible reCAPTCHA Verifier an toàn chống rò rỉ instance
- * Tránh lỗi 'Cannot read properties of null (reading then)' do xung đột vòng đời widget
+ * Tránh lỗi 'reCAPTCHA has already been rendered in this element'
  */
 export async function createRecaptchaVerifier(buttonOrContainerId = 'recaptcha-container', onVerified) {
   if (typeof window === 'undefined') return null;
 
-  // 1. Nếu verifier đã tồn tại và container vẫn còn trong DOM, tái sử dụng trực tiếp
-  if (window.recaptchaVerifier) {
-    return window.recaptchaVerifier;
-  }
-
-  // 2. Tìm container DOM và dọn dẹp các node iframe mồ côi nếu có
   const container = typeof buttonOrContainerId === 'string'
     ? document.getElementById(buttonOrContainerId)
     : buttonOrContainerId;
 
-  if (container) {
-    container.innerHTML = '';
-  }
-
-  // 3. Khởi tạo RecaptchaVerifier mới với container sạch
-  const target = container || buttonOrContainerId;
-  const verifier = new RecaptchaVerifier(auth, target, {
-    size: 'invisible',
-    callback: () => {
-      if (typeof onVerified === 'function') onVerified();
-    },
-    'expired-callback': () => {
-      console.warn('[FIREBASE_AUTH] reCAPTCHA hết hạn, reset verifier.');
-      resetRecaptchaVerifier();
+  // 1. Nếu verifier đã tồn tại và container vẫn còn trong DOM, tái sử dụng trực tiếp
+  if (window.recaptchaVerifier) {
+    if (container && document.body.contains(container)) {
+      return window.recaptchaVerifier;
     }
-  });
-
-  // 4. Render trước để Google reCAPTCHA nạp sẵn widgetId và Promise nội bộ
-  try {
-    await verifier.render();
-  } catch (err) {
-    console.warn('[FIREBASE_AUTH] reCAPTCHA render warning:', err);
+    // Nếu container đã bị unmount khỏi DOM, dọn dẹp verifier cũ để tạo mới
+    clearRecaptchaVerifier();
   }
 
-  window.recaptchaVerifier = verifier;
-  return verifier;
+  if (!container) {
+    console.warn('[FIREBASE_AUTH] Không tìm thấy container cho reCAPTCHA:', buttonOrContainerId);
+    return null;
+  }
+
+  // 2. Dọn sạch container DOM trước khi gắn widget mới
+  try {
+    container.innerHTML = '';
+  } catch {}
+
+  // 3. Khởi tạo RecaptchaVerifier mới (Không tự ý gọi verifier.render() trước
+  // vì signInWithPhoneNumber sẽ tự động gọi render() nội bộ, tránh double-render)
+  try {
+    const target = container || buttonOrContainerId;
+    const verifier = new RecaptchaVerifier(auth, target, {
+      size: 'invisible',
+      callback: () => {
+        if (typeof onVerified === 'function') onVerified();
+      },
+      'expired-callback': () => {
+        console.warn('[FIREBASE_AUTH] reCAPTCHA hết hạn, reset verifier.');
+        resetRecaptchaVerifier();
+      }
+    });
+
+    window.recaptchaVerifier = verifier;
+    return verifier;
+  } catch (err) {
+    console.warn('[FIREBASE_AUTH] Lỗi khi tạo RecaptchaVerifier, tiến hành tự phục hồi:', err);
+    clearRecaptchaVerifier();
+    try {
+      const freshVerifier = new RecaptchaVerifier(auth, container, {
+        size: 'invisible',
+        callback: () => {
+          if (typeof onVerified === 'function') onVerified();
+        }
+      });
+      window.recaptchaVerifier = freshVerifier;
+      return freshVerifier;
+    } catch (retryErr) {
+      console.error('[FIREBASE_AUTH] Không thể phục hồi reCAPTCHA:', retryErr);
+      return null;
+    }
+  }
 }
 
 /**
@@ -95,25 +133,11 @@ export function resetRecaptchaVerifier() {
       if (window.grecaptcha && typeof window.recaptchaVerifier._widgetId === 'number') {
         window.grecaptcha.reset(window.recaptchaVerifier._widgetId);
       } else {
-        window.recaptchaVerifier.clear();
-        window.recaptchaVerifier = null;
+        clearRecaptchaVerifier();
       }
     } catch {
-      window.recaptchaVerifier = null;
+      clearRecaptchaVerifier();
     }
-  }
-}
-
-/**
- * Dọn dẹp hoàn toàn khi modal unmount
- */
-export function clearRecaptchaVerifier() {
-  if (typeof window === 'undefined') return;
-  if (window.recaptchaVerifier) {
-    try {
-      window.recaptchaVerifier.clear();
-    } catch {}
-    window.recaptchaVerifier = null;
   }
 }
 

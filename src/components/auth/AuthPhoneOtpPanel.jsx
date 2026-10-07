@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Phone, ArrowRight, RotateCcw, Sparkles, CheckCircle2, ShieldCheck, User } from 'lucide-react';
-import { auth, formatVietnamPhoneE164, createRecaptchaVerifier, signInWithPhoneNumber } from '../../config/firebase';
+import { auth, formatVietnamPhoneE164, createRecaptchaVerifier, clearRecaptchaVerifier, signInWithPhoneNumber } from '../../config/firebase';
 import { useAuth } from '../../context/AuthContext';
 import PhoneOtpInput from './PhoneOtpInput';
 
@@ -28,6 +28,13 @@ export default function AuthPhoneOtpPanel({ onToast, onSuccess }) {
     };
   }, [cooldown]);
 
+  // Dọn dẹp reCAPTCHA khi panel unmount
+  useEffect(() => {
+    return () => {
+      clearRecaptchaVerifier();
+    };
+  }, []);
+
   // Gửi mã OTP qua Firebase Phone Auth
   const handleSendOtp = async (e) => {
     if (e) e.preventDefault();
@@ -42,7 +49,7 @@ export default function AuthPhoneOtpPanel({ onToast, onSuccess }) {
     setIsLoading(true);
     try {
       const phoneE164 = formatVietnamPhoneE164(phone);
-      const appVerifier = createRecaptchaVerifier('recaptcha-container', () => {
+      const appVerifier = await createRecaptchaVerifier('recaptcha-container', () => {
         // Callback khi reCAPTCHA verify thành công
       });
 
@@ -55,12 +62,13 @@ export default function AuthPhoneOtpPanel({ onToast, onSuccess }) {
       }
     } catch (err) {
       console.error('[FIREBASE_PHONE_OTP] Lỗi gửi mã:', err);
+      clearRecaptchaVerifier();
       if (err.code === 'auth/too-many-requests') {
         setErrorMessage('Bác đã yêu cầu gửi mã quá nhiều lần từ thiết bị này. Vui lòng thử lại sau ít phút.');
       } else if (err.code === 'auth/invalid-phone-number') {
         setErrorMessage('Số điện thoại không đúng định dạng quốc tế. Bác vui lòng kiểm tra lại.');
-      } else if (err.code === 'auth/captcha-check-failed') {
-        setErrorMessage('Xác thực bảo mật chống bot chưa hoàn tất. Bác vui lòng thử bấm lại nhé.');
+      } else if (err.code === 'auth/captcha-check-failed' || err.message?.includes('rendered')) {
+        setErrorMessage('Lớp bảo mật chống bot đã được làm mới. Bác vui lòng thử bấm gửi lại nhé.');
       } else {
         setErrorMessage(err.message || 'Chưa thể gửi mã OTP lúc này. Bác vui lòng thử lại sau nhé!');
       }

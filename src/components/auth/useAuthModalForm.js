@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { auth, formatVietnamPhoneE164, createRecaptchaVerifier, resetRecaptchaVerifier, signInWithPhoneNumber } from '../../config/firebase';
+import { auth, formatVietnamPhoneE164, createRecaptchaVerifier, resetRecaptchaVerifier, clearRecaptchaVerifier, signInWithPhoneNumber } from '../../config/firebase';
 
 export function useAuthModalForm({
   authModalOpen,
@@ -32,11 +32,12 @@ export function useAuthModalForm({
 
   const phoneInputRef = useRef(null);
 
-  // Clear sensitive form state when modal closes
+  // Clear sensitive form state & reCAPTCHA instance when modal closes
   useEffect(() => {
     if (!authModalOpen) {
       setPassword('');
       setErrorMessage('');
+      clearRecaptchaVerifier();
     }
   }, [authModalOpen]);
 
@@ -95,13 +96,17 @@ export function useAuthModalForm({
       if (onToast) onToast(`Đã gửi mã xác thực tới số ${cleanPhone}.`);
     } catch (err) {
       console.error('[FIREBASE_OTP]', err);
-      resetRecaptchaVerifier();
+      clearRecaptchaVerifier();
       if (err.code === 'auth/too-many-requests') {
-        setErrorMessage('Đã gửi mã quá nhiều lần từ thiết bị này. Vui lòng thử lại sau.');
+        setErrorMessage('Bác đã yêu cầu gửi mã quá nhiều lần từ thiết bị này. Vui lòng thử lại sau ít phút.');
+      } else if (err.code === 'auth/invalid-phone-number') {
+        setErrorMessage('Số điện thoại không đúng định dạng.');
+      } else if (err.code === 'auth/captcha-check-failed' || err.message?.includes('rendered')) {
+        setErrorMessage('Lớp bảo mật chống bot đã được làm mới. Bác vui lòng bấm Gửi mã lại nhé!');
       } else if (err.code === 'auth/operation-not-allowed') {
         setErrorMessage('Vùng gửi SMS (+84) đang được kích hoạt. Bác vui lòng thử lại sau ít phút.');
       } else {
-        setErrorMessage(err.message || 'Không thể gửi mã OTP. Bác vui lòng thử lại.');
+        setErrorMessage(err.message || 'Không thể gửi mã xác thực. Bác vui lòng thử lại.');
       }
     } finally {
       setIsOtpSending(false);
