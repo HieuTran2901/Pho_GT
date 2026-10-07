@@ -5,6 +5,7 @@ import {
   TOUR_STORAGE_KEY
 } from '../components/onboarding/tourSteps';
 import { playTourStepChime, playTourCompleteFanfare, playPraiseChime } from '../utils/tourSound';
+import { useAuth } from './AuthContext';
 
 const OnboardingTourContext = createContext(null);
 
@@ -12,15 +13,12 @@ const OnboardingTourContext = createContext(null);
 const areRectsEqual = (r1, r2) => {
   if (!r1 && !r2) return true;
   if (!r1 || !r2) return false;
-  return (
-    Math.abs(r1.top - r2.top) < 0.5 &&
-    Math.abs(r1.left - r2.left) < 0.5 &&
-    Math.abs(r1.width - r2.width) < 0.5 &&
-    Math.abs(r1.height - r2.height) < 0.5
-  );
+  return Math.abs(r1.top - r2.top) < 0.5 && Math.abs(r1.left - r2.left) < 0.5 &&
+    Math.abs(r1.width - r2.width) < 0.5 && Math.abs(r1.height - r2.height) < 0.5;
 };
 
 export function OnboardingTourProvider({ children }) {
+  const { user } = useAuth();
   const [isTourActive, setIsTourActive] = useState(false);
   const [isModeSelectorOpen, setIsModeSelectorOpen] = useState(false);
   const [tourMode, setTourMode] = useState('heritage');
@@ -186,6 +184,9 @@ export function OnboardingTourProvider({ children }) {
 
   const closeModeSelector = useCallback(() => {
     setIsModeSelectorOpen(false);
+    try {
+      localStorage.setItem(TOUR_STORAGE_KEY, 'true');
+    } catch {}
   }, []);
 
   const selectTourMode = useCallback((mode) => {
@@ -428,9 +429,21 @@ export function OnboardingTourProvider({ children }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isTourActive, nextStep, prevStep, skipTour]);
 
-  // Tự động kích hoạt sau 1.8s cho khách mới lần đầu
+  // Người dùng đã đăng nhập hội viên: tự động đánh dấu hoàn thành và tắt bảng thông báo
+  useEffect(() => {
+    if (user && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(TOUR_STORAGE_KEY, 'true');
+      } catch {}
+      setIsModeSelectorOpen(false);
+      setIsTourActive(false);
+    }
+  }, [user]);
+
+  // Tự động kích hoạt sau 1.8s cho khách mới lần đầu (chỉ khi CHƯA đăng nhập và CHƯA từng xem/bỏ qua)
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    if (user) return;
 
     // Không tự bung nếu đang ở trang Admin hoặc Marketing
     const path = window.location.pathname;
@@ -440,12 +453,14 @@ export function OnboardingTourProvider({ children }) {
       const hasCompleted = localStorage.getItem(TOUR_STORAGE_KEY);
       if (!hasCompleted) {
         const timer = setTimeout(() => {
-          openModeSelector();
+          if (!user && !localStorage.getItem(TOUR_STORAGE_KEY)) {
+            openModeSelector();
+          }
         }, 1800);
         return () => clearTimeout(timer);
       }
     } catch {}
-  }, [openModeSelector]);
+  }, [openModeSelector, user]);
 
   const value = useMemo(
     () => ({
