@@ -27,6 +27,9 @@ public class LoyaltyTransaction {
     @Column(nullable = false)
     private Integer pointsChange; // +/-
 
+    @Column(name = "points", nullable = true)
+    private Integer points = 0; // Legacy column compatibility for MySQL NOT NULL constraint
+
     @Column(nullable = false, length = 30)
     private String type; // WELCOME_BONUS | EARN_ORDER | REDEEM_REWARD
 
@@ -45,6 +48,7 @@ public class LoyaltyTransaction {
         this.loyaltyAccount = loyaltyAccount;
         this.orderId = orderId;
         this.pointsChange = pointsChange;
+        this.points = pointsChange != null ? pointsChange : 0;
         this.type = type;
         this.balanceAfter = balanceAfter;
         this.description = description;
@@ -58,7 +62,14 @@ public class LoyaltyTransaction {
     public String getOrderId() { return orderId; }
     public void setOrderId(String orderId) { this.orderId = orderId; }
     public Integer getPointsChange() { return pointsChange; }
-    public void setPointsChange(Integer pointsChange) { this.pointsChange = pointsChange; }
+    public void setPointsChange(Integer pointsChange) { 
+        this.pointsChange = pointsChange; 
+        if (this.points == null || this.points == 0) {
+            this.points = pointsChange != null ? pointsChange : 0;
+        }
+    }
+    public Integer getPoints() { return points != null ? points : (pointsChange != null ? pointsChange : 0); }
+    public void setPoints(Integer points) { this.points = points; }
     public String getType() { return type; }
     public void setType(String type) { this.type = type; }
     public Integer getBalanceAfter() { return balanceAfter; }
