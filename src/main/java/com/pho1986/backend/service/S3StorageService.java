@@ -89,13 +89,13 @@ public class S3StorageService {
             return publicUrl;
         } catch (S3Exception e) {
             log.error("[S3Storage] Lỗi AWS S3 khi upload: code={}, message={}", e.awsErrorDetails().errorCode(), e.getMessage());
-            throw new IllegalStateException("Lỗi từ Amazon S3: " + e.awsErrorDetails().errorMessage(), e);
+            throw new IllegalStateException("Không thể lưu trữ tệp ảnh lên dịch vụ S3. Quý khách vui lòng thử lại sau.", e);
         } catch (SdkClientException e) {
             log.error("[S3Storage] Lỗi AWS SDK Client (chưa cấu hình credentials hoặc không có kết nối mạng): {}", e.getMessage());
-            throw new IllegalStateException("Không thể kết nối tới Amazon S3. Vui lòng kiểm tra AWS Credentials (AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY) hoặc kết nối mạng.", e);
+            throw new IllegalStateException("Không thể kết nối tới dịch vụ lưu trữ đám mây. Quý khách vui lòng thử lại sau.", e);
         } catch (IOException e) {
             log.error("[S3Storage] Lỗi đọc luồng dữ liệu file: {}", e.getMessage());
-            throw new IllegalStateException("Lỗi đọc dữ liệu tệp ảnh tải lên: " + e.getMessage(), e);
+            throw new IllegalStateException("Không thể đọc tệp ảnh tải lên. Vui lòng chọn tệp hợp lệ.", e);
         }
     }
 

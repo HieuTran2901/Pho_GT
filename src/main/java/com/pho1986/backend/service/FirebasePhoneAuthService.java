@@ -66,7 +66,7 @@ public class FirebasePhoneAuthService {
             decodedToken = firebaseService.verifyIdToken(request.getIdToken());
         } catch (Exception e) {
             log.error("[FIREBASE_AUTH] Xác thực ID Token thất bại: {}", e.getMessage());
-            throw new IllegalArgumentException("Mã xác thực Firebase không hợp lệ hoặc đã hết hạn: " + e.getMessage());
+            throw new IllegalArgumentException("Mã xác thực không hợp lệ hoặc đã hết hạn. Quý khách vui lòng thử lại.");
         }
 
         String rawPhone = firebaseService.extractPhoneNumber(decodedToken);

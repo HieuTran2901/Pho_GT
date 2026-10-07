@@ -67,12 +67,19 @@ public class TableService {
                 String guestName = (order.getGuestName() != null && !order.getGuestName().isBlank())
                         ? order.getGuestName()
                         : (order.getUser() != null ? order.getUser().getFullName() : "Khách tại bàn");
-                resp.setActiveGuestName(guestName);
 
                 String guestPhone = (order.getGuestPhone() != null && !order.getGuestPhone().isBlank())
                         ? order.getGuestPhone()
                         : (order.getUser() != null ? order.getUser().getPhone() : "");
-                resp.setActiveGuestPhone(guestPhone);
+
+                boolean isAdmin = isCallerAdmin();
+                if (isAdmin) {
+                    resp.setActiveGuestName(guestName);
+                    resp.setActiveGuestPhone(guestPhone);
+                } else {
+                    resp.setActiveGuestName(maskName(guestName));
+                    resp.setActiveGuestPhone(com.pho1986.backend.common.PiiMaskUtils.maskPhone(guestPhone));
+                }
 
                 resp.setActiveAmount(order.getFinalAmount());
                 resp.setActiveStatus(order.getStatus());
@@ -312,5 +319,23 @@ public class TableService {
             return false;
         }
         return matchesTableIdentifier(order.getTableNumber(), table);
+    }
+
+    private boolean isCallerAdmin() {
+        try {
+            org.springframework.security.core.Authentication auth =
+                    org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.getAuthorities() != null) {
+                return auth.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+            }
+        } catch (Exception ignored) {}
+        return false;
+    }
+
+    private String maskName(String name) {
+        if (name == null || name.isBlank() || "Khách tại bàn".equals(name)) return "Khách tại bàn";
+        String[] parts = name.trim().split("\\s+");
+        if (parts.length <= 1) return parts[0].substring(0, Math.min(1, parts[0].length())) + "***";
+        return parts[0] + " *** " + parts[parts.length - 1];
     }
 }
