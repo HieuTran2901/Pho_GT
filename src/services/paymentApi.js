@@ -3,7 +3,7 @@
  * Connects frontend to Spring Boot backend (/api/v1/payments) with resilient offline fallback.
  */
 
-import { getApiBaseUrl, notifyIfAccountLocked } from './apiConfig';
+import { getApiBaseUrl, notifyIfAccountLocked, sanitizeErrorMessage } from './apiConfig';
 
 const API_BASE_URL = getApiBaseUrl('payments');
 
@@ -63,8 +63,9 @@ export const paymentApi = {
       if (response.ok && json?.data) {
         return json.data;
       } else if (json?.message) {
-        console.warn('[PaymentApi] Backend error response:', json.message);
-        const err = new Error(json.message);
+        const safeMessage = sanitizeErrorMessage(json.message, 'Hệ thống thanh toán đang bận. Quý khách vui lòng thử lại sau.');
+        console.warn('[PaymentApi] Backend error response:', safeMessage);
+        const err = new Error(safeMessage);
         err.status = response.status;
         err.data = json;
         throw err;

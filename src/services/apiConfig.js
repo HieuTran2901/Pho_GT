@@ -41,3 +41,16 @@ export const notifyIfAccountLocked = (status, data) => {
   }
   return false;
 };
+
+/**
+ * Lọc sạch mọi thông báo kỹ thuật, lỗi cơ sở dữ liệu hoặc stack trace vô tình lọt ra production
+ */
+export const sanitizeErrorMessage = (message, fallback = 'Dạ, yêu cầu chưa thể thực hiện lúc này. Quý khách vui lòng thử lại sau nhé!') => {
+  if (!message || typeof message !== 'string') return fallback;
+  const isTechnicalLeak = /could not execute|statement|sql|exception|hibernate|jdbc|database|constraint|syntax|table|column|nullpointer|stacktrace|bad credentials/i.test(message);
+  if (isTechnicalLeak) {
+    return 'Dạ, quán đang bảo trì hoặc cập nhật dữ liệu. Quý khách vui lòng thử lại sau ít phút nhé!';
+  }
+  return message;
+};
+

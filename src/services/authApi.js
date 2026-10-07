@@ -3,7 +3,7 @@
  * Connects frontend to Spring Boot backend (/api/v1/auth) with resilient fallback.
  */
 
-import { getApiBaseUrl, notifyIfAccountLocked } from './apiConfig';
+import { getApiBaseUrl, notifyIfAccountLocked, sanitizeErrorMessage } from './apiConfig';
 
 const API_BASE_URL = getApiBaseUrl('auth');
 
@@ -19,8 +19,7 @@ async function handleResponse(response, isLoginAttempt = false) {
     if (!isLoginAttempt) {
       notifyIfAccountLocked(response.status, json);
     }
-    const errorMsg = (json && (json.message || json.error)) 
-      || (response.status === 423
+    const defaultStatusMsg = (response.status === 423
           ? 'Tài khoản của quý khách đã bị khóa bảo vệ. Vui lòng liên hệ Hotline quán để được hỗ trợ mở khóa.'
           : response.status === 401 
           ? 'Số điện thoại hoặc mật khẩu chưa chính xác. Quý khách vui lòng kiểm tra lại nhé!'
@@ -31,6 +30,8 @@ async function handleResponse(response, isLoginAttempt = false) {
           : response.status >= 500
           ? 'Dạ, quán đang bảo trì hệ thống một chút. Quý khách vui lòng quay lại sau ít phút nhé!'
           : 'Dạ, yêu cầu chưa thể thực hiện lúc này. Quý khách vui lòng thử lại sau nhé!');
+    const rawMsg = (json && (json.message || json.error));
+    const errorMsg = rawMsg ? sanitizeErrorMessage(rawMsg, defaultStatusMsg) : defaultStatusMsg;
     const error = new Error(errorMsg);
     error.status = response.status;
     error.data = json;

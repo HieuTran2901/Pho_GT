@@ -3,7 +3,7 @@
  * Connects frontend customer views to Spring Boot Public REST endpoints (/api/v1/dishes)
  */
 
-import { getApiBaseUrl } from './apiConfig';
+import { getApiBaseUrl, sanitizeErrorMessage } from './apiConfig';
 
 const API_BASE_URL = getApiBaseUrl('dishes');
 
@@ -11,8 +11,9 @@ async function handleResponse(response) {
   const json = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const errorMsg = (json && (json.message || json.error))
-      || `Lỗi khi tải dữ liệu món ăn (Mã ${response.status}).`;
+    const defaultMsg = `Dạ, thực đơn đang được cập nhật. Quý khách vui lòng thử lại sau giây lát (Mã ${response.status}).`;
+    const rawMsg = (json && (json.message || json.error));
+    const errorMsg = rawMsg ? sanitizeErrorMessage(rawMsg, defaultMsg) : defaultMsg;
     const error = new Error(errorMsg);
     error.status = response.status;
     error.data = json;

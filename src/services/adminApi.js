@@ -6,7 +6,7 @@
  */
 
 import { authApi } from './authApi';
-import { getApiBaseUrl } from './apiConfig';
+import { getApiBaseUrl, sanitizeErrorMessage } from './apiConfig';
 
 const API_BASE_URL = getApiBaseUrl('admin');
 
@@ -14,11 +14,12 @@ async function handleAdminResponse(response) {
   const json = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const errorMsg = (json && (json.message || json.error))
-      || (response.status === 401 ? 'Phiên làm việc quản trị viên đã hết hạn. Vui lòng đăng nhập lại.'
+    const defaultMsg = (response.status === 401 ? 'Phiên làm việc quản trị viên đã hết hạn. Vui lòng đăng nhập lại.'
           : response.status === 403 ? 'Tài khoản của bạn không có quyền truy cập khu vực Quản Trị.'
-          : response.status >= 500 ? 'Lỗi máy chủ nội bộ. Vui lòng thử lại sau ít phút.'
+          : response.status >= 500 ? 'Hệ thống đang bận. Vui lòng thử lại sau ít phút.'
           : 'Không thể xử lý yêu cầu lúc này.');
+    const rawMsg = (json && (json.message || json.error));
+    const errorMsg = rawMsg ? sanitizeErrorMessage(rawMsg, defaultMsg) : defaultMsg;
     const error = new Error(errorMsg);
     error.status = response.status;
     error.data = json;

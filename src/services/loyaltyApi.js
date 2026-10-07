@@ -5,7 +5,7 @@
  * Kết nối REST API /api/v1/loyalty để tra cứu phần thưởng, điểm tích lũy và đổi quà.
  */
 
-import { getApiBaseUrl, notifyIfAccountLocked } from './apiConfig';
+import { getApiBaseUrl, notifyIfAccountLocked, sanitizeErrorMessage } from './apiConfig';
 
 const API_BASE_URL = getApiBaseUrl('loyalty');
 
@@ -14,12 +14,13 @@ async function handleResponse(response) {
 
   if (!response.ok) {
     notifyIfAccountLocked(response.status, json);
-    const errorMsg = (json && (json.message || json.error))
-      || (response.status === 401
+    const defaultMsg = (response.status === 401
           ? 'Phiên đăng nhập đã hết hạn. Quý khách vui lòng đăng nhập lại nhé!'
           : response.status === 400
           ? 'Yêu cầu không hợp lệ hoặc số điểm không đủ để đổi quà.'
           : 'Dạ, hệ thống đổi quà tạm thời gián đoạn. Quý khách thử lại sau ít phút nhé!');
+    const rawMsg = (json && (json.message || json.error));
+    const errorMsg = rawMsg ? sanitizeErrorMessage(rawMsg, defaultMsg) : defaultMsg;
     const error = new Error(errorMsg);
     error.status = response.status;
     error.data = json;
