@@ -279,8 +279,8 @@ export function OnboardingTourProvider({ children }) {
     if (step.expectedAction === actionType) {
       setIsPraising(true);
       setPraiseData({
-        title: step.praiseTitle || 'Làm tốt lắm Bác ơi! 🎉',
-        message: step.praiseMessage || 'Thao tác của Bác rất chuẩn xác!'
+        title: step.praiseTitle || 'Thao tác rất chuẩn xác ạ! 🎉',
+        message: step.praiseMessage || 'Thao tác của Quý khách rất chuẩn xác!'
       });
       playPraiseChime();
 

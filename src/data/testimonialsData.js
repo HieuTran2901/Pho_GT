@@ -45,7 +45,7 @@ export const TESTIMONIALS = [
   },
   {
     id: 5,
-    name: 'Bác Trần Văn Hưng',
+    name: 'Ông Trần Văn Hưng',
     role: 'Nhà nghiên cứu Văn hóa Dân gian',
     badge: 'Thực khách sành vị',
     category: 'broth',

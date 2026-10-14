@@ -98,15 +98,15 @@ export function useAuthModalForm({
       console.error('[FIREBASE_OTP]', err);
       clearRecaptchaVerifier();
       if (err.code === 'auth/too-many-requests') {
-        setErrorMessage('Bác đã yêu cầu gửi mã quá nhiều lần từ thiết bị này. Vui lòng thử lại sau ít phút.');
+        setErrorMessage('Quý khách đã yêu cầu gửi mã quá nhiều lần từ thiết bị này. Vui lòng thử lại sau ít phút.');
       } else if (err.code === 'auth/invalid-phone-number') {
         setErrorMessage('Số điện thoại không đúng định dạng.');
       } else if (err.code === 'auth/captcha-check-failed' || err.message?.includes('rendered')) {
-        setErrorMessage('Lớp bảo mật chống bot đã được làm mới. Bác vui lòng bấm Gửi mã lại nhé!');
+        setErrorMessage('Lớp bảo mật chống bot đã được làm mới. Quý khách vui lòng bấm Gửi mã lại nhé!');
       } else if (err.code === 'auth/operation-not-allowed') {
-        setErrorMessage('Vùng gửi SMS (+84) đang được kích hoạt. Bác vui lòng thử lại sau ít phút.');
+        setErrorMessage('Vùng gửi SMS (+84) đang được kích hoạt. Quý khách vui lòng thử lại sau ít phút.');
       } else {
-        setErrorMessage(err.message || 'Không thể gửi mã xác thực. Bác vui lòng thử lại.');
+        setErrorMessage(err.message || 'Không thể gửi mã xác thực. Quý khách vui lòng thử lại.');
       }
     } finally {
       setIsOtpSending(false);
@@ -212,14 +212,14 @@ export function useAuthModalForm({
       handleTabChange('login');
     } else {
       setPhone('0912345678');
-      setFullName('Bác Hai Phố Cổ');
+      setFullName('Nguyễn Văn An');
       setPassword('123456');
       handleTabChange('register');
     }
   }, [handleTabChange]);
 
   const handleForgotPassword = useCallback(() => {
-    if (onToast) onToast('Quán đã nhận yêu cầu. Đang kích hoạt lấy lại mật khẩu qua SMS OTP cho số ' + (phone || 'của bác') + '.');
+    if (onToast) onToast('Quán đã nhận yêu cầu. Đang kích hoạt lấy lại mật khẩu qua SMS OTP cho số ' + (phone || 'của Quý khách') + '.');
   }, [onToast, phone]);
 
   const handleGuestOrder = useCallback(() => {

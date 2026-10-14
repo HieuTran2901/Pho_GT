@@ -386,7 +386,7 @@ export function useAdminPortalState() {
         tableNumber: o.tableNumber || (idx === 0 ? 12 : idx === 1 ? 8 : 5),
         floor: o.floor || 1,
         orderType: o.orderType || (o.tableNumber ? 'DINE_IN' : 'DELIVERY'),
-        guestName: o.guestName || (idx === 0 ? 'Anh Nguyễn Văn Minh' : idx === 1 ? 'Chị Trần Thị Mai' : 'Bác Lê Hoàng Long'),
+        guestName: o.guestName || (idx === 0 ? 'Anh Nguyễn Văn Minh' : idx === 1 ? 'Chị Trần Thị Mai' : 'Ông Lê Hoàng Long'),
         guestPhone: o.guestPhone || (idx === 0 ? '092 952 8509' : idx === 1 ? '098 765 4321' : '091 234 5678'),
         finalAmount: o.finalAmount || 150000,
         paymentMethod: o.paymentMethod || 'Thanh toán online (SEPAY)',

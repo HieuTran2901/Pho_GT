@@ -72,7 +72,7 @@ function MenuSection({ onAddToCart }) {
               <AlertCircle className="w-10 h-10 mx-auto mb-3 text-[#caa876]" />
               <h3 className="font-serif text-lg font-bold mb-2">Không tìm thấy món "{searchQuery}"</h3>
               <p className="text-xs text-stone-400 mb-5">
-                Bác thử gõ "tái lăn", "gà đồi", "sốt vang", hoặc xem trọn vẹn trong Sổ Tay Thực Khách nhé!
+                Quý khách thử gõ "tái lăn", "gà đồi", "sốt vang", hoặc xem trọn vẹn trong Sổ Tay Thực Khách nhé!
               </p>
               <button
                 type="button"

@@ -51,14 +51,14 @@ const TourModeSelectorCard = memo(function TourModeSelectorCard({ onSelectMode, 
               </span>
             </div>
             <h3 className="text-lg sm:text-xl font-black text-[#fae29c] mt-1 leading-tight">
-              Bác Muốn Trải Nghiệm Điều Gì?
+              Quý Khách Muốn Trải Nghiệm Điều Gì?
             </h3>
           </div>
         </div>
 
         {/* Lời dẫn dắt ấm áp */}
         <p className="text-xs sm:text-sm text-stone-200 font-sans leading-relaxed mb-6 opacity-90">
-          Dạ thưa Bác! Con là <strong className="text-amber-300 font-serif">Tiểu Nhị 1986</strong>, rất vinh hạnh được đồng hành cùng Bác. Mời Bác chọn hành trình hướng dẫn phù hợp nhất:
+          Dạ kính thưa Quý khách! Em là <strong className="text-amber-300 font-serif">Tiểu Nhị 1986</strong>, rất vinh hạnh được đồng hành cùng Quý khách. Mời Quý khách chọn hành trình hướng dẫn phù hợp nhất:
         </p>
 
         {/* 2 Lựa chọn hành trình dạng bento */}
@@ -134,7 +134,7 @@ const TourModeSelectorCard = memo(function TourModeSelectorCard({ onSelectMode, 
         {/* Footer: Bỏ qua / Để sau */}
         <div className="flex items-center justify-between pt-4 border-t border-[#d4af37]/20 text-xs font-sans">
           <span className="text-stone-400">
-            Bác có thể mở lại bất cứ lúc nào qua nút la bàn trên menu
+            Quý khách có thể mở lại bất cứ lúc nào qua nút la bàn trên menu
           </span>
           <button
             type="button"

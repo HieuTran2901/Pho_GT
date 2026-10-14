@@ -21,7 +21,7 @@ function ChatLauncher({ onClick, isOpen }) {
       {showTooltip && (
         <div className="relative px-4 py-2.5 rounded-2xl bg-gradient-to-br from-[#122b21] via-[#0d2119] to-[#081711] border border-[#d4af37]/70 shadow-[0_10px_25px_rgba(0,0,0,0.6)] text-stone-100 text-xs font-serif flex items-center gap-2.5 animate-in fade-in slide-in-from-bottom-2 duration-300 max-w-[240px]">
           <div className="flex-1 leading-snug">
-            <span className="font-bold text-[#fae29c]">Tiểu Nhị 1986:</span> Bác muốn dùng phở gì hôm nay ạ?
+            <span className="font-bold text-[#fae29c]">Tiểu Nhị 1986:</span> Quý khách muốn dùng phở gì hôm nay ạ?
           </div>
           <button
             onClick={(e) => {

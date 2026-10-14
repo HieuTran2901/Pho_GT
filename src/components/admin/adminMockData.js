@@ -41,7 +41,7 @@ export const DEFAULT_DASHBOARD_PENDING_ORDERS = [
     tableNumber: 5,
     floor: 2,
     orderType: 'DINE_IN',
-    guestName: 'Bác Lê Hoàng Long',
+    guestName: 'Ông Lê Hoàng Long',
     guestPhone: '091 234 5678',
     finalAmount: 185000,
     paymentMethod: 'Tiền mặt tại bàn',

@@ -6,7 +6,7 @@
 export const INITIAL_GREETING = {
   id: 'welcome_1',
   role: 'assistant',
-  content: 'Dạ em chào Bác ạ! Em là Tiểu Nhị quán Phở Gia Truyền 1986. Bác ghé chơi, em xin phép hầu chuyện và mời Bác thưởng thức những bát phở nước dùng ninh than củi 24 giờ thơm nức mũi ạ. Bác muốn dùng phở gì hôm nay?',
+  content: 'Dạ em kính chào Quý khách ạ! Em là Tiểu Nhị quán Phở Gia Truyền 1986. Quý khách ghé chơi, em xin phép hầu chuyện và mời Quý khách thưởng thức những bát phở nước dùng ninh than củi 24 giờ thơm nức mũi ạ. Quý khách muốn dùng phở gì hôm nay?',
   time: 'Vừa xong',
   actionType: 'NONE'
 };
@@ -51,7 +51,7 @@ export const QUICK_SUGGESTIONS = [
 
 export const CLIENT_FALLBACK_ANSWERS = {
   tai_lan: {
-    reply: 'Dạ bát Phở Bò Tái Lăn Áp Chảo (75.000đ) là món trứ danh của quán em ạ! Thịt bò tơ chao lửa lớn thơm lừng tỏi phi, nước dùng béo ngọt sóng sánh. Em gửi Bác thẻ món để Bác chọn thêm vào giỏ nhé!',
+    reply: 'Dạ bát Phở Bò Tái Lăn Áp Chảo (75.000đ) là món trứ danh của quán em ạ! Thịt bò tơ chao lửa lớn thơm lừng tỏi phi, nước dùng béo ngọt sóng sánh. Em gửi Quý khách thẻ món để Quý khách chọn thêm vào giỏ nhé!',
     actionType: 'DISH',
     actionPayload: {
       id: 'dish_tai_lan',
@@ -61,12 +61,12 @@ export const CLIENT_FALLBACK_ANSWERS = {
     }
   },
   booking: {
-    reply: 'Dạ quán luôn dành sẵn những góc bàn gỗ mộc ấm cúng bên hiên ngói rêu phong. Bác bấm nút Đặt Bàn ngay dưới đây để chọn chỗ ưng ý chỉ trong 30 giây ạ!',
+    reply: 'Dạ quán luôn dành sẵn những góc bàn gỗ mộc ấm cúng bên hiên ngói rêu phong. Quý khách bấm nút Đặt Bàn ngay dưới đây để chọn chỗ ưng ý chỉ trong 30 giây ạ!',
     actionType: 'BOOKING',
     actionPayload: { title: 'Đặt Bàn Trực Quan 1986' }
   },
   voucher: {
-    reply: 'Dạ quán kính gửi Bác Tem Phiếu Tri Kỷ [PHO1986VIP] giảm 20% cho đơn từ 150.000đ. Bác có thể sao chép và dùng ngay khi thanh toán ạ!',
+    reply: 'Dạ quán kính gửi Quý khách Tem Phiếu Tri Kỷ [PHO1986VIP] giảm 20% cho đơn từ 150.000đ. Quý khách có thể sao chép và dùng ngay khi thanh toán ạ!',
     actionType: 'VOUCHER',
     actionPayload: { code: 'PHO1986VIP', discount: 'GIẢM 20%' }
   }

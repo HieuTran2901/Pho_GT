@@ -247,7 +247,7 @@ function BookLeftPage({
                       </div>
                       <p className="text-xs font-bold text-[#3e1f14]">Chưa có món yêu thích nào</p>
                       <p className="text-[11px] text-stone-500 italic max-w-[220px] mx-auto leading-relaxed">
-                        Bác hãy bấm biểu tượng ❤️ trên món ăn để lưu vào danh sách tâm đắc nhé!
+                        Quý khách hãy bấm biểu tượng ❤️ trên món ăn để lưu vào danh sách tâm đắc nhé!
                       </p>
                     </div>
                   ) : (

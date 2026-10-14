@@ -151,7 +151,7 @@ const TourMascotCard = memo(function TourMascotCard({
       {isNudged && !isPraising && (
         <div className="absolute -top-9 left-1/2 -translate-x-1/2 bg-[#fae29c] text-[#7a1e12] text-[11px] font-sans font-bold px-3 py-1 rounded-full shadow-xl border border-amber-500 animate-bounce whitespace-nowrap z-40 flex items-center gap-1.5 pointer-events-none">
           <Sparkles className="w-3.5 h-3.5 text-[#96281b]" />
-          <span>Bác bấm &quot;Tiếp tục&quot; hoặc &quot;✕&quot; ở đây nhé!</span>
+          <span>Quý khách bấm &quot;Tiếp tục&quot; hoặc &quot;✕&quot; ở đây nhé!</span>
         </div>
       )}
 
@@ -221,7 +221,7 @@ const TourMascotCard = memo(function TourMascotCard({
           {/* Body: Tiêu đề & Lời thoại ấm áp của Tiểu Nhị */}
           <div className="space-y-1.5 mb-3">
             <h4 className="text-sm sm:text-base font-black text-[#fae29c] leading-tight font-serif">
-              {isPraising ? (praiseData?.title || 'Làm tốt lắm Bác ơi! 🎉') : step.title}
+              {isPraising ? (praiseData?.title || 'Thao tác rất chuẩn xác ạ! 🎉') : step.title}
             </h4>
             <p className="text-xs text-stone-200 leading-relaxed font-sans font-normal opacity-95">
               {isPraising ? (praiseData?.message || step.mascotMessage) : step.mascotMessage}
@@ -230,7 +230,7 @@ const TourMascotCard = memo(function TourMascotCard({
             {/* Gợi ý thao tác trực quan */}
             {step.isInteractive && !isPraising && (
               <div className="mt-2 flex items-center gap-1.5 text-[11px] font-sans text-emerald-300 bg-emerald-950/70 border border-emerald-500/40 px-2.5 py-1 rounded-xl animate-pulse">
-                <span>{step.actionHint || '👉 Bác chạm thử trực tiếp trên màn hình nhé!'}</span>
+                <span>{step.actionHint || '👉 Quý khách chạm thử trực tiếp trên màn hình nhé!'}</span>
               </div>
             )}
 
@@ -238,7 +238,7 @@ const TourMascotCard = memo(function TourMascotCard({
             {isPraising && (
               <div className="mt-2 flex items-center gap-2 text-[11px] font-sans text-amber-200 bg-emerald-950/80 border border-emerald-500/40 px-2.5 py-1 rounded-xl shadow-inner">
                 <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-spin [animation-duration:3s]" />
-                <span>Tiểu Nhị đang đưa Bác sang trạm tiếp theo...</span>
+                <span>Tiểu Nhị đang đưa Quý khách sang trạm tiếp theo...</span>
               </div>
             )}
           </div>

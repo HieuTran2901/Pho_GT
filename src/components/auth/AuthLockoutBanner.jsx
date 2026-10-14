@@ -5,7 +5,7 @@ import PhoMascotExpression from './PhoMascotExpression';
 /**
  * AuthLockoutBanner
  * Banner thông báo bảo mật đa tầng mang đậm phong vị Quán Phở Gia Truyền 1986:
- * - Thay vì thông báo kỹ thuật khô khan (HTTP 429/423), dùng giọng văn dí dỏm, ấm áp của Bác Chủ Quán.
+ * - Thay vì thông báo kỹ thuật khô khan (HTTP 429/423), dùng giọng văn dí dỏm, ấm áp của Quán Phở Gia Truyền 1986.
  * - Tích hợp Mascot Bé Tô Phở 1986 phản ánh đúng tâm lý và biểu cảm qua từng vòng.
  * - Hỗ trợ các nút hành động cứu nguy thông minh (Quên MK, Hotline, Đặt bàn vãng lai, Đổi số điện thoại).
  */
@@ -45,7 +45,7 @@ export default function AuthLockoutBanner({
             </div>
 
             <p className="text-[11.5px] text-stone-200 font-serif mt-1 leading-relaxed">
-              {errorMessage || 'Số điện thoại này hiện đang trong trạng thái tạm khóa. Bác có thể nhập số khác hoặc gọi Hotline để Bếp Trưởng hỗ trợ mở két nhé!'}
+              {errorMessage || 'Số điện thoại này hiện đang trong trạng thái tạm khóa. Quý khách có thể nhập số khác hoặc gọi Hotline để Bếp Trưởng hỗ trợ mở két nhé!'}
             </p>
 
             <div className="mt-2.5 pt-2 border-t border-red-500/25 flex flex-wrap items-center gap-2">
@@ -97,7 +97,7 @@ export default function AuthLockoutBanner({
             mood: 'tea',
             badge: 'Lệnh Quán: Thong Thả Uống Trà 🍵',
             subBadge: 'Vòng 1/5 • Tạm nghỉ 60s',
-            quote: 'Ấy dà! Bác gõ nhầm mật khẩu 5 lần rồi kìa. Thong thả nhấp chén trà nóng 1 phút cho ấm bụng, thư thái đầu óc rồi gõ lại nhé bác ơi!',
+            quote: 'Dạ, Quý khách đã nhập sai mật khẩu 5 lần rồi kìa. Thong thả nhấp chén trà nóng 1 phút cho ấm bụng, thư thái đầu óc rồi thử lại nhé Quý khách ơi!',
             color: 'from-[#2b1609] via-[#1f0e05] to-[#150803]',
             borderColor: 'border-amber-500/80',
             accentColor: 'text-amber-300'
@@ -105,9 +105,9 @@ export default function AuthLockoutBanner({
         case 2:
           return {
             mood: 'crying',
-            badge: 'Bác Ơi Đừng Bấm Nữa Nha... 🥺',
+            badge: 'Quý Khách Ơi Đừng Bấm Nữa Nha... 🥺',
             subBadge: 'Vòng 2/5 • Tạm nghỉ 3 phút',
-            quote: 'Bác ơi, chắc bác lỡ quên mật khẩu thật rồi đúng không? Đừng ráng bấm nữa mà tội nghiệp tài khoản nha! Bác bấm "Quên mật khẩu" bên dưới để quán hỗ trợ bác ngay nè.',
+            quote: 'Quý khách ơi, chắc Quý khách lỡ quên mật khẩu thật rồi đúng không? Đừng ráng bấm nữa mà tội nghiệp tài khoản nha! Quý khách bấm "Quên mật khẩu" bên dưới để quán hỗ trợ ngay nè.',
             color: 'from-[#2d110f] via-[#200c0a] to-[#170706]',
             borderColor: 'border-rose-500/80',
             accentColor: 'text-rose-300'
@@ -117,7 +117,7 @@ export default function AuthLockoutBanner({
             mood: 'suspicious',
             badge: 'Nghi Vấn: Hack Nồi Nước Dùng? 🧐',
             subBadge: 'Vòng 3/5 • Tạm nghỉ 10 phút',
-            quote: 'Khoan đã nha... Bác thử sai tới vòng thứ 3 rồi đó! Có phải bác đang tính "hack" công thức nước dùng 38 năm gia truyền của quán em không? Quán bảo vệ kỹ lắm đó nghen!',
+            quote: 'Khoan đã nha... Quý khách thử sai tới vòng thứ 3 rồi đó! Có phải Quý khách đang tính "hack" công thức nước dùng 38 năm gia truyền của quán em không? Quán bảo vệ kỹ lắm đó nghen!',
             color: 'from-[#291708] via-[#1d0f04] to-[#130902]',
             borderColor: 'border-amber-600/80',
             accentColor: 'text-amber-300'
@@ -127,7 +127,7 @@ export default function AuthLockoutBanner({
             mood: 'alarm',
             badge: 'Báo Động Cấp 1: Sắp Niêm Phong! 🚨',
             subBadge: 'Vòng 4/5 • Tạm nghỉ 30 phút',
-            quote: 'Bác ơi, báo động cấp 1 rồi! Chỉ còn ĐÚNG 1 VÒNG THỬ NỮA là tài khoản bị niêm phong két luôn đấy ạ. Bác dừng tay lại ngay, gọi Hotline quán em hỗ trợ liền chứ đừng bấm bừa nữa nhé!',
+            quote: 'Quý khách ơi, báo động cấp 1 rồi! Chỉ còn ĐÚNG 1 VÒNG THỬ NỮA là tài khoản bị niêm phong két luôn đấy ạ. Quý khách dừng tay lại ngay, gọi Hotline quán em hỗ trợ liền chứ đừng bấm bừa nữa nhé!',
             color: 'from-[#38100a] via-[#260a06] to-[#160402]',
             borderColor: 'border-red-500/90',
             accentColor: 'text-red-300'
@@ -196,8 +196,8 @@ export default function AuthLockoutBanner({
               <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
               <span>
                 {remainingRounds > 0
-                  ? `Bác còn ${remainingRounds} vòng thử trước khi tài khoản bị niêm phong két.`
-                  : 'CẢNH BÁO ĐỎ: Đây là vòng thử cuối cùng của bác!'}
+                  ? `Quý khách còn ${remainingRounds} vòng thử trước khi tài khoản bị niêm phong két.`
+                  : 'CẢNH BÁO ĐỎ: Đây là vòng thử cuối cùng của Quý khách!'}
               </span>
             </div>
 

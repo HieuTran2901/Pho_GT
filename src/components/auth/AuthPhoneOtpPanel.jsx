@@ -58,19 +58,19 @@ export default function AuthPhoneOtpPanel({ onToast, onSuccess }) {
       setStep('ENTER_OTP');
       setCooldown(60);
       if (onToast) {
-        onToast(`Mã xác thực OTP đã được gửi đến số ${phone}. Bác kiểm tra tin nhắn nhé!`);
+        onToast(`Mã xác thực OTP đã được gửi đến số ${phone}. Quý khách kiểm tra tin nhắn nhé!`);
       }
     } catch (err) {
       console.error('[FIREBASE_PHONE_OTP] Lỗi gửi mã:', err);
       clearRecaptchaVerifier();
       if (err.code === 'auth/too-many-requests') {
-        setErrorMessage('Bác đã yêu cầu gửi mã quá nhiều lần từ thiết bị này. Vui lòng thử lại sau ít phút.');
+        setErrorMessage('Quý khách đã yêu cầu gửi mã quá nhiều lần từ thiết bị này. Vui lòng thử lại sau ít phút.');
       } else if (err.code === 'auth/invalid-phone-number') {
-        setErrorMessage('Số điện thoại không đúng định dạng quốc tế. Bác vui lòng kiểm tra lại.');
+        setErrorMessage('Số điện thoại không đúng định dạng quốc tế. Quý khách vui lòng kiểm tra lại.');
       } else if (err.code === 'auth/captcha-check-failed' || err.message?.includes('rendered')) {
-        setErrorMessage('Lớp bảo mật chống bot đã được làm mới. Bác vui lòng thử bấm gửi lại nhé.');
+        setErrorMessage('Lớp bảo mật chống bot đã được làm mới. Quý khách vui lòng thử bấm gửi lại nhé.');
       } else {
-        setErrorMessage(err.message || 'Chưa thể gửi mã OTP lúc này. Bác vui lòng thử lại sau nhé!');
+        setErrorMessage(err.message || 'Chưa thể gửi mã OTP lúc này. Quý khách vui lòng thử lại sau nhé!');
       }
     } finally {
       setIsLoading(false);
@@ -103,18 +103,18 @@ export default function AuthPhoneOtpPanel({ onToast, onSuccess }) {
 
       if (onToast) {
         const bonusMsg = response?.pointsEarned ? ` + Nhận ngay ${response.pointsEarned} Điểm Tri Kỷ!` : '';
-        onToast(`Chào mừng Bác! Đăng nhập bằng số điện thoại thành công!${bonusMsg}`);
+        onToast(`Chào mừng Quý khách! Đăng nhập bằng số điện thoại thành công!${bonusMsg}`);
       }
 
       if (onSuccess) onSuccess();
     } catch (err) {
       console.error('[FIREBASE_PHONE_OTP] Lỗi xác thực OTP:', err);
       if (err.code === 'auth/invalid-verification-code') {
-        setErrorMessage('Mã OTP không chính xác. Bác vui lòng kiểm tra lại tin nhắn nhé!');
+        setErrorMessage('Mã OTP không chính xác. Quý khách vui lòng kiểm tra lại tin nhắn nhé!');
       } else if (err.code === 'auth/code-expired') {
-        setErrorMessage('Mã OTP đã hết hiệu lực. Bác bấm "Gửi lại mã" bên dưới nhé.');
+        setErrorMessage('Mã OTP đã hết hiệu lực. Quý khách bấm "Gửi lại mã" bên dưới nhé.');
       } else {
-        setErrorMessage(err.message || 'Xác thực OTP thất bại. Bác vui lòng thử lại.');
+        setErrorMessage(err.message || 'Xác thực OTP thất bại. Quý khách vui lòng thử lại.');
       }
     } finally {
       setIsLoading(false);
@@ -165,7 +165,7 @@ export default function AuthPhoneOtpPanel({ onToast, onSuccess }) {
 
           <div>
             <label htmlFor="otp-fullname" className="block text-xs font-serif font-bold text-[#3a251b] mb-1">
-              Họ và Tên của Bác <span className="text-stone-400 font-normal">(Tùy chọn)</span>
+              Họ và Tên của Quý khách <span className="text-stone-400 font-normal">(Tùy chọn)</span>
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-500">
@@ -174,7 +174,7 @@ export default function AuthPhoneOtpPanel({ onToast, onSuccess }) {
               <input
                 id="otp-fullname"
                 type="text"
-                placeholder="VD: Bác Ba Phố Cổ"
+                placeholder="VD: Nguyễn Văn An"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 disabled={isLoading}
@@ -236,7 +236,7 @@ export default function AuthPhoneOtpPanel({ onToast, onSuccess }) {
           <div className="text-xs text-stone-600">
             {cooldown > 0 ? (
               <span className="text-stone-500 font-mono">
-                Bác có thể yêu cầu gửi lại mã sau: <strong className="text-[#8a1e14]">{cooldown}s</strong>
+                Quý khách có thể yêu cầu gửi lại mã sau: <strong className="text-[#8a1e14]">{cooldown}s</strong>
               </span>
             ) : (
               <button

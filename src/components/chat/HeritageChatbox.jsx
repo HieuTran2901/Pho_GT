@@ -174,7 +174,7 @@ export default function HeritageChatbox({
         const botMessage = {
           id: `bot_${Date.now()}`,
           role: 'assistant',
-          content: data.reply || 'Dạ Tiểu Nhị xin hầu chuyện Bác!',
+          content: data.reply || 'Dạ Tiểu Nhị xin hầu chuyện Quý khách!',
           actionType: data.actionType || 'NONE',
           actionPayload: data.actionPayload || null,
           time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
@@ -196,7 +196,7 @@ export default function HeritageChatbox({
       const lower = text.toLowerCase();
       if (lower.includes('bạn là ai') || lower.includes('em là ai') || lower.includes('tên gì')) {
         matched = {
-          reply: 'Dạ em là Tiểu Nhị quán Phở Gia Truyền 1986. Em túc trực ở đây để hầu chuyện, giới thiệu thực đơn ninh chậm 24h và giúp Bác đặt bàn, nhận ưu đãi ạ!',
+          reply: 'Dạ em là Tiểu Nhị quán Phở Gia Truyền 1986. Em túc trực ở đây để hầu chuyện, giới thiệu thực đơn ninh chậm 24h và giúp Quý khách đặt bàn, nhận ưu đãi ạ!',
           actionType: 'NONE',
           actionPayload: null
         };
@@ -206,7 +206,7 @@ export default function HeritageChatbox({
 
       const fallbackReply = matched
         ? matched.reply
-        : 'Dạ em chào Bác! Nước dùng phở 1986 được ninh chậm 24 giờ thơm lừng thảo mộc. Bác có muốn em gợi ý một bát phở tái lăn áp chảo hay hướng dẫn đặt bàn trước không ạ?';
+        : 'Dạ em kính chào Quý khách! Nước dùng phở 1986 được ninh chậm 24 giờ thơm lừng thảo mộc. Quý khách có muốn em gợi ý một bát phở tái lăn áp chảo hay hướng dẫn đặt bàn trước không ạ?';
 
       const botMessage = {
         id: `bot_${Date.now()}`,
