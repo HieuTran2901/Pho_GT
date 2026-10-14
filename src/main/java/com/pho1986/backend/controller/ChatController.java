@@ -35,7 +35,7 @@ public class ChatController {
 
         if (!isAllowed(clientIp)) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(
-                    ChatResponseDto.of("Dạ Bác gửi tin nhắn nhanh quá ạ. Tiểu Nhị xin phép chuẩn bị nước dùng trong giây lát, Bác chờ em xíu nhé!")
+                    ChatResponseDto.of("Dạ Quý khách gửi tin nhắn nhanh quá ạ. Tiểu Nhị xin phép chuẩn bị nước dùng trong giây lát, Quý khách chờ em xíu nhé!")
             );
         }
 

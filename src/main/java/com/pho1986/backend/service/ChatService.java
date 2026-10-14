@@ -33,7 +33,7 @@ public class ChatService {
     private static final String SYSTEM_PROMPT = """
         Bạn là "Tiểu Nhị Phố Cũ 1986" - người đàm đạo và phục vụ ẩm thực tại quán Phở Gia Truyền 1986 (Hà Nội).
         Phong cách giao tiếp:
-        - Xưng hô lịch thiệp, đôn hậu, tao nhã chuẩn phong vị Hà Nội xưa ("Dạ em chào Bác", "Kính thưa Quý khách", "Mời Bác xơi phở").
+        - Xưng hô lịch thiệp, đôn hậu, tao nhã chuẩn phong vị Hà Nội xưa ("Dạ em kính chào Quý khách", "Kính thưa Quý khách", "Mời Quý khách xơi phở").
         - Trích dẫn tinh thần ẩm thực của Thạch Lam, Vũ Bằng về phở Hà Nội.
         - Tinh hoa quán: Nước dùng ninh chậm 24 giờ bằng than củi đỏ lửa với xương ống bò tơ, sá sùng Quan Lạn nướng vàng, 5 thảo mộc (hoa hồi xứ Lạng, thảo quả nướng, quế chi, rễ mùi, hạt ngò); tuyệt đối không dùng mì chính; bánh phở tươi tráng cối đá mỏng như lụa; đựng trong bát chiết yêu men lam Bát Tràng giữ nhiệt bỏng rẫy.
         - Giờ mở cửa: 06:00 đến 23:00 hàng ngày.
@@ -168,7 +168,7 @@ public class ChatService {
 
         if (matches(q, "chào", "hi", "hello", "ơi", "alo", "quán ơi")) {
             return ChatResponseDto.of(
-                    "Dạ em kính chào Bác ạ! Bác ghé chơi quán Phở Gia Truyền 1986. Hôm nay tiết trời đẹp, Bác muốn dùng phở tái lăn áp chảo hay một bát nạm gầu giòn nóng hổi ạ?",
+                    "Dạ em kính chào Quý khách ạ! Quý khách ghé chơi quán Phở Gia Truyền 1986. Hôm nay tiết trời đẹp, Quý khách muốn dùng phở tái lăn áp chảo hay một bát nạm gầu giòn nóng hổi ạ?",
                     action.actionType(), action.payload(), true
             );
         }
@@ -176,7 +176,7 @@ public class ChatService {
         if (matches(q, "đặt bàn", "giữ chỗ", "bàn trống", "mấy người", "đặt chỗ")) {
             Map<String, Object> payload = Map.of("title", "Đặt Bàn Trực Quan 1986", "description", "Chọn vị trí bàn gỗ mộc hiên nhà hoặc trong gian ấm.");
             return ChatResponseDto.of(
-                    "Dạ quán luôn dành sẵn những góc bàn gỗ mộc ấm cúng bên hiên ngói rêu phong. Bác bấm vào nút Đặt Bàn dưới đây để chọn chỗ ưng ý chỉ trong 30 giây ạ!",
+                    "Dạ quán luôn dành sẵn những góc bàn gỗ mộc ấm cúng bên hiên ngói rêu phong. Quý khách bấm vào nút Đặt Bàn dưới đây để chọn chỗ ưng ý chỉ trong 30 giây ạ!",
                     "BOOKING", payload, true
             );
         }
@@ -192,13 +192,13 @@ public class ChatService {
                         ? String.format(" cho đơn từ %,.0fđ", v.getMinOrderAmount()) : "";
                 Map<String, Object> payload = Map.of("code", v.getCode(), "discount", disc, "desc", v.getTitle() + minOrder);
                 return ChatResponseDto.of(
-                        String.format("Dạ quán kính gửi Bác Tem Phiếu Tri Kỷ [%s] %s%s. Bác có thể sao chép mã và dùng ngay khi thanh toán ạ!", v.getCode(), disc, minOrder),
+                        String.format("Dạ quán kính gửi Quý khách Tem Phiếu Tri Kỷ [%s] %s%s. Quý khách có thể sao chép mã và dùng ngay khi thanh toán ạ!", v.getCode(), disc, minOrder),
                         "VOUCHER", payload, true
                 );
             }
             Map<String, Object> payload = Map.of("code", "PHO1986VIP", "discount", "GIẢM 20%", "desc", "Áp dụng đơn từ 150k khi đặt phở.");
             return ChatResponseDto.of(
-                    "Dạ quán kính gửi Bác Tem Phiếu Tri Kỷ [PHO1986VIP] giảm 20% cho bữa thưởng vị hôm nay. Bác có thể sao chép mã và dùng ngay khi thanh toán ạ!",
+                    "Dạ quán kính gửi Quý khách Tem Phiếu Tri Kỷ [PHO1986VIP] giảm 20% cho bữa thưởng vị hôm nay. Quý khách có thể sao chép mã và dùng ngay khi thanh toán ạ!",
                     "VOUCHER", payload, true
             );
         }
@@ -208,14 +208,14 @@ public class ChatService {
             Number price = (Number) action.payload().get("price");
             String priceStr = price != null ? String.format("%,.0fđ", price.doubleValue()) : "";
             return ChatResponseDto.of(
-                    String.format("Dạ quán kính gửi Bác món %s với giá %s chuẩn niêm yết. Từng thớ thịt ngập vị ngọt tủy than củi ninh 24 giờ. Bác bấm nút dưới đây để thêm ngay vào giỏ ạ!", name, priceStr),
+                    String.format("Dạ quán kính gửi Quý khách món %s với giá %s chuẩn niêm yết. Từng thớ thịt ngập vị ngọt tủy than củi ninh 24 giờ. Quý khách bấm nút dưới đây để thêm ngay vào giỏ ạ!", name, priceStr),
                     action.actionType(), action.payload(), true
             );
         }
 
         if (matches(q, "mì chính", "bột ngọt", "nước dùng", "sá sùng", "ninh")) {
             return ChatResponseDto.of(
-                    "Dạ Bác an tâm tuyệt đối ạ! Nồi đồng quán ninh than củi ròng rã 24 giờ chắt lọc từ tủy xương ống bò tơ và sá sùng đảo Quan Lạn phơi sương, vị ngọt umami thuần khiết 100% không dùng một hạt mì chính nhân tạo nào.",
+                    "Dạ Quý khách an tâm tuyệt đối ạ! Nồi đồng quán ninh than củi ròng rã 24 giờ chắt lọc từ tủy xương ống bò tơ và sá sùng đảo Quan Lạn phơi sương, vị ngọt umami thuần khiết 100% không dùng một hạt mì chính nhân tạo nào.",
                     "NONE", null, true
             );
         }
@@ -229,13 +229,13 @@ public class ChatService {
 
         if (matches(q, "menu", "thực đơn", "giá", "có món gì", "danh sách món")) {
             return ChatResponseDto.of(
-                    "Dạ quán có đủ 26 món tinh hoa gia truyền: Phở bò tái lăn, nạm gầu giòn, đuôi bò thố đá, phở gà đồi, cùng quẩy giòn và trà sen Tây Hồ. Bác có thể xem toàn bộ thực đơn ngay dưới đây ạ!",
+                    "Dạ quán có đủ 26 món tinh hoa gia truyền: Phở bò tái lăn, nạm gầu giòn, đuôi bò thố đá, phở gà đồi, cùng quẩy giòn và trà sen Tây Hồ. Quý khách có thể xem toàn bộ thực đơn ngay dưới đây ạ!",
                     "MENU", null, true
             );
         }
 
         return ChatResponseDto.of(
-                "Dạ từng thìa nước dùng 1986 đượm hương hoa hồi và sá sùng Quan Lạn luôn sẵn sàng phục vụ Bác. Bác muốn xem thực đơn, đặt bàn trước hay nhận mã tem phiếu tri kỷ ạ?",
+                "Dạ từng thìa nước dùng 1986 đượm hương hoa hồi và sá sùng Quan Lạn luôn sẵn sàng phục vụ Quý khách. Quý khách muốn xem thực đơn, đặt bàn trước hay nhận mã tem phiếu tri kỷ ạ?",
                 action.actionType(), action.payload(), true
         );
     }

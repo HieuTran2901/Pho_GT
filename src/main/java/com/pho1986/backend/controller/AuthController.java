@@ -128,7 +128,7 @@ public class AuthController {
         ResponseCookie refreshCookie = createRefreshCookie(response.getRefreshToken(), isSecure);
 
         String message = response.getPointsEarned() != null && response.getPointsEarned() > 0
-                ? "Chào mừng Bác! Đăng nhập thành công và nhận ngay " + response.getPointsEarned() + " Điểm Tri Kỷ!"
+                ? "Chào mừng Quý khách! Đăng nhập thành công và nhận ngay " + response.getPointsEarned() + " Điểm Tri Kỷ!"
                 : "Đăng nhập bằng số điện thoại thành công!";
 
         return ResponseEntity.ok()
