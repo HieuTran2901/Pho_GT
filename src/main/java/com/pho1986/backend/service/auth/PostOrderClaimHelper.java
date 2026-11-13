@@ -1,5 +1,6 @@
 package com.pho1986.backend.service.auth;
 
+import com.pho1986.backend.common.AccountLockedException;
 import com.pho1986.backend.model.dto.AuthDtos.PostOrderClaimRequest;
 import com.pho1986.backend.model.entity.LoyaltyAccount;
 import com.pho1986.backend.model.entity.LoyaltyTransaction;
@@ -11,6 +12,7 @@ import com.pho1986.backend.repository.LoyaltyTransactionRepository;
 import com.pho1986.backend.repository.OrderRepository;
 import com.pho1986.backend.repository.TasteProfileRepository;
 import com.pho1986.backend.repository.UserRepository;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -53,20 +55,31 @@ public class PostOrderClaimHelper {
             throw new IllegalArgumentException("Đơn hàng này đã được gắn vào tài khoản");
         }
 
+        String status = order.getStatus() != null ? order.getStatus().toUpperCase() : "";
+        if ("CANCELLED".equals(status) || "REFUNDED".equals(status) || "REFUND_PENDING".equals(status)) {
+            throw new IllegalStateException("Đơn hàng đã hủy hoặc hoàn tiền, không thể quy đổi điểm tích lũy.");
+        }
+
         // Chống chiếm đoạt đơn hàng: Bắt buộc số điện thoại claim phải khớp với số điện thoại người đặt
         String cleanClaimPhone = (request.getPhone() != null) ? request.getPhone().replaceAll("[\\s.-]+", "") : "";
         String cleanGuestPhone = (order.getGuestPhone() != null) ? order.getGuestPhone().replaceAll("[\\s.-]+", "") : "";
-        if (!cleanClaimPhone.equals(cleanGuestPhone)) {
+        if (cleanClaimPhone.isEmpty() || !cleanClaimPhone.equals(cleanGuestPhone)) {
             throw new IllegalArgumentException("Số điện thoại yêu cầu tích điểm không khớp với số điện thoại đặt đơn hàng này!");
         }
 
         int earnedPoints = Math.max(10, (int) Math.floor(order.getFinalAmount() / 1000.0));
 
-        User user = userRepository.findByPhone(request.getPhone()).orElse(null);
+        User user = userRepository.findByPhone(cleanClaimPhone).orElse(null);
 
         if (user == null) {
+            String method = order.getPaymentMethod() != null ? order.getPaymentMethod().toUpperCase() : "";
+            boolean isPayLaterMethod = "COD".equals(method) || "POST_PAID_AT_STORE".equals(method) || "CASH".equals(method);
+            if (!isPayLaterMethod && !"PAID".equalsIgnoreCase(order.getPaymentStatus())) {
+                throw new IllegalStateException("Đơn hàng trực tuyến phải hoàn tất thanh toán trước khi quy đổi điểm tích lũy.");
+            }
+
             user = new User(
-                    request.getPhone(),
+                    cleanClaimPhone,
                     request.getFullName(),
                     passwordEncoder.encode(request.getPassword()),
                     null
@@ -103,6 +116,22 @@ public class PostOrderClaimHelper {
             order.setUser(user);
             orderRepository.save(order);
         } else {
+            // [SEC-ISSUE-01] Ngăn chặn Account Takeover: Bắt buộc xác thực mật khẩu và trạng thái thanh toán trước khi gán đơn
+            if (user.isAccountLocked() || "LOCKED".equalsIgnoreCase(user.getStatus())) {
+                throw new AccountLockedException(
+                        user.getPhone(),
+                        "Tài khoản của quý khách hiện đang bị khóa. Không thể chuyển đổi đơn hàng vào tài khoản này.",
+                        user.getLockedAt(),
+                        user.getLockReason()
+                );
+            }
+            if (request.getPassword() == null || !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+                throw new BadCredentialsException("Mật khẩu tài khoản không chính xác. Không thể chuyển đổi đơn hàng vào tài khoản này.");
+            }
+            if (!"PAID".equalsIgnoreCase(order.getPaymentStatus())) {
+                throw new IllegalStateException("Đơn hàng phải hoàn tất thanh toán trước khi quy đổi điểm tích lũy.");
+            }
+
             order.setUser(user);
             orderRepository.save(order);
 

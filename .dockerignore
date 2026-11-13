@@ -1,0 +1,13 @@
+target/
+.mvn/
+mvnw
+mvnw.cmd
+.git/
+.gitignore
+.env
+*.log
+.idea/
+*.iml
+test.java
+.github/
+EC2_DEPLOYMENT_GUIDE.md

@@ -46,12 +46,13 @@ public class AuthController {
                     .body(ApiResponse.error("Quý khách đã đăng ký quá nhiều lần từ thiết bị này. Vui lòng thử lại sau " + waitSec + " giây."));
         }
 
-        AuthResponse response = authService.register(request, clientIp, deviceId);
+        AuthSessionResult session = authService.register(request, clientIp, deviceId);
+        AuthResponse response = session.response();
         loginRateLimiter.recordRegistration(clientIp);
         boolean isSecure = httpRequest.isSecure();
 
         ResponseCookie accessCookie = createAccessCookie(response.getAccessToken(), isSecure);
-        ResponseCookie refreshCookie = createRefreshCookie(response.getRefreshToken(), isSecure);
+        ResponseCookie refreshCookie = createRefreshCookie(session.refreshToken(), isSecure);
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
@@ -65,11 +66,12 @@ public class AuthController {
             HttpServletRequest httpRequest) {
         String clientIp = loginRateLimiter.extractClientIp(httpRequest);
         String deviceId = ThreatDefenseFilter.extractDeviceId(httpRequest);
-        AuthResponse response = authService.login(request, clientIp, deviceId);
+        AuthSessionResult session = authService.login(request, clientIp, deviceId);
+        AuthResponse response = session.response();
         boolean isSecure = httpRequest.isSecure();
 
         ResponseCookie accessCookie = createAccessCookie(response.getAccessToken(), isSecure);
-        ResponseCookie refreshCookie = createRefreshCookie(response.getRefreshToken(), isSecure);
+        ResponseCookie refreshCookie = createRefreshCookie(session.refreshToken(), isSecure);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
@@ -86,11 +88,12 @@ public class AuthController {
             token = requestBody.getRefreshToken();
         }
 
-        AuthResponse response = authService.refreshToken(token);
+        AuthSessionResult session = authService.refreshToken(token);
+        AuthResponse response = session.response();
         boolean isSecure = httpRequest.isSecure();
 
         ResponseCookie accessCookie = createAccessCookie(response.getAccessToken(), isSecure);
-        ResponseCookie refreshCookie = createRefreshCookie(response.getRefreshToken(), isSecure);
+        ResponseCookie refreshCookie = createRefreshCookie(session.refreshToken(), isSecure);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
@@ -102,11 +105,12 @@ public class AuthController {
     public ResponseEntity<ApiResponse<AuthResponse>> postOrderClaim(
             @Valid @RequestBody PostOrderClaimRequest request,
             HttpServletRequest httpRequest) {
-        AuthResponse response = authService.postOrderClaim(request);
+        AuthSessionResult session = authService.postOrderClaim(request);
+        AuthResponse response = session.response();
         boolean isSecure = httpRequest.isSecure();
 
         ResponseCookie accessCookie = createAccessCookie(response.getAccessToken(), isSecure);
-        ResponseCookie refreshCookie = createRefreshCookie(response.getRefreshToken(), isSecure);
+        ResponseCookie refreshCookie = createRefreshCookie(session.refreshToken(), isSecure);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
@@ -121,11 +125,12 @@ public class AuthController {
         String clientIp = loginRateLimiter.extractClientIp(httpRequest);
         String deviceId = ThreatDefenseFilter.extractDeviceId(httpRequest);
 
-        AuthResponse response = firebasePhoneAuthService.authenticate(request, clientIp, deviceId);
+        AuthSessionResult session = firebasePhoneAuthService.authenticate(request, clientIp, deviceId);
+        AuthResponse response = session.response();
         boolean isSecure = httpRequest.isSecure();
 
         ResponseCookie accessCookie = createAccessCookie(response.getAccessToken(), isSecure);
-        ResponseCookie refreshCookie = createRefreshCookie(response.getRefreshToken(), isSecure);
+        ResponseCookie refreshCookie = createRefreshCookie(session.refreshToken(), isSecure);
 
         String message = response.getPointsEarned() != null && response.getPointsEarned() > 0
                 ? "Chào mừng Quý khách! Đăng nhập thành công và nhận ngay " + response.getPointsEarned() + " Điểm Tri Kỷ!"

@@ -82,12 +82,12 @@ public class AuthService {
     }
 
     @Transactional
-    public AuthResponse register(RegisterRequest request) {
+    public AuthSessionResult register(RegisterRequest request) {
         return register(request, null, null);
     }
 
     @Transactional
-    public AuthResponse register(RegisterRequest request, String clientIp, String deviceId) {
+    public AuthSessionResult register(RegisterRequest request, String clientIp, String deviceId) {
         // Kiểm tra Blacklist SĐT và Thiết Bị
         if (threatDefenseService.isPhoneBlocked(request.getPhone())) {
             String reason = threatDefenseService.getPhoneBanReason(request.getPhone());
@@ -154,14 +154,14 @@ public class AuthService {
 
         String accessToken = tokenProvider.generateAccessToken(user.getId(), user.getRole());
         String refreshToken = createAndSaveRefreshToken(user);
-        return new AuthResponse(user, accessToken, refreshToken, 50);
+        return new AuthSessionResult(new AuthResponse(user, accessToken, 50), refreshToken);
     }
 
-    public AuthResponse login(LoginRequest request) {
+    public AuthSessionResult login(LoginRequest request) {
         return login(request, "unknown", null);
     }
 
-    public AuthResponse login(LoginRequest request, String clientIp) {
+    public AuthSessionResult login(LoginRequest request, String clientIp) {
         return login(request, clientIp, null);
     }
 
@@ -170,7 +170,7 @@ public class AuthService {
             LoginRateLimitExceededException.class,
             AccountLockedException.class
     })
-    public AuthResponse login(LoginRequest request, String clientIp, String deviceId) {
+    public AuthSessionResult login(LoginRequest request, String clientIp, String deviceId) {
         User user = userRepository.findByPhone(request.getPhone()).orElse(null);
 
         loginAttemptPolicy.checkPreLoginGuards(user, clientIp);
@@ -184,7 +184,7 @@ public class AuthService {
 
             String accessToken = tokenProvider.generateAccessToken(user.getId(), user.getRole());
             String refreshToken = createAndSaveRefreshToken(user);
-            return new AuthResponse(user, accessToken, refreshToken);
+            return new AuthSessionResult(new AuthResponse(user, accessToken), refreshToken);
         }
 
         loginAttemptPolicy.handleNonExistentUser(request.getPhone(), clientIp);
@@ -204,7 +204,7 @@ public class AuthService {
     }
 
     @Transactional(noRollbackFor = { BadCredentialsException.class })
-    public AuthResponse refreshToken(String refreshTokenString) {
+    public AuthSessionResult refreshToken(String refreshTokenString) {
         if (refreshTokenString == null || refreshTokenString.isBlank() || !tokenProvider.validateToken(refreshTokenString)) {
             throw new BadCredentialsException("Phiên đăng nhập đã hết hạn, quý khách vui lòng đăng nhập lại nhé!");
         }
@@ -247,7 +247,7 @@ public class AuthService {
         String newAccessToken = tokenProvider.generateAccessToken(user.getId(), user.getRole());
         String newRefreshToken = createAndSaveRefreshToken(user, refreshToken.getFamilyId());
 
-        return new AuthResponse(user, newAccessToken, newRefreshToken);
+        return new AuthSessionResult(new AuthResponse(user, newAccessToken), newRefreshToken);
     }
 
     @Transactional
@@ -288,12 +288,15 @@ public class AuthService {
         return user;
     }
 
-    @Transactional
-    public AuthResponse postOrderClaim(PostOrderClaimRequest request) {
+    @Transactional(noRollbackFor = {
+            BadCredentialsException.class,
+            AccountLockedException.class
+    })
+    public AuthSessionResult postOrderClaim(PostOrderClaimRequest request) {
         PostOrderClaimHelper.ClaimResult result = postOrderClaimHelper.processClaim(request);
         User user = result.user();
         String accessToken = tokenProvider.generateAccessToken(user.getId(), user.getRole());
         String refreshToken = createAndSaveRefreshToken(user);
-        return new AuthResponse(user, accessToken, refreshToken, result.earnedPoints());
+        return new AuthSessionResult(new AuthResponse(user, accessToken, result.earnedPoints()), refreshToken);
     }
 }

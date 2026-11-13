@@ -4,7 +4,6 @@
 -- ==============================================================================
 
 SET NAMES utf8mb4;
-SET FOREIGN_KEY_CHECKS = 0;
 
 -- ==============================================================================
 -- NHÓM 3: PHỞ GÀ ĐỒI TA (6 MÓN ĐỘC BẢN)
@@ -286,5 +285,3 @@ ON DUPLICATE KEY UPDATE
   category_id = VALUES(category_id), name = VALUES(name), price = VALUES(price), portion = VALUES(portion),
   tag = VALUES(tag), tag_icon = VALUES(tag_icon), ingredients = VALUES(ingredients), description = VALUES(description),
   image_url = VALUES(image_url), is_available = VALUES(is_available), is_signature = VALUES(is_signature);
-
-SET FOREIGN_KEY_CHECKS = 1;

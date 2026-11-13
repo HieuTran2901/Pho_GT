@@ -3,7 +3,7 @@ package com.pho1986.backend.service;
 import com.pho1986.backend.common.AccountLockedException;
 import com.pho1986.backend.common.LoginRateLimitExceededException;
 import com.pho1986.backend.common.PiiMaskUtils;
-import com.pho1986.backend.model.dto.AuthDtos.AuthResponse;
+import com.pho1986.backend.model.dto.AuthDtos.AuthSessionResult;
 import com.pho1986.backend.model.dto.AuthDtos.LoginRequest;
 import com.pho1986.backend.model.dto.AuthDtos.PostOrderClaimRequest;
 import com.pho1986.backend.model.dto.OrderDtos.CreateOrderItemRequest;
@@ -247,8 +247,8 @@ public class ModularizationAdversarialTest {
         LoginRequest loginReq = new LoginRequest();
         loginReq.setPhone(testPhone);
         loginReq.setPassword("secretpass");
-        AuthResponse initialAuth = authService.login(loginReq, "127.0.0.1", "device-test-01");
-        String initialRefreshToken = initialAuth.getRefreshToken();
+        AuthSessionResult initialAuth = authService.login(loginReq, "127.0.0.1", "device-test-01");
+        String initialRefreshToken = initialAuth.refreshToken();
         assertNotNull(initialRefreshToken);
 
         String initialHash = TokenHashUtil.sha256Hex(initialRefreshToken);
@@ -257,8 +257,8 @@ public class ModularizationAdversarialTest {
         assertNotNull(familyId);
 
         // 2. Normal rotation: use initialRefreshToken to obtain a new rotated token
-        AuthResponse rotatedAuth = authService.refreshToken(initialRefreshToken);
-        String rotatedRefreshToken = rotatedAuth.getRefreshToken();
+        AuthSessionResult rotatedAuth = authService.refreshToken(initialRefreshToken);
+        String rotatedRefreshToken = rotatedAuth.refreshToken();
         assertNotNull(rotatedRefreshToken);
         assertNotEquals(initialRefreshToken, rotatedRefreshToken, "Rotated token must be different from initial token");
 

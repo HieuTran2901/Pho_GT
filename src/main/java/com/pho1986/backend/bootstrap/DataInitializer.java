@@ -83,9 +83,6 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        // Tự động tương thích schema chuyển đổi Refresh Token
-        migrateRefreshTokenSchema();
-
         // Gieo tài khoản Quản trị viên ADMIN theo chuẩn an ninh
         seedAdminUser();
 
@@ -341,16 +338,6 @@ public class DataInitializer implements CommandLineRunner {
             );
             voucherRepository.saveAll(seedList);
             System.out.println("✅ [DataInitializer] Đã khởi tạo thành công 2 mã tem phiếu chuẩn vào Database!");
-        }
-    }
-
-    private void migrateRefreshTokenSchema() {
-        if (dataSource == null) return;
-        try (java.sql.Connection conn = dataSource.getConnection();
-             java.sql.Statement stmt = conn.createStatement()) {
-            stmt.execute("ALTER TABLE refresh_tokens MODIFY COLUMN token VARCHAR(512) NULL");
-        } catch (Exception ignored) {
-            // Cột có thể đã được xóa hoặc đã là NULL
         }
     }
 }

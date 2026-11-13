@@ -3,6 +3,7 @@ package com.pho1986.backend.service;
 import com.google.firebase.auth.FirebaseToken;
 import com.pho1986.backend.security.TokenHashUtil;
 import com.pho1986.backend.model.dto.AuthDtos.AuthResponse;
+import com.pho1986.backend.model.dto.AuthDtos.AuthSessionResult;
 import com.pho1986.backend.model.dto.AuthDtos.FirebasePhoneLoginRequest;
 import com.pho1986.backend.model.entity.LoyaltyAccount;
 import com.pho1986.backend.model.entity.RefreshToken;
@@ -59,7 +60,7 @@ public class FirebasePhoneAuthService {
     }
 
     @Transactional
-    public AuthResponse authenticate(FirebasePhoneLoginRequest request, String clientIp, String deviceId) {
+    public AuthSessionResult authenticate(FirebasePhoneLoginRequest request, String clientIp, String deviceId) {
         // 1. Xác thực ID Token qua Firebase Admin SDK
         FirebaseToken decodedToken;
         try {
@@ -148,7 +149,7 @@ public class FirebasePhoneAuthService {
         log.info("[FIREBASE_AUTH] Đăng nhập SĐT [{}] thành công. User ID: [{}], Khách mới: [{}]",
                 domesticPhone, user.getId(), isNewUser);
 
-        return new AuthResponse(user, accessToken, refreshToken, isNewUser ? 50 : 0);
+        return new AuthSessionResult(new AuthResponse(user, accessToken, isNewUser ? 50 : 0), refreshToken);
     }
 
     private String createAndSaveRefreshToken(User user) {

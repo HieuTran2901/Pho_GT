@@ -95,18 +95,11 @@ public class AuthDtos {
     public static class AuthResponse {
         private User user;
         private String accessToken;
-        private String refreshToken;
         private Integer pointsEarned;
 
         public AuthResponse(User user, String accessToken) {
             this.user = user;
             this.accessToken = accessToken;
-        }
-
-        public AuthResponse(User user, String accessToken, String refreshToken) {
-            this.user = user;
-            this.accessToken = accessToken;
-            this.refreshToken = refreshToken;
         }
 
         public AuthResponse(User user, String accessToken, Integer pointsEarned) {
@@ -115,22 +108,19 @@ public class AuthDtos {
             this.pointsEarned = pointsEarned;
         }
 
-        public AuthResponse(User user, String accessToken, String refreshToken, Integer pointsEarned) {
-            this.user = user;
-            this.accessToken = accessToken;
-            this.refreshToken = refreshToken;
-            this.pointsEarned = pointsEarned;
-        }
-
         public User getUser() { return user; }
         public void setUser(User user) { this.user = user; }
         public String getAccessToken() { return accessToken; }
         public void setAccessToken(String accessToken) { this.accessToken = accessToken; }
-        public String getRefreshToken() { return refreshToken; }
-        public void setRefreshToken(String refreshToken) { this.refreshToken = refreshToken; }
         public Integer getPointsEarned() { return pointsEarned; }
         public void setPointsEarned(Integer pointsEarned) { this.pointsEarned = pointsEarned; }
     }
+
+    /**
+     * Kết quả phiên đăng nhập nội bộ để truyền Refresh Token tới HttpOnly Cookie
+     * mà không bao giờ tuần tự hóa Refresh Token vào JSON response body (SEC-ISSUE-02).
+     */
+    public record AuthSessionResult(AuthResponse response, String refreshToken) {}
 
     public static class UserProfileResponse {
         private String id;
