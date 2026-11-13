@@ -228,4 +228,38 @@ export const saveCustomerHistoryOrder = ({
   }
 };
 
+export const LEGACY_DISH_ID_MAP = {
+  1: 'dish-01-pho-bo-tai-lan-hn',
+  2: 'dish-07-pho-dac-biet-bat-day-du',
+  3: 'dish-02-pho-bo-tai-nam-gion',
+  4: 'dish-08-pho-bo-sot-vang-co-truyen',
+  5: 'dish-13-pho-ga-doi-chat-la-chanh',
+  6: 'dish-14-pho-dui-ga-rut-xuong',
+  7: 'dish-19-quay-gion-chien-phong',
+  8: 'dish-20-trung-ga-chan-nuoc-beo',
+  9: 'dish-22-tra-sen-tay-ho',
+  10: 'dish-03-pho-tai-bap-bo-hoa',
+  11: 'dish-04-pho-bo-tai-gau-gion',
+  12: 'dish-15-pho-ga-xe-long-trung-non',
+  13: 'dish-16-pho-ga-tron-chua-ngot',
+  14: 'dish-09-pho-tho-da-nui-lua',
+  15: 'dish-23-sua-dau-nanh-la-dua'
+};
+
+export const resolveDishId = (item) => {
+  const rawId = item?.dishId || item?.id;
+  if (!rawId) return 'dish-01-pho-bo-tai-lan-hn';
+  if (LEGACY_DISH_ID_MAP[rawId]) return LEGACY_DISH_ID_MAP[rawId];
+  return String(rawId);
+};
+
+export const buildOrderItems = (cartItems = []) => (cartItems || []).map((i) => ({
+  dishId: resolveDishId(i),
+  dishName: i.dishName || i.name || 'Món phở gia truyền',
+  unitPrice: Number(i.price ?? i.unitPrice ?? 0),
+  quantity: Number(i.quantity ?? 1),
+  subtotal: Number(i.price ?? i.unitPrice ?? 0) * Number(i.quantity ?? 1),
+  customizedOptions: JSON.stringify({ broth: i.broth || null, onion: i.onion || null, herb: i.herb || null, cruller: i.cruller || null })
+}));
+
 

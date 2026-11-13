@@ -4,19 +4,49 @@
  */
 
 import { getApiBaseUrl, notifyIfAccountLocked } from './apiConfig';
+import { hashUserIdentifier, normalizePhone } from '../utils/cartStorage';
 
 const API_BASE_URL = getApiBaseUrl('orders');
 
 const LOCAL_ORDERS_KEY = 'pho1986_customer_order_history';
 
+const getStoredSessionUser = () => {
+  try {
+    if (typeof localStorage === 'undefined') return null;
+    const session = localStorage.getItem('pho1986_customer_session');
+    return session ? JSON.parse(session) : null;
+  } catch {
+    return null;
+  }
+};
+
+const getLegacyLocalOrdersKeys = (parsed) => {
+  const keys = [];
+  if (parsed?.id !== undefined && parsed?.id !== null) {
+    keys.push(`${LOCAL_ORDERS_KEY}_usr_${parsed.id}`);
+  }
+  if (parsed?.phone) {
+    const raw = String(parsed.phone).replace(/\s+/g, '');
+    const norm = normalizePhone(parsed.phone);
+    if (raw) keys.push(`${LOCAL_ORDERS_KEY}_usr_${raw}`);
+    if (norm && norm !== raw) keys.push(`${LOCAL_ORDERS_KEY}_usr_${norm}`);
+  }
+  return keys;
+};
+
 const getLocalOrdersKey = () => {
   try {
     if (typeof localStorage === 'undefined') return LOCAL_ORDERS_KEY;
-    const session = localStorage.getItem('pho1986_customer_session');
-    if (session) {
-      const parsed = JSON.parse(session);
-      const uid = parsed?.id || (parsed?.phone ? String(parsed.phone).replace(/\s+/g, '') : null);
-      if (uid) return `${LOCAL_ORDERS_KEY}_usr_${uid}`;
+    const parsed = getStoredSessionUser();
+    if (parsed) {
+      if (parsed.id !== undefined && parsed.id !== null) {
+        const rawId = String(parsed.id).trim();
+        if (rawId) return `${LOCAL_ORDERS_KEY}_usr_${hashUserIdentifier(`id_${rawId}`)}`;
+      }
+      if (parsed.phone) {
+        const cleanPhone = normalizePhone(parsed.phone);
+        if (cleanPhone) return `${LOCAL_ORDERS_KEY}_usr_${hashUserIdentifier(`ph_${cleanPhone}`)}`;
+      }
     }
   } catch {}
   return `${LOCAL_ORDERS_KEY}_guest`;
@@ -104,6 +134,58 @@ export const DEFAULT_CUSTOMER_ORDERS = [
 
 export const orderApi = {
   /**
+   * Tạo đơn hàng mới trên Backend (/api/v1/orders)
+   * Trả về CreateOrderResponse (orderCode, orderAccessToken, finalAmount...)
+   */
+  async createOrder(orderPayload) {
+    try {
+      const token = typeof localStorage !== 'undefined'
+        ? (localStorage.getItem('accessToken') || localStorage.getItem('pho1986_access_token'))
+        : null;
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const res = await fetch(API_BASE_URL, {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+        body: JSON.stringify(orderPayload)
+      });
+
+      const json = await res.json().catch(() => null);
+
+      if (res.status === 423 || json?.data?.code === 'ACCOUNT_LOCKED') {
+        notifyIfAccountLocked(res.status, json);
+        const err = new Error(json?.message || 'Tài khoản hoặc số điện thoại này hiện đang bị tạm khóa dịch vụ.');
+        err.status = 423;
+        err.isLocked = true;
+        err.data = json;
+        throw err;
+      }
+
+      if (res.ok && json?.data) {
+        return json.data;
+      } else if (json?.message) {
+        const err = new Error(json.message);
+        err.status = res.status;
+        err.data = json;
+        throw err;
+      } else if (!res.ok) {
+        const err = new Error(`Máy chủ từ chối tạo đơn hàng (${res.status})`);
+        err.status = res.status;
+        err.data = json;
+        throw err;
+      }
+    } catch (e) {
+      if (e.isLocked || e.status) throw e;
+      console.warn('[OrderApi] Tạo đơn hàng trên backend thất bại hoặc ngoại tuyến:', e.message);
+      throw e;
+    }
+  },
+
+  /**
    * Lấy lịch sử đơn hàng từ Backend hoặc Local Storage
    */
   async getOrderHistory() {
@@ -171,19 +253,42 @@ export const orderApi = {
     return merged;
   },
   /**
-   * Đọc danh sách đơn từ LocalStorage
+   * Đọc danh sách đơn từ LocalStorage (tự động migrate & xóa khóa PII cũ)
    */
   getLocalOrders() {
     try {
       if (typeof localStorage === 'undefined') return [];
       const key = getLocalOrdersKey();
+      let resolved = null;
       const data = localStorage.getItem(key);
-      if (data) return JSON.parse(data);
-      if (key === `${LOCAL_ORDERS_KEY}_guest`) {
-        const legacy = localStorage.getItem(LOCAL_ORDERS_KEY);
-        if (legacy) return JSON.parse(legacy);
+      if (data) {
+        const parsed = JSON.parse(data);
+        if (Array.isArray(parsed)) resolved = parsed;
       }
-      return [];
+
+      const sessionUser = getStoredSessionUser();
+      const legacyKeys = key === `${LOCAL_ORDERS_KEY}_guest`
+        ? [LOCAL_ORDERS_KEY]
+        : getLegacyLocalOrdersKeys(sessionUser);
+
+      for (const legacyKey of legacyKeys) {
+        if (!legacyKey || legacyKey === key) continue;
+        if (!resolved) {
+          try {
+            const legacyData = localStorage.getItem(legacyKey);
+            if (legacyData) {
+              const parsedLegacy = JSON.parse(legacyData);
+              if (Array.isArray(parsedLegacy)) {
+                resolved = parsedLegacy;
+                localStorage.setItem(key, JSON.stringify(resolved));
+              }
+            }
+          } catch {}
+        }
+        localStorage.removeItem(legacyKey);
+      }
+
+      return resolved || [];
     } catch {
       return [];
     }

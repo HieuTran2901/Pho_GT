@@ -1,12 +1,67 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { loyaltyApi } from '../../services/loyaltyApi';
 import { useAuth } from '../../context/AuthContext';
+import { hashUserIdentifier, normalizePhone } from '../../utils/cartStorage';
 import { GIFT_TABS, DEFAULT_WELCOME_GIFTS } from './giftVaultConstants';
 
+const getLegacyGiftStorageKeys = (currentUser) => {
+  const keys = [];
+  if (currentUser?.id !== undefined && currentUser?.id !== null) {
+    keys.push(`pho1986_gifts_usr_${currentUser.id}`);
+  }
+  if (currentUser?.phone) {
+    const raw = String(currentUser.phone).replace(/\s+/g, '');
+    const norm = normalizePhone(currentUser.phone);
+    if (raw) keys.push(`pho1986_gifts_phone_${raw}`);
+    if (norm && norm !== raw) keys.push(`pho1986_gifts_phone_${norm}`);
+  }
+  return keys;
+};
+
 const getMyGiftsStorageKey = (currentUser) => {
-  if (currentUser?.id) return `pho1986_gifts_usr_${currentUser.id}`;
-  if (currentUser?.phone) return `pho1986_gifts_phone_${String(currentUser.phone).replace(/\s+/g, '')}`;
+  if (currentUser?.id !== undefined && currentUser?.id !== null) {
+    const rawId = String(currentUser.id).trim();
+    if (rawId) return `pho1986_gifts_usr_${hashUserIdentifier(`id_${rawId}`)}`;
+  }
+  if (currentUser?.phone) {
+    const cleanPhone = normalizePhone(currentUser.phone);
+    if (cleanPhone) return `pho1986_gifts_usr_${hashUserIdentifier(`ph_${cleanPhone}`)}`;
+  }
   return 'pho1986_gifts_guest';
+};
+
+const loadAndMigrateGifts = (targetKey, currentUser) => {
+  if (typeof window === 'undefined') return DEFAULT_WELCOME_GIFTS;
+  try {
+    let resolved = null;
+    const saved = localStorage.getItem(targetKey);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) resolved = parsed;
+    }
+
+    const legacyKeys = getLegacyGiftStorageKeys(currentUser);
+    for (const legacyKey of legacyKeys) {
+      if (!legacyKey || legacyKey === targetKey) continue;
+      if (!resolved) {
+        try {
+          const legacySaved = localStorage.getItem(legacyKey);
+          if (legacySaved) {
+            const parsedLegacy = JSON.parse(legacySaved);
+            if (Array.isArray(parsedLegacy)) {
+              resolved = parsedLegacy;
+              localStorage.setItem(targetKey, JSON.stringify(resolved));
+            }
+          }
+        } catch {}
+      }
+      localStorage.removeItem(legacyKey);
+    }
+
+    return resolved || DEFAULT_WELCOME_GIFTS;
+  } catch {
+    return DEFAULT_WELCOME_GIFTS;
+  }
 };
 
 export function useGiftVaultState({
@@ -27,28 +82,16 @@ export function useGiftVaultState({
   const storageKey = useMemo(() => getMyGiftsStorageKey(user), [user]);
   const activeKeyRef = useRef(storageKey);
 
-  // Quà của người dùng (nạp từ localStorage hoặc quà mặc định chào mừng)
-  const [myGifts, setMyGifts] = useState(() => {
-    if (typeof window === 'undefined') return DEFAULT_WELCOME_GIFTS;
-    try {
-      const saved = localStorage.getItem(storageKey);
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return DEFAULT_WELCOME_GIFTS;
-  });
+  // Quà của người dùng (nạp từ localStorage, tự động migrate & xóa khóa PII cũ)
+  const [myGifts, setMyGifts] = useState(() => loadAndMigrateGifts(storageKey, user));
 
   // Tái đồng bộ quà tặng khi thay đổi tài khoản hoặc đăng nhập/đăng xuất
   useEffect(() => {
     if (activeKeyRef.current !== storageKey) {
       activeKeyRef.current = storageKey;
-      try {
-        const saved = localStorage.getItem(storageKey);
-        setMyGifts(saved ? JSON.parse(saved) : DEFAULT_WELCOME_GIFTS);
-      } catch {
-        setMyGifts(DEFAULT_WELCOME_GIFTS);
-      }
+      setMyGifts(loadAndMigrateGifts(storageKey, user));
     }
-  }, [storageKey]);
+  }, [storageKey, user]);
 
   // Lưu myGifts vào storage khi thay đổi (chỉ khi trùng khớp partition đang hoạt động)
   useEffect(() => {

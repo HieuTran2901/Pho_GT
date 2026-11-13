@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { orderApi } from '../../services/orderApi';
 import { paymentApi } from '../../services/paymentApi';
 import { loyaltyApi } from '../../services/loyaltyApi';
 import { fetchAndPickRandomTable, checkTableStillAvailable } from '../../utils/randomTableHelper';
 import { useOrderLockoutGuard } from './useOrderLockoutGuard';
 import { useOrderReturnHandler } from './useOrderReturnHandler';
 import { usePaymentPolling } from './usePaymentPolling';
-import { BRANCH_LABELS, INITIAL_FORM_DATA, saveOrderSession, saveCustomerHistoryOrder, SESSION_LATEST_KEY } from './orderConstants';
+import { BRANCH_LABELS, INITIAL_FORM_DATA, saveOrderSession, saveCustomerHistoryOrder, SESSION_LATEST_KEY, buildOrderItems } from './orderConstants';
 
 export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart, onToast } = {}) {
   const { user } = useAuth();
@@ -111,19 +112,16 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart, 
 
   const scrollTimersRef = useRef([]);
   const lastProcessedUrlRef = useRef('');
-  const isPaymentReturnActiveRef = useRef(false);
 
-  const clearScrollTimers = useCallback((reason = '') => {
-    if (isPaymentReturnActiveRef.current && (reason.startsWith('user-') || reason === 'unmount')) return;
+  const clearScrollTimers = useCallback(() => {
     scrollTimersRef.current.forEach((t) => clearTimeout(t));
     scrollTimersRef.current = [];
   }, []);
 
-  // Hủy toàn bộ timer cuộn tự động khi người dùng chủ động tương tác màn hình (trừ khi đang trong luồng thanh toán return)
+  // Hủy mọi lệnh cuộn tự động ngay lập tức khi người dùng chủ động vuốt/cuộn màn hình (Zero Scroll Yanking)
   useEffect(() => {
-    const handleUserInteraction = (e) => {
-      if (isPaymentReturnActiveRef.current) return;
-      clearScrollTimers(`user-${e.type}`);
+    const handleUserInteraction = () => {
+      clearScrollTimers();
     };
     window.addEventListener('wheel', handleUserInteraction, { passive: true });
     window.addEventListener('touchstart', handleUserInteraction, { passive: true });
@@ -136,8 +134,7 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart, 
   const scrollToOrderSection = useCallback((target = 'card', isPaymentReturn = false) => {
     if (typeof window === 'undefined') return;
 
-    if (isPaymentReturn) isPaymentReturnActiveRef.current = true;
-    clearScrollTimers('new-scroll');
+    clearScrollTimers();
 
     const performScroll = (behavior = 'smooth') => {
       const cardEl = document.getElementById('order-form-card');
@@ -159,21 +156,12 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart, 
       }
     };
 
-    if (isPaymentReturn) {
-      performScroll('instant');
-      [100, 300, 700, 1200].forEach((delay) => {
-        const t = setTimeout(() => performScroll('smooth'), delay);
-        scrollTimersRef.current.push(t);
-      });
-      const endTimer = setTimeout(() => {
-        isPaymentReturnActiveRef.current = false;
-      }, 1500);
-      scrollTimersRef.current.push(endTimer);
-    } else {
-      // Chỉ cuộn nhẹ nhàng 1 lần duy nhất sau 50ms khi React render bước mới trong trang
-      const t = setTimeout(() => performScroll('smooth'), 50);
-      scrollTimersRef.current.push(t);
-    }
+    // Chỉ cuộn duy nhất 1 lần sau khi DOM sẵn sàng; tôn trọng tuyệt đối thao tác người dùng
+    const delayMs = isPaymentReturn ? 120 : 50;
+    const t = setTimeout(() => {
+      window.requestAnimationFrame(() => performScroll('smooth'));
+    }, delayMs);
+    scrollTimersRef.current.push(t);
   }, [sectionRef, clearScrollTimers]);
 
   const handleCloseSeatMap = useCallback(() => {
@@ -348,45 +336,57 @@ export function useOrderSectionState(sectionRef, { cartItems = [], onClearCart, 
         return;
       }
 
-      const orderItems = (cartItems || []).map((i) => ({
-        dishId: String(i.id || i.dishId || ''),
-        dishName: i.dishName || i.name || 'Món phở gia truyền',
-        unitPrice: Number(i.price ?? i.unitPrice ?? 0),
-        quantity: Number(i.quantity ?? 1),
-        subtotal: Number(i.price ?? i.unitPrice ?? 0) * Number(i.quantity ?? 1),
-        customizedOptions: JSON.stringify({ broth: i.broth || null, onion: i.onion || null, herb: i.herb || null, cruller: i.cruller || null })
-      }));
+      const orderItems = buildOrderItems(cartItems);
 
+      // Bước 1: Tạo đơn hàng chính thức trên Backend (POST /api/v1/orders)
+      const tableNum = (formData.orderType === 'dine-in' && selectedTable) ? (selectedTable.name || String(selectedTable.id)) : null;
+      let confirmedOrderCode = bookingCode;
+      let orderAccessToken = null;
+      let finalPayAmount = orderAmount;
+
+      try {
+        const createdOrder = await orderApi.createOrder({
+          guestName: formData.customerName, guestPhone: formData.phone,
+          deliveryAddressText: targetAddress, paymentMethod: selectedPaymentMethod,
+          notes: formData.note, tableNumber: tableNum, items: orderItems, appliedGiftId
+        });
+        if (createdOrder?.orderCode) {
+          confirmedOrderCode = createdOrder.orderCode;
+          orderAccessToken = createdOrder.orderAccessToken || null;
+          if (createdOrder.finalAmount && createdOrder.finalAmount > 0) finalPayAmount = createdOrder.finalAmount;
+          setBookingCode(confirmedOrderCode);
+        }
+      } catch (orderErr) {
+        if (orderErr.isLocked || orderErr.status === 423) throw orderErr;
+        if (orderErr.status) throw orderErr;
+        console.warn('[OrderSection] Không thể tạo đơn backend, tiếp tục ngoại tuyến:', orderErr);
+      }
+
+      // Bước 2: Khởi tạo thanh toán với mã đơn thật và capability token
       const paymentRes = await paymentApi.createPayment({
-        orderCode: bookingCode, paymentMethod: selectedPaymentMethod,
-        note: formData.note, customerName: formData.customerName,
-        phone: formData.phone, address: targetAddress, amount: orderAmount,
-        tableNumber: (formData.orderType === 'dine-in' && selectedTable) ? (selectedTable.name || selectedTable.id) : null,
-        appliedGiftId, items: orderItems
+        orderCode: confirmedOrderCode, orderAccessToken, paymentMethod: selectedPaymentMethod,
+        note: formData.note, customerName: formData.customerName, phone: formData.phone,
+        address: targetAddress, amount: finalPayAmount, tableNumber: tableNum, appliedGiftId, items: orderItems
       });
       setPaymentData(paymentRes);
 
       if (appliedGiftId) {
-        loyaltyApi.applyGift(appliedGiftId, bookingCode).catch(() => {});
-        try {
-          window.dispatchEvent(new CustomEvent('pho1986:gift-vault-updated', { detail: { giftId: appliedGiftId, orderCode: bookingCode } }));
-        } catch {}
+        loyaltyApi.applyGift(appliedGiftId, confirmedOrderCode).catch(() => {});
+        try { window.dispatchEvent(new CustomEvent('pho1986:gift-vault-updated', { detail: { giftId: appliedGiftId, orderCode: confirmedOrderCode } })); } catch {}
       }
 
-      saveOrderSession(bookingCode, {
-        bookingCode, formData, selectedPaymentMethod, paymentData: paymentRes,
-        amount: orderAmount, selectedTable, createdAt: Date.now()
+      saveOrderSession(confirmedOrderCode, {
+        bookingCode: confirmedOrderCode, orderAccessToken, formData, selectedPaymentMethod,
+        paymentData: paymentRes, amount: finalPayAmount, selectedTable, createdAt: Date.now()
       });
       saveCustomerHistoryOrder({
-        bookingCode, formData, selectedPaymentMethod, orderAmount,
-        selectedTable, targetAddress, cartItems
+        bookingCode: confirmedOrderCode, formData, selectedPaymentMethod,
+        orderAmount: finalPayAmount, selectedTable, targetAddress, cartItems
       });
 
       if (onClearCart) onClearCart();
       loyaltyApi.getLoyaltySummary().then((s) => s?.account && window.dispatchEvent(new CustomEvent('pho1986:loyalty-updated', { detail: s.account }))).catch(() => {});
 
-      // SePay: Chuyển sang Bước 3 hiển thị mã QR VietQR Napas 247 (Tự động khớp đơn qua SePay Webhook)
-      // Tránh form POST tự động sang pay.sepay.vn gây redirect loop 302 hoặc tự reset trang
       if (selectedPaymentMethod === 'MOMO' && paymentRes?.payUrl) {
         setDirection('forward'); setStep(3); scrollToOrderSection();
         try { window.open(paymentRes.payUrl, '_blank'); } catch {}

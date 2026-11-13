@@ -13,6 +13,7 @@ export const paymentApi = {
    */
   async createPayment({
     orderCode,
+    orderAccessToken = null,
     paymentMethod = 'VIETQR',
     note = '',
     customerName = '',
@@ -24,10 +25,15 @@ export const paymentApi = {
     items = []
   }) {
     try {
-      const token = typeof localStorage !== 'undefined' ? localStorage.getItem('accessToken') : null;
+      const token = typeof localStorage !== 'undefined'
+        ? (localStorage.getItem('accessToken') || localStorage.getItem('pho1986_access_token'))
+        : null;
       const headers = { 'Content-Type': 'application/json' };
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
+      }
+      if (orderAccessToken) {
+        headers['X-Order-Access-Token'] = orderAccessToken;
       }
 
       const response = await fetch(API_BASE_URL, {
@@ -36,6 +42,7 @@ export const paymentApi = {
         credentials: 'include',
         body: JSON.stringify({
           orderCode,
+          orderAccessToken,
           paymentMethod,
           note,
           customerName,
