@@ -50,6 +50,11 @@ export const QUICK_SUGGESTIONS = [
 ];
 
 export const CLIENT_FALLBACK_ANSWERS = {
+  menu: {
+    reply: 'Dạ quán Phở Gia Truyền 1986 có hơn 20 món đặc sản: Phở Bò Tái Lăn Áp Chảo (75.000đ), Phở Bò Nạm Gầu Giòn (75.000đ), Phở Đuôi Bò Thố Đá (95.000đ), Phở Gà Đồi (70.000đ), cùng Quẩy Giòn, Trà Sen Tây Hồ và Nước Sấu/Mơ. Quý khách bấm nút bên dưới để xem trọn bộ thực đơn nhé ạ!',
+    actionType: 'MENU',
+    actionPayload: { title: 'Thực Đơn Tinh Hoa 1986' }
+  },
   tai_lan: {
     reply: 'Dạ bát Phở Bò Tái Lăn Áp Chảo (75.000đ) là món trứ danh của quán em ạ! Thịt bò tơ chao lửa lớn thơm lừng tỏi phi, nước dùng béo ngọt sóng sánh. Em gửi Quý khách thẻ món để Quý khách chọn thêm vào giỏ nhé!',
     actionType: 'DISH',

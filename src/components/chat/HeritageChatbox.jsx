@@ -200,20 +200,42 @@ export default function HeritageChatbox({
           actionType: 'NONE',
           actionPayload: null
         };
-      } else if (lower.includes('tái lăn') || lower.includes('gợi ý')) matched = CLIENT_FALLBACK_ANSWERS.tai_lan;
-      else if (lower.includes('đặt bàn') || lower.includes('giữ chỗ')) matched = CLIENT_FALLBACK_ANSWERS.booking;
-      else if (lower.includes('mã') || lower.includes('voucher') || lower.includes('giảm giá')) matched = CLIENT_FALLBACK_ANSWERS.voucher;
+      } else if (lower.includes('tái lăn')) {
+        matched = CLIENT_FALLBACK_ANSWERS.tai_lan;
+      } else if (lower.includes('đặt bàn') || lower.includes('giữ chỗ') || lower.includes('đặt chỗ')) {
+        matched = CLIENT_FALLBACK_ANSWERS.booking;
+      } else if (lower.includes('mã') || lower.includes('voucher') || lower.includes('giảm giá') || lower.includes('ưu đãi')) {
+        matched = CLIENT_FALLBACK_ANSWERS.voucher;
+      } else if (lower.includes('giờ') || lower.includes('mở cửa') || lower.includes('địa chỉ') || lower.includes('ở đâu')) {
+        matched = {
+          reply: 'Dạ quán mở cửa từ 06:00 sáng đến 23:00 đêm mỗi ngày tại Phố Cổ Hà Nội, có đặt bàn trước và giao hàng thố giữ nhiệt 45 phút ạ!',
+          actionType: 'NONE',
+          actionPayload: null
+        };
+      } else if (lower.includes('mì chính') || lower.includes('bột ngọt') || lower.includes('nước dùng') || lower.includes('sá sùng')) {
+        matched = {
+          reply: 'Dạ nước dùng quán ninh than củi 24 giờ từ xương ống bò tơ và sá sùng Quan Lạn cùng 5 vị thảo mộc, hoàn toàn 100% không dùng mì chính ạ!',
+          actionType: 'NONE',
+          actionPayload: null
+        };
+      } else if (
+        lower.includes('món') || lower.includes('thực đơn') || lower.includes('menu')
+        || lower.includes('phở') || lower.includes('ăn gì') || lower.includes('bán gì')
+        || lower.includes('giá') || lower.includes('gợi ý')
+      ) {
+        matched = CLIENT_FALLBACK_ANSWERS.menu;
+      }
 
       const fallbackReply = matched
         ? matched.reply
-        : 'Dạ em kính chào Quý khách! Nước dùng phở 1986 được ninh chậm 24 giờ thơm lừng thảo mộc. Quý khách có muốn em gợi ý một bát phở tái lăn áp chảo hay hướng dẫn đặt bàn trước không ạ?';
+        : 'Dạ Tiểu Nhị đã ghi nhận lời nhắn của Quý khách ạ! Quý khách muốn xem thực đơn các món phở 1986, đặt bàn trước hay nhận mã tem phiếu ưu đãi hôm nay?';
 
       const botMessage = {
         id: `bot_${Date.now()}`,
         role: 'assistant',
         content: fallbackReply,
-        actionType: matched ? matched.actionType : 'NONE',
-        actionPayload: matched ? matched.actionPayload : null,
+        actionType: matched ? matched.actionType : 'MENU',
+        actionPayload: matched ? matched.actionPayload : { title: 'Thực Đơn Tinh Hoa 1986' },
         time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
       };
 

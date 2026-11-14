@@ -18,7 +18,7 @@ function ChatActionCard({
     };
   }, []);
 
-  if (!actionType || actionType === 'NONE' || !actionPayload) {
+  if (!actionType || actionType === 'NONE' || (actionType !== 'MENU' && !actionPayload)) {
     return null;
   }
 
