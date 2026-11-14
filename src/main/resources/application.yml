@@ -7,6 +7,8 @@ server:
     include-exception: false
 
 spring:
+  config:
+    import: optional:file:.env[.properties],optional:file:backend/.env[.properties]
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
   application:
@@ -64,7 +66,7 @@ app:
       account-name: ${VIETQR_ACCOUNT_NAME:PHO GIA TRUYEN 1986}
   gemini:
     api-key: ${GEMINI_API_KEY:}
-    model: ${GEMINI_MODEL:gemini-3.6-flash}
+    model: ${GEMINI_MODEL:gemini-3.8-flash}
     endpoint: ${GEMINI_ENDPOINT:https://generativelanguage.googleapis.com/v1beta/models}
 
 payment:

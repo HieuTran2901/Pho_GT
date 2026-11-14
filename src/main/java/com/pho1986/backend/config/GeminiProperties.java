@@ -3,15 +3,38 @@ package com.pho1986.backend.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+
 @Configuration
 @ConfigurationProperties(prefix = "app.gemini")
 public class GeminiProperties {
 
+    public static final String DEFAULT_MODEL = "gemini-3.8-flash";
+    private static final List<String> FALLBACK_MODELS = List.of(
+            "gemini-3.8-flash",
+            "gemini-3.5-flash-lite",
+            "gemini-flash-latest"
+    );
+
     private String apiKey = "";
-    private String model = "gemini-3.6-flash";
+    private String model = DEFAULT_MODEL;
     private String endpoint = "https://generativelanguage.googleapis.com/v1beta/models";
 
     public GeminiProperties() {
+    }
+
+    private static String normalizeModel(String rawModel) {
+        if (rawModel == null || rawModel.trim().isEmpty()) {
+            return DEFAULT_MODEL;
+        }
+        String trimmed = rawModel.trim();
+        if ("gemini-3.6-flash".equalsIgnoreCase(trimmed)) {
+            return DEFAULT_MODEL;
+        }
+        return trimmed;
     }
 
     public boolean isConfigured() {
@@ -32,11 +55,18 @@ public class GeminiProperties {
     }
 
     public String getModel() {
-        return model;
+        return normalizeModel(model);
     }
 
     public void setModel(String model) {
-        this.model = model;
+        this.model = normalizeModel(model);
+    }
+
+    public List<String> getCandidateModels() {
+        Set<String> ordered = new LinkedHashSet<>();
+        ordered.add(getModel());
+        ordered.addAll(FALLBACK_MODELS);
+        return new ArrayList<>(ordered);
     }
 
     public String getEndpoint() {

@@ -2,9 +2,13 @@ package com.pho1986.backend.service;
 
 import com.pho1986.backend.config.GeminiProperties;
 import com.pho1986.backend.dto.ChatRequestDto;
+import com.pho1986.backend.dto.ChatRequestDto.ChatMessageHistoryDto;
 import com.pho1986.backend.dto.ChatResponseDto;
 import com.pho1986.backend.model.entity.Dish;
+import com.pho1986.backend.model.entity.Voucher;
 import com.pho1986.backend.repository.DishRepository;
+import com.pho1986.backend.service.chat.ChatIntentResolver;
+import com.pho1986.backend.service.chat.ChatIntentResolver.ChatActionDetected;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -24,30 +28,35 @@ public class ChatService {
     private final RestClient restClient;
     private final DishRepository dishRepository;
     private final VoucherService voucherService;
+    private final ChatIntentResolver chatIntentResolver;
 
-    // In-Memory Cache cho danh mục món ăn (TTL 60s) - Triệt tiêu truy vấn trùng lặp
     private volatile List<Dish> cachedDishes = null;
     private volatile long lastCacheTime = 0L;
+    private volatile String activeWorkingModel = null;
     private static final long CACHE_TTL_MS = 60_000L;
 
     private static final String SYSTEM_PROMPT = """
         Bạn là "Tiểu Nhị Phố Cũ 1986" - người đàm đạo và phục vụ ẩm thực tại quán Phở Gia Truyền 1986 (Hà Nội).
-        Phong cách giao tiếp:
-        - Xưng hô lịch thiệp, đôn hậu, tao nhã chuẩn phong vị Hà Nội xưa ("Dạ em kính chào Quý khách", "Kính thưa Quý khách", "Mời Quý khách xơi phở").
-        - Trích dẫn tinh thần ẩm thực của Thạch Lam, Vũ Bằng về phở Hà Nội.
-        - Tinh hoa quán: Nước dùng ninh chậm 24 giờ bằng than củi đỏ lửa với xương ống bò tơ, sá sùng Quan Lạn nướng vàng, 5 thảo mộc (hoa hồi xứ Lạng, thảo quả nướng, quế chi, rễ mùi, hạt ngò); tuyệt đối không dùng mì chính; bánh phở tươi tráng cối đá mỏng như lụa; đựng trong bát chiết yêu men lam Bát Tràng giữ nhiệt bỏng rẫy.
-        - Giờ mở cửa: 06:00 đến 23:00 hàng ngày.
-        - Có nhận đặt bàn trước, giao hàng tận nơi đóng gói thố giữ nhiệt 45 phút.
-        - Khuyến mãi: Áp dụng các mã tem phiếu tri ân theo danh mục thực tế được đính kèm bên dưới.
-        - Trả lời ngắn gọn, súc tích (khoảng 2-4 câu), ấm áp, mời mọc khách thưởng vị hoặc đặt bàn.
+        Quy tắc giao tiếp bắt buộc:
+        - Trả lời TRỰC TIẾP, tự nhiên và đúng trọng tâm câu hỏi của Quý khách ngay từ câu đầu tiên; TUYỆT ĐỐI không lặp lại câu chào sáo rỗng hay văn mẫu giống nhau ở các lượt.
+        - Xưng hô lịch thiệp, ấm áp chuẩn phong vị Hà Nội xưa ("Dạ", "Quý khách", "em").
+        - Nếu khách hỏi về thực đơn/món ăn/khẩu vị: liệt kê trực tiếp tên món, giá tiền chính xác 100% từ dữ liệu thực tế bên dưới và gợi ý hợp gu khách.
+        - Tinh hoa quán: Nước dùng ninh chậm 24 giờ than củi với xương ống bò tơ, sá sùng Quan Lạn, 5 thảo mộc (hoa hồi, thảo quả, quế chi, rễ mùi, hạt ngò), 100% không mì chính; bánh phở tráng cối đá; bát men lam Bát Tràng giữ nhiệt.
+        - Giờ mở cửa: 06:00 - 23:00 hàng ngày; có đặt bàn trước và giao hàng thố giữ nhiệt 45 phút; hotline 0986.198.686.
+        - Khuyến mãi: Chỉ nêu đúng mã tem phiếu từ danh mục thực tế bên dưới, không tự bịa mã hay giá.
+        - Độ dài: Ngắn gọn, tự nhiên trong 2-4 câu.
         """;
 
-    public ChatService(GeminiProperties geminiProperties, DishRepository dishRepository, VoucherService voucherService) {
+    public ChatService(
+            GeminiProperties geminiProperties,
+            DishRepository dishRepository,
+            VoucherService voucherService,
+            ChatIntentResolver chatIntentResolver) {
         this.geminiProperties = geminiProperties;
         this.dishRepository = dishRepository;
         this.voucherService = voucherService;
+        this.chatIntentResolver = chatIntentResolver;
 
-        // Cấu hình RestClient với Connect Timeout (5s) và Read Timeout (15s) tránh giữ nghẽn luồng Tomcat
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout(Duration.ofSeconds(5));
         requestFactory.setReadTimeout(Duration.ofSeconds(15));
@@ -78,336 +87,169 @@ public class ChatService {
         }
     }
 
-    public ChatResponseDto processChat(ChatRequestDto request) {
-        String userMessage = request.getMessage() != null ? request.getMessage().trim() : "";
-
-        // 1. Kiểm tra intent hành động trực tiếp trước (Action Detection)
-        ChatActionDetected detectedAction = detectAction(userMessage);
-
-        // 2. Thử gọi LLM Google Gemini nếu đã cấu hình API Key
-        if (geminiProperties.isConfigured()) {
-            try {
-                ChatResponseDto llmResponse = callGeminiLlm(userMessage, request.getHistory(), detectedAction);
-                if (llmResponse != null && llmResponse.getReply() != null && !llmResponse.getReply().isBlank()) {
-                    return llmResponse;
-                }
-            } catch (Exception e) {
-                log.warn("[ChatService] Lỗi gọi Gemini API (fallback sang tri thức nội bộ): {}", e.getMessage());
-            }
+    private List<Voucher> safeGetVouchers() {
+        try {
+            List<Voucher> active = voucherService.getActivePublicVouchers();
+            return active != null ? active : Collections.emptyList();
+        } catch (Exception e) {
+            log.warn("[ChatService] Lỗi khi tải voucher từ DB: {}", e.getMessage());
+            return Collections.emptyList();
         }
-
-        // 3. Fallback sang Bộ máy Tri thức Tràng An Offline
-        return resolveOfflineKnowledge(userMessage, detectedAction);
     }
 
-    @SuppressWarnings("unchecked")
-    private ChatResponseDto callGeminiLlm(String userMessage, List<ChatRequestDto.ChatMessageHistoryDto> history, ChatActionDetected detectedAction) {
-        String url = String.format("%s/%s:generateContent?key=%s",
-                geminiProperties.getEndpoint(),
-                geminiProperties.getModel(),
-                geminiProperties.getApiKey());
+    public ChatResponseDto processChat(ChatRequestDto request) {
+        String userMessage = request.getMessage() != null ? request.getMessage().trim() : "";
+        List<Dish> availableDishes = getAvailableDishes();
+        List<Voucher> activeVouchers = safeGetVouchers();
 
-        List<Map<String, Object>> contents = new ArrayList<>();
+        ChatActionDetected detectedAction = chatIntentResolver.detectAction(userMessage, availableDishes, activeVouchers);
 
-        if (history != null) {
-            int start = Math.max(0, history.size() - 4);
-            for (int i = start; i < history.size(); i++) {
-                ChatRequestDto.ChatMessageHistoryDto item = history.get(i);
-                String role = "user".equalsIgnoreCase(item.getRole()) ? "user" : "model";
-                contents.add(Map.of("role", role, "parts", List.of(Map.of("text", item.getContent()))));
+        if (geminiProperties.isConfigured()) {
+            ChatResponseDto llmResponse = callGeminiLlm(
+                    userMessage, request.getHistory(), detectedAction, availableDishes, activeVouchers);
+            if (llmResponse != null && llmResponse.getReply() != null && !llmResponse.getReply().isBlank()) {
+                return llmResponse;
             }
         }
 
-        contents.add(Map.of("role", "user", "parts", List.of(Map.of("text", userMessage))));
+        return chatIntentResolver.resolveSmartKnowledge(
+                userMessage, request.getHistory(), detectedAction, availableDishes, activeVouchers);
+    }
 
-        String dynamicPrompt = SYSTEM_PROMPT + "\n" + buildDynamicMenuPrompt() + "\n" + buildDynamicVoucherPrompt();
+    private ChatResponseDto callGeminiLlm(
+            String userMessage,
+            List<ChatMessageHistoryDto> history,
+            ChatActionDetected detectedAction,
+            List<Dish> availableDishes,
+            List<Voucher> activeVouchers) {
+        List<Map<String, Object>> contents = buildAlternatingContents(userMessage, history);
+        String dynamicPrompt = SYSTEM_PROMPT + "\n"
+                + buildDynamicMenuPrompt(availableDishes) + "\n"
+                + buildDynamicVoucherPrompt(activeVouchers);
 
         Map<String, Object> requestBody = Map.of(
-                "system_instruction", Map.of("parts", List.of(Map.of("text", dynamicPrompt))),
+                "systemInstruction", Map.of("parts", List.of(Map.of("text", dynamicPrompt))),
                 "contents", contents,
-                "generationConfig", Map.of("temperature", 0.7, "maxOutputTokens", 2048)
+                "generationConfig", Map.of("temperature", 0.7, "maxOutputTokens", 1024)
         );
 
-        Map<String, Object> response = restClient.post()
-                .uri(url)
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(requestBody)
-                .retrieve()
-                .body(Map.class);
+        String apiKey = geminiProperties.getApiKey();
+        for (String candidateModel : resolveModelCandidates()) {
+            try {
+                String url = String.format("%s/%s:generateContent", geminiProperties.getEndpoint(), candidateModel);
+                @SuppressWarnings("unchecked")
+                Map<String, Object> response = restClient.post()
+                        .uri(url)
+                        .header("x-goog-api-key", apiKey)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(requestBody)
+                        .retrieve()
+                        .body(Map.class);
 
-        if (response != null && response.containsKey("candidates")) {
-            List<Map<String, Object>> candidates = (List<Map<String, Object>>) response.get("candidates");
-            if (!candidates.isEmpty()) {
-                Map<String, Object> candidate = candidates.get(0);
-                Map<String, Object> content = (Map<String, Object>) candidate.get("content");
-                if (content != null && content.containsKey("parts")) {
-                    List<Map<String, Object>> parts = (List<Map<String, Object>>) content.get("parts");
-                    StringBuilder sb = new StringBuilder();
-                    for (Map<String, Object> part : parts) {
-                        if (part != null && part.containsKey("text")) {
-                            sb.append(part.get("text"));
-                        }
-                    }
-                    String text = sb.toString().trim();
-                    if (!text.isEmpty()) {
-                        return ChatResponseDto.of(
-                                text,
-                                detectedAction.actionType(),
-                                detectedAction.payload(),
-                                false
-                        );
-                    }
+                String replyText = extractTextFromGeminiResponse(response);
+                if (replyText != null && !replyText.isEmpty()) {
+                    this.activeWorkingModel = candidateModel;
+                    ChatActionDetected finalAction = chatIntentResolver.enrichActionFromReply(
+                            userMessage, replyText, detectedAction, availableDishes);
+                    return ChatResponseDto.of(replyText, finalAction.actionType(), finalAction.payload(), false);
                 }
+            } catch (Exception e) {
+                log.warn("[ChatService] Model {} không phản hồi ({}), thử model dự phòng...",
+                        candidateModel, sanitizeError(e.getMessage(), apiKey));
             }
         }
         return null;
     }
 
-    private ChatResponseDto resolveOfflineKnowledge(String query, ChatActionDetected action) {
-        String q = query.toLowerCase(Locale.ROOT);
-
-        if (matches(q, "chào", "hi", "hello", "ơi", "alo", "quán ơi")) {
-            return ChatResponseDto.of(
-                    "Dạ em kính chào Quý khách ạ! Quý khách ghé chơi quán Phở Gia Truyền 1986. Hôm nay tiết trời đẹp, Quý khách muốn dùng phở tái lăn áp chảo hay một bát nạm gầu giòn nóng hổi ạ?",
-                    action.actionType(), action.payload(), true
-            );
+    private List<String> resolveModelCandidates() {
+        Set<String> models = new LinkedHashSet<>();
+        if (activeWorkingModel != null && !activeWorkingModel.isBlank()) {
+            models.add(activeWorkingModel);
         }
+        models.addAll(geminiProperties.getCandidateModels());
+        return new ArrayList<>(models);
+    }
 
-        if (matches(q, "đặt bàn", "giữ chỗ", "bàn trống", "mấy người", "đặt chỗ")) {
-            Map<String, Object> payload = Map.of("title", "Đặt Bàn Trực Quan 1986", "description", "Chọn vị trí bàn gỗ mộc hiên nhà hoặc trong gian ấm.");
-            return ChatResponseDto.of(
-                    "Dạ quán luôn dành sẵn những góc bàn gỗ mộc ấm cúng bên hiên ngói rêu phong. Quý khách bấm vào nút Đặt Bàn dưới đây để chọn chỗ ưng ý chỉ trong 30 giây ạ!",
-                    "BOOKING", payload, true
-            );
-        }
+    private List<Map<String, Object>> buildAlternatingContents(String userMessage, List<ChatMessageHistoryDto> history) {
+        List<Map<String, Object>> contents = new ArrayList<>();
+        String lastRole = null;
 
-        if (matches(q, "mã", "voucher", "ưu đãi", "khuyến mãi", "giảm giá", "phiếu")) {
-            List<com.pho1986.backend.model.entity.Voucher> activeVouchers = voucherService.getActivePublicVouchers();
-            if (activeVouchers != null && !activeVouchers.isEmpty()) {
-                var v = activeVouchers.get(0);
-                String disc = "PERCENT".equalsIgnoreCase(v.getDiscountType())
-                        ? String.format("GIẢM %.0f%%", v.getDiscountValue())
-                        : String.format("GIẢM %,.0fđ", v.getDiscountValue());
-                String minOrder = (v.getMinOrderAmount() != null && v.getMinOrderAmount() > 0)
-                        ? String.format(" cho đơn từ %,.0fđ", v.getMinOrderAmount()) : "";
-                Map<String, Object> payload = Map.of("code", v.getCode(), "discount", disc, "desc", v.getTitle() + minOrder);
-                return ChatResponseDto.of(
-                        String.format("Dạ quán kính gửi Quý khách Tem Phiếu Tri Kỷ [%s] %s%s. Quý khách có thể sao chép mã và dùng ngay khi thanh toán ạ!", v.getCode(), disc, minOrder),
-                        "VOUCHER", payload, true
-                );
+        if (history != null && !history.isEmpty()) {
+            int start = Math.max(0, history.size() - 6);
+            for (int i = start; i < history.size(); i++) {
+                ChatMessageHistoryDto item = history.get(i);
+                if (item == null || item.getContent() == null || item.getContent().isBlank()) continue;
+                String role = "user".equalsIgnoreCase(item.getRole()) ? "user" : "model";
+                // Gemini generateContent requires conversation turns to start with 'user' and alternate
+                if (contents.isEmpty() && "model".equals(role)) continue;
+                if (role.equals(lastRole)) continue;
+                contents.add(Map.of("role", role, "parts", List.of(Map.of("text", item.getContent().trim()))));
+                lastRole = role;
             }
-            Map<String, Object> payload = Map.of("code", "PHO1986VIP", "discount", "GIẢM 20%", "desc", "Áp dụng đơn từ 150k khi đặt phở.");
-            return ChatResponseDto.of(
-                    "Dạ quán kính gửi Quý khách Tem Phiếu Tri Kỷ [PHO1986VIP] giảm 20% cho bữa thưởng vị hôm nay. Quý khách có thể sao chép mã và dùng ngay khi thanh toán ạ!",
-                    "VOUCHER", payload, true
-            );
         }
 
-        if ("DISH".equals(action.actionType()) && action.payload() != null) {
-            String name = (String) action.payload().get("name");
-            Number price = (Number) action.payload().get("price");
-            String priceStr = price != null ? String.format("%,.0fđ", price.doubleValue()) : "";
-            return ChatResponseDto.of(
-                    String.format("Dạ quán kính gửi Quý khách món %s với giá %s chuẩn niêm yết. Từng thớ thịt ngập vị ngọt tủy than củi ninh 24 giờ. Quý khách bấm nút dưới đây để thêm ngay vào giỏ ạ!", name, priceStr),
-                    action.actionType(), action.payload(), true
-            );
+        if ("user".equals(lastRole) && !contents.isEmpty()) {
+            contents.remove(contents.size() - 1);
         }
-
-        if (matches(q, "mì chính", "bột ngọt", "nước dùng", "sá sùng", "ninh")) {
-            return ChatResponseDto.of(
-                    "Dạ Quý khách an tâm tuyệt đối ạ! Nồi đồng quán ninh than củi ròng rã 24 giờ chắt lọc từ tủy xương ống bò tơ và sá sùng đảo Quan Lạn phơi sương, vị ngọt umami thuần khiết 100% không dùng một hạt mì chính nhân tạo nào.",
-                    "NONE", null, true
-            );
-        }
-
-        if (matches(q, "giờ", "mở cửa", "địa chỉ", "ở đâu")) {
-            return ChatResponseDto.of(
-                    "Dạ quán mở cửa đón khách từ 06:00 sáng đến 23:00 đêm mỗi ngày tại Phố Cổ Hà Nội. Khung giờ sáng sớm luôn có những bát phở đầu nồi thơm nức hương hồi quế ạ!",
-                    "NONE", null, true
-            );
-        }
-
-        if (matches(q, "menu", "thực đơn", "giá", "có món gì", "danh sách món")) {
-            return ChatResponseDto.of(
-                    "Dạ quán có đủ 26 món tinh hoa gia truyền: Phở bò tái lăn, nạm gầu giòn, đuôi bò thố đá, phở gà đồi, cùng quẩy giòn và trà sen Tây Hồ. Quý khách có thể xem toàn bộ thực đơn ngay dưới đây ạ!",
-                    "MENU", null, true
-            );
-        }
-
-        return ChatResponseDto.of(
-                "Dạ từng thìa nước dùng 1986 đượm hương hoa hồi và sá sùng Quan Lạn luôn sẵn sàng phục vụ Quý khách. Quý khách muốn xem thực đơn, đặt bàn trước hay nhận mã tem phiếu tri kỷ ạ?",
-                action.actionType(), action.payload(), true
-        );
+        contents.add(Map.of("role", "user", "parts", List.of(Map.of("text", userMessage))));
+        return contents;
     }
 
-    private ChatActionDetected detectAction(String text) {
-        String q = text.toLowerCase(Locale.ROOT).trim();
-        if (matches(q, "đặt bàn", "giữ chỗ", "bàn trống", "đặt chỗ")) {
-            return new ChatActionDetected("BOOKING", Map.of("title", "Đặt Bàn"));
-        }
-        if (matches(q, "mã", "voucher", "ưu đãi", "khuyến mãi", "giảm giá", "phiếu")) {
-            List<com.pho1986.backend.model.entity.Voucher> activeVouchers = voucherService.getActivePublicVouchers();
-            if (activeVouchers != null && !activeVouchers.isEmpty()) {
-                var v = activeVouchers.get(0);
-                String disc = "PERCENT".equalsIgnoreCase(v.getDiscountType())
-                        ? String.format("GIẢM %.0f%%", v.getDiscountValue())
-                        : String.format("GIẢM %,.0fđ", v.getDiscountValue());
-                return new ChatActionDetected("VOUCHER", Map.of("code", v.getCode(), "discount", disc));
-            }
-            return new ChatActionDetected("VOUCHER", Map.of("code", "PHO1986VIP", "discount", "GIẢM 20%"));
-        }
-        if (matches(q, "menu", "thực đơn", "toàn bộ món", "danh sách món")) {
-            return new ChatActionDetected("MENU", null);
-        }
+    @SuppressWarnings("unchecked")
+    private String extractTextFromGeminiResponse(Map<String, Object> response) {
+        if (response == null || !response.containsKey("candidates")) return null;
+        List<Map<String, Object>> candidates = (List<Map<String, Object>>) response.get("candidates");
+        if (candidates == null || candidates.isEmpty()) return null;
 
-        try {
-            List<Dish> availableDishes = getAvailableDishes();
-            if (availableDishes != null && !availableDishes.isEmpty()) {
-                // Vòng 1: Tìm kiếm ưu tiên độ khớp cao (tên đầy đủ, cụm từ đặc trưng chính xác)
-                for (Dish d : availableDishes) {
-                    if (isHighConfidenceDishMatch(q, d.getName(), d.getSlug())) {
-                        return createDishAction(d);
-                    }
-                }
+        Map<String, Object> content = (Map<String, Object>) candidates.get(0).get("content");
+        if (content == null || !content.containsKey("parts")) return null;
 
-                // Vòng 2: Tìm kiếm khớp phụ (từ khóa mở rộng)
-                for (Dish d : availableDishes) {
-                    if (isPartialDishMatch(q, d.getName())) {
-                        return createDishAction(d);
-                    }
-                }
-
-                if (matches(q, "món ngon", "gợi ý", "đặc biệt", "bán chạy", "signature")) {
-                    Dish first = availableDishes.get(0);
-                    return createDishAction(first);
-                }
-            }
-        } catch (Exception e) {
-            log.warn("[ChatService] Lỗi khi detectAction từ DB: {}", e.getMessage());
+        List<Map<String, Object>> parts = (List<Map<String, Object>>) content.get("parts");
+        StringBuilder sb = new StringBuilder();
+        for (Map<String, Object> part : parts) {
+            if (part == null || Boolean.TRUE.equals(part.get("thought"))) continue;
+            Object text = part.get("text");
+            if (text != null) sb.append(text);
         }
-
-        return new ChatActionDetected("NONE", null);
+        return sb.toString().trim();
     }
 
-    private ChatActionDetected createDishAction(Dish d) {
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("id", d.getId());
-        payload.put("name", d.getName());
-        payload.put("price", d.getPrice());
-        payload.put("image", (d.getImageUrl() != null && !d.getImageUrl().isBlank())
-                ? d.getImageUrl()
-                : "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&w=400&q=80");
-        return new ChatActionDetected("DISH", payload);
-    }
-
-    private String buildDynamicMenuPrompt() {
-        try {
-            List<Dish> availableDishes = getAvailableDishes();
-            if (availableDishes == null || availableDishes.isEmpty()) {
-                return "";
-            }
-            StringBuilder sb = new StringBuilder("\nDANH MỤC 26 MÓN ĂN & ĐỒ UỐNG THỰC TẾ TẠI QUÁN (DATABASE LIVE DATA):\n");
-            for (Dish d : availableDishes) {
-                String catName = (d.getCategory() != null) ? d.getCategory().getName() : "Món";
-                sb.append(String.format("- [%s] %s: %,.0fđ", catName, d.getName(), d.getPrice()));
-                if (Boolean.TRUE.equals(d.getIsSignature())) {
-                    sb.append(" (Món Tinh Hoa Bán Chạy)");
-                }
-                if (d.getPortion() != null && !d.getPortion().isBlank()) {
-                    sb.append(" (Phần: ").append(d.getPortion().trim()).append(")");
-                }
-                if (d.getDescription() != null && !d.getDescription().isBlank()) {
-                    sb.append(" - ").append(d.getDescription().trim());
-                }
-                sb.append("\n");
-            }
-            sb.append("QUY TẮC BẮT BUỘC:\n");
-            sb.append("1. Báo đúng 100% tên món và giá tiền như danh mục trên, không tự bịa giá.\n");
-            sb.append("2. Khi khách hỏi về bất kỳ món nào, hãy giải thích hấp dẫn và mời khách thêm vào giỏ thưởng vị.\n");
-            return sb.toString();
-        } catch (Exception e) {
-            log.warn("[ChatService] Lỗi khi tạo dynamic menu prompt: {}", e.getMessage());
-            return "";
+    private String buildDynamicMenuPrompt(List<Dish> availableDishes) {
+        if (availableDishes == null || availableDishes.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder("\nDANH MỤC MÓN ĂN & ĐỒ UỐNG THỰC TẾ TẠI QUÁN (DATABASE LIVE DATA):\n");
+        for (Dish d : availableDishes) {
+            String catName = (d.getCategory() != null) ? d.getCategory().getName() : "Món";
+            sb.append(String.format("- [%s] %s: %,.0fđ", catName, d.getName(), d.getPrice()));
+            if (Boolean.TRUE.equals(d.getIsSignature())) sb.append(" (Món Tinh Hoa)");
+            if (d.getPortion() != null && !d.getPortion().isBlank()) sb.append(" (Phần: ").append(d.getPortion().trim()).append(")");
+            if (d.getDescription() != null && !d.getDescription().isBlank()) sb.append(" - ").append(d.getDescription().trim());
+            sb.append("\n");
         }
+        return sb.toString();
     }
 
-    private String buildDynamicVoucherPrompt() {
-        try {
-            List<com.pho1986.backend.model.entity.Voucher> activeVouchers = voucherService.getActivePublicVouchers();
-            if (activeVouchers == null || activeVouchers.isEmpty()) {
-                return "";
-            }
-            StringBuilder sb = new StringBuilder("\nDANH SÁCH TEM PHIẾU / MÃ GIẢM GIÁ ĐANG ÁP DỤNG THỰC TẾ TẠI QUÁN (DATABASE LIVE DATA):\n");
-            for (var v : activeVouchers) {
-                String discountStr = "PERCENT".equalsIgnoreCase(v.getDiscountType())
-                        ? String.format("Giảm %.0f%% (tối đa %,.0fđ)", v.getDiscountValue(), v.getMaxDiscountAmount() != null ? v.getMaxDiscountAmount() : 0.0)
-                        : String.format("Giảm trực tiếp %,.0fđ", v.getDiscountValue());
-                String minOrderStr = (v.getMinOrderAmount() != null && v.getMinOrderAmount() > 0)
-                        ? String.format(" cho đơn từ %,.0fđ", v.getMinOrderAmount()) : "";
-                sb.append(String.format("- Mã [%s]: %s - %s%s. %s\n",
-                        v.getCode(), v.getTitle(), discountStr, minOrderStr, v.getDescription() != null ? v.getDescription() : ""));
-            }
-            sb.append("QUY TẮC BẮT BUỘC VỀ VOUCHER:\n");
-            sb.append("1. Báo đúng tên mã viết hoa và điều kiện như danh mục trên, không tự chế mã.\n");
-            return sb.toString();
-        } catch (Exception e) {
-            log.warn("[ChatService] Lỗi khi tạo dynamic voucher prompt: {}", e.getMessage());
-            return "";
+    private String buildDynamicVoucherPrompt(List<Voucher> activeVouchers) {
+        if (activeVouchers == null || activeVouchers.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder("\nDANH SÁCH TEM PHIẾU / MÃ GIẢM GIÁ THỰC TẾ (DATABASE LIVE DATA):\n");
+        for (Voucher v : activeVouchers) {
+            String discountStr = "PERCENT".equalsIgnoreCase(v.getDiscountType())
+                    ? String.format("Giảm %.0f%% (tối đa %,.0fđ)", v.getDiscountValue(),
+                            v.getMaxDiscountAmount() != null ? v.getMaxDiscountAmount() : 0.0)
+                    : String.format("Giảm trực tiếp %,.0fđ", v.getDiscountValue());
+            String minOrderStr = (v.getMinOrderAmount() != null && v.getMinOrderAmount() > 0)
+                    ? String.format(" cho đơn từ %,.0fđ", v.getMinOrderAmount()) : "";
+            sb.append(String.format("- Mã [%s]: %s - %s%s. %s\n",
+                    v.getCode(), v.getTitle(), discountStr, minOrderStr, v.getDescription() != null ? v.getDescription() : ""));
         }
+        return sb.toString();
     }
 
-    private boolean isHighConfidenceDishMatch(String query, String dishName, String slug) {
-        if (dishName == null) return false;
-        String name = dishName.toLowerCase(Locale.ROOT);
-        if (query.contains(name)) return true;
-
-        String clean = name.replace("phở bò ", "")
-                           .replace("phở gà ", "")
-                           .replace("phở ", "")
-                           .replace("hà nội", "")
-                           .replace("1986", "")
-                           .trim();
-        if (!clean.isEmpty() && query.contains(clean)) return true;
-
-        if (query.contains("gà đồi") && name.contains("gà đồi")) return true;
-        if (query.contains("phở gà") && name.contains("phở gà")) return true;
-        if (query.contains("đuôi bò") && name.contains("đuôi bò")) return true;
-        if (query.contains("thố đá") && name.contains("thố đá")) return true;
-        if (query.contains("sốt vang") && name.contains("sốt vang")) return true;
-        if (query.contains("tái lăn") && name.contains("tái lăn")) return true;
-        if (query.contains("sườn bò") && name.contains("sườn bò")) return true;
-        if (query.contains("bắp hoa") && name.contains("bắp hoa")) return true;
-        if (query.contains("tủy bò") && name.contains("tủy bò")) return true;
-        if ((query.contains("nạm") || query.contains("gầu")) && (name.contains("nạm") || name.contains("gầu"))) return true;
-        if (query.contains("nước sấu") && name.contains("sấu")) return true;
-        if (query.contains("nước mơ") && name.contains("mơ")) return true;
-        if (query.contains("quẩy giòn") && name.contains("quẩy")) return true;
-        if (query.contains("trà sen") && name.contains("trà sen")) return true;
-        if (query.contains("trứng chần") && name.contains("trứng")) return true;
-
-        if (slug != null && !slug.isBlank()) {
-            String normSlug = slug.replace("-", " ");
-            if (query.contains(normSlug)) return true;
+    private String sanitizeError(String message, String apiKey) {
+        if (message == null) return "Unknown error";
+        if (apiKey != null && !apiKey.isEmpty()) {
+            return message.replace(apiKey, "***");
         }
-        return false;
+        return message;
     }
-
-    private boolean isPartialDishMatch(String query, String dishName) {
-        if (dishName == null) return false;
-        String name = dishName.toLowerCase(Locale.ROOT);
-        if (query.contains("quẩy") && name.contains("quẩy")) return true;
-        if (query.contains("sấu") && name.contains("sấu")) return true;
-        if (query.contains("mơ") && name.contains("mơ")) return true;
-        if ((query.contains("cà phê") || query.contains("cafe")) && (name.contains("cà phê") || name.contains("cafe"))) return true;
-        return false;
-    }
-
-    private boolean matches(String text, String... keywords) {
-        for (String kw : keywords) {
-            if (text.contains(kw)) return true;
-        }
-        return false;
-    }
-
-    private record ChatActionDetected(String actionType, Map<String, Object> payload) {}
 }

@@ -45,6 +45,10 @@ app:
       bank-name: ${VIETQR_BANK_NAME:MBBank - Ngân hàng Quân Đội}
       account-no: ${VIETQR_ACCOUNT_NO:0384090045}
       account-name: ${VIETQR_ACCOUNT_NAME:PHO GIA TRUYEN 1986}
+  gemini:
+    api-key: ${GEMINI_API_KEY:}
+    model: ${GEMINI_MODEL:gemini-3.8-flash}
+    endpoint: ${GEMINI_ENDPOINT:https://generativelanguage.googleapis.com/v1beta/models}
 
 payment:
   sepay:
